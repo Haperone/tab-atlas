@@ -659,6 +659,7 @@ header {
 .toast.visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+  pointer-events: auto; /* so the Undo button is clickable */
 }
 
 .toast svg {
@@ -1541,5 +1542,90 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   background: rgba(201, 110, 114, 0.1);
 }
 .dialog-btn.danger:hover { background: rgba(201, 110, 114, 0.18); }
+
+
+/* ================================================================
+   FOLDERS v2 — colors, search, drag affordances, undo, animation
+   ================================================================ */
+
+/* Per-folder accent: a coloured left bar + a small dot by the name */
+.folder {
+  border-left: 3px solid var(--folder-accent, transparent);
+}
+.folder-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--folder-accent, var(--muted));
+  box-shadow: 0 0 6px var(--folder-accent, transparent);
+}
+
+/* Drag affordances */
+.folder-header { cursor: grab; }
+.page-chip.dragging,
+.folder.dragging { opacity: 0.45; }
+
+/* Collapse / expand-all button in the Folders header */
+.folders-collapse-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--muted);
+  background: none;
+  border: 1px solid rgba(127, 146, 171, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.folders-collapse-all svg { width: 14px; height: 14px; }
+.folders-collapse-all:hover {
+  color: var(--text);
+  border-color: rgba(120, 168, 200, 0.4);
+  background: rgba(127, 146, 171, 0.1);
+}
+
+/* Search across the inbox + folders */
+.saved-search {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(127, 146, 171, 0.18);
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin-bottom: 12px;
+  outline: none;
+}
+.saved-search::placeholder { color: var(--muted); }
+.saved-search:focus { border-color: rgba(120, 168, 200, 0.5); }
+
+/* Undo affordance inside the toast */
+.toast-undo {
+  margin-left: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.toast-undo:hover { text-decoration: underline; }
+
+/* Brief highlight when a tab lands in its new place */
+@keyframes itemFlash {
+  0%   { background: rgba(120, 168, 200, 0.28); }
+  100% { background: transparent; }
+}
+.deferred-item.just-moved {
+  animation: itemFlash 1s ease;
+  border-radius: 6px;
+}
 
 

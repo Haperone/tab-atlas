@@ -225,17 +225,34 @@ async function closeTabOutDupes() {
  * Saves a single tab to the "Saved for Later" list in chrome.storage.local.
  * @param {{ url: string, title: string }} tab
  */
-async function saveTabForLater(tab) {
+async function saveTabForLater(tab, folderId = null) {
   const { deferred = [] } = await chrome.storage.local.get('deferred');
+  const id = Date.now().toString() + Math.random().toString(36).slice(2, 6);
   deferred.push({
-    id:        Date.now().toString(),
+    id,
     url:       tab.url,
     title:     tab.title,
     savedAt:   new Date().toISOString(),
     completed: false,
     dismissed: false,
+    folderId:  folderId || null,
   });
   await chrome.storage.local.set({ deferred });
+  return id;
+}
+
+/**
+ * undismissSavedTab(id)
+ *
+ * Reverses dismissSavedTab() — used by the "Undo" toast action.
+ */
+async function undismissSavedTab(id) {
+  const { deferred = [] } = await chrome.storage.local.get('deferred');
+  const tab = deferred.find(t => t.id === id);
+  if (tab) {
+    tab.dismissed = false;
+    await chrome.storage.local.set({ deferred });
+  }
 }
 
 /**
@@ -304,6 +321,9 @@ async function dismissSavedTab(id) {
    ]
    ---------------------------------------------------------------- */
 
+// Folder accent colours (cycled on creation; changeable from the menu)
+const FOLDER_COLORS = ['#78a8c8', '#73937a', '#c8916e', '#9a8ac0', '#c96e72', '#6fae9e', '#c7a85a'];
+
 /**
  * getFolders()
  *
@@ -312,6 +332,16 @@ async function dismissSavedTab(id) {
 async function getFolders() {
   const { folders = [] } = await chrome.storage.local.get('folders');
   return folders;
+}
+
+/**
+ * folderColor(folder, index)
+ *
+ * Resolves a folder's accent colour, falling back to a palette slot for
+ * folders created before colours existed.
+ */
+function folderColor(folder, index = 0) {
+  return folder.color || FOLDER_COLORS[index % FOLDER_COLORS.length];
 }
 
 /**
@@ -324,14 +354,57 @@ async function createFolder(name) {
   if (!clean) return null;
   const folders = await getFolders();
   const folder = {
-    id:        Date.now().toString(),
+    id:        Date.now().toString() + Math.random().toString(36).slice(2, 6),
     name:      clean,
     collapsed: false,
+    color:     FOLDER_COLORS[folders.length % FOLDER_COLORS.length],
     createdAt: new Date().toISOString(),
   };
   folders.push(folder);
   await chrome.storage.local.set({ folders });
   return folder;
+}
+
+/**
+ * cycleFolderColor(id)
+ *
+ * Advances a folder's accent colour to the next one in the palette.
+ */
+async function cycleFolderColor(id) {
+  const folders = await getFolders();
+  const folder = folders.find(f => f.id === id);
+  if (folder) {
+    const i = FOLDER_COLORS.indexOf(folder.color);
+    folder.color = FOLDER_COLORS[(i + 1) % FOLDER_COLORS.length];
+    await chrome.storage.local.set({ folders });
+  }
+}
+
+/**
+ * reorderFolders(draggedId, targetId)
+ *
+ * Moves the dragged folder to the position of the target folder.
+ */
+async function reorderFolders(draggedId, targetId) {
+  if (draggedId === targetId) return;
+  const folders = await getFolders();
+  const from = folders.findIndex(f => f.id === draggedId);
+  const to   = folders.findIndex(f => f.id === targetId);
+  if (from === -1 || to === -1) return;
+  const [moved] = folders.splice(from, 1);
+  folders.splice(to, 0, moved);
+  await chrome.storage.local.set({ folders });
+}
+
+/**
+ * setAllFoldersCollapsed(collapsed)
+ *
+ * Collapses or expands every folder at once.
+ */
+async function setAllFoldersCollapsed(collapsed) {
+  const folders = await getFolders();
+  folders.forEach(f => { f.collapsed = !!collapsed; });
+  await chrome.storage.local.set({ folders });
 }
 
 /**
@@ -373,17 +446,41 @@ async function setFolderCollapsed(id, collapsed) {
  */
 async function deleteFolder(id, mode = 'inbox') {
   const folders = await getFolders();
+  const folder  = folders.find(f => f.id === id);
+  const index   = folders.findIndex(f => f.id === id);
   const nextFolders = folders.filter(f => f.id !== id);
 
   const { deferred = [] } = await chrome.storage.local.get('deferred');
+  const affected = [];
   for (const tab of deferred) {
     if (tab.folderId === id) {
+      affected.push({ id: tab.id, prevFolderId: tab.folderId, prevDismissed: tab.dismissed });
       if (mode === 'delete') tab.dismissed = true;
       else                   tab.folderId  = null; // back to inbox
     }
   }
 
   await chrome.storage.local.set({ folders: nextFolders, deferred });
+  return { folder, index, affected }; // snapshot for undo
+}
+
+/**
+ * restoreDeletedFolder(snapshot)
+ *
+ * Reverses deleteFolder() — re-inserts the folder at its old position and
+ * restores each affected tab's folderId / dismissed state.
+ */
+async function restoreDeletedFolder(snapshot) {
+  if (!snapshot || !snapshot.folder) return;
+  const folders = await getFolders();
+  folders.splice(Math.min(snapshot.index, folders.length), 0, snapshot.folder);
+
+  const { deferred = [] } = await chrome.storage.local.get('deferred');
+  for (const a of snapshot.affected) {
+    const tab = deferred.find(t => t.id === a.id);
+    if (tab) { tab.folderId = a.prevFolderId; tab.dismissed = a.prevDismissed; }
+  }
+  await chrome.storage.local.set({ folders, deferred });
 }
 
 /**
@@ -553,11 +650,48 @@ function animateCardOut(card) {
  *
  * Brief pop-up notification at the bottom of the screen.
  */
-function showToast(message) {
+let toastTimer = null;
+function showToast(message, undoFn) {
   const toast = document.getElementById('toast');
   document.getElementById('toastText').textContent = message;
+
+  // Drop any previous Undo button
+  const oldBtn = toast.querySelector('.toast-undo');
+  if (oldBtn) oldBtn.remove();
+
+  if (typeof undoFn === 'function') {
+    const btn = document.createElement('button');
+    btn.className = 'toast-undo';
+    btn.type = 'button';
+    btn.textContent = 'Undo';
+    btn.addEventListener('click', async () => {
+      clearTimeout(toastTimer);
+      toast.classList.remove('visible');
+      await undoFn();
+    });
+    toast.appendChild(btn);
+  }
+
   toast.classList.add('visible');
-  setTimeout(() => toast.classList.remove('visible'), 2500);
+  clearTimeout(toastTimer);
+  // Give undoable actions a little longer to act
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), undoFn ? 5500 : 2500);
+}
+
+/**
+ * flashItem(deferredId)
+ *
+ * Plays a brief highlight on a saved tab after it moves, so the eye can
+ * follow it to its new location.
+ */
+function flashItem(deferredId) {
+  if (!deferredId) return;
+  const el = document.querySelector(`.deferred-item[data-deferred-id="${deferredId}"]`);
+  if (!el) return;
+  el.classList.remove('just-moved');
+  // reflow to restart the animation
+  void el.offsetWidth;
+  el.classList.add('just-moved');
 }
 
 /**
@@ -903,8 +1037,8 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${escapeHtml(domain)}&sz=16` : '';
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
-      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="">` : ''}
+    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
+      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
       <span class="chip-text">${safeTitle}</span>${dupeTag}
       <div class="chip-actions">
         <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
@@ -984,8 +1118,8 @@ function renderDomainCard(group) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${escapeHtml(domain)}&sz=16` : '';
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
-      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="">` : ''}
+    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
+      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
       <span class="chip-text">${safeTitle}</span>${dupeTag}
       <div class="chip-actions">
         <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
@@ -1043,6 +1177,23 @@ function renderDomainCard(group) {
  * "Saved for Later" checklist column. Shows active items as a checklist
  * and completed items in a collapsible archive.
  */
+// Live search query for the inbox + folders (lowercased; '' = no filter)
+let savedQuery = '';
+
+/**
+ * savedMatches(item)
+ *
+ * True when a saved tab matches the current search query (title / url / domain).
+ */
+function savedMatches(item) {
+  if (!savedQuery) return true;
+  let domain = '';
+  try { domain = new URL(item.url).hostname; } catch {}
+  return (item.title || '').toLowerCase().includes(savedQuery) ||
+         (item.url   || '').toLowerCase().includes(savedQuery) ||
+         domain.toLowerCase().includes(savedQuery);
+}
+
 async function renderDeferredColumn() {
   const column         = document.getElementById('deferredColumn');
   const list           = document.getElementById('deferredList');
@@ -1056,13 +1207,15 @@ async function renderDeferredColumn() {
 
   try {
     const { active, archived } = await getSavedTabs();
+    const folders = await getFolders();
 
     // Inbox = active saved tabs that haven't been filed into a folder.
-    // (Tabs with a folderId are rendered inside the Folders column instead.)
-    const inbox = active.filter(t => !t.folderId);
+    const inboxAll = active.filter(t => !t.folderId);
+    const inbox    = inboxAll.filter(savedMatches);
 
-    // Hide the entire column if there's nothing to show
-    if (inbox.length === 0 && archived.length === 0) {
+    // Keep the column visible whenever there's an inbox, an archive, OR any
+    // folders exist — so the inbox stays available as a drag-back target.
+    if (inboxAll.length === 0 && archived.length === 0 && folders.length === 0) {
       column.style.display = 'none';
       return;
     }
@@ -1076,12 +1229,18 @@ async function renderDeferredColumn() {
       list.style.display = 'block';
       empty.style.display = 'none';
     } else {
+      list.innerHTML = '';
       list.style.display = 'none';
       countEl.textContent = '';
+      empty.textContent = savedQuery
+        ? 'No matches in the inbox.'
+        : (folders.length > 0
+            ? 'Inbox empty — drop a tab here to bring it back.'
+            : 'Nothing saved. Living in the moment.');
       empty.style.display = 'block';
     }
 
-    // Render archive section
+    // Render archive section (archive keeps its own separate search box)
     if (archived.length > 0) {
       archiveCountEl.textContent = `(${archived.length})`;
       archiveList.innerHTML = archived.map(item => renderArchiveItem(item)).join('');
@@ -1195,23 +1354,33 @@ async function renderFoldersColumn() {
         if (t.folderId) (byFolder[t.folderId] = byFolder[t.folderId] || []).push(t);
       }
 
-      listEl.innerHTML = folders.map(f => {
-        const items = byFolder[f.id] || [];
+      const rendered = folders.map((f, i) => {
+        const allItems = byFolder[f.id] || [];
+        const items    = allItems.filter(savedMatches);
+        // While searching, skip folders with no matching tabs
+        if (savedQuery && items.length === 0) return '';
+        const expanded = savedQuery ? true : !f.collapsed;
+        const color    = folderColor(f, i);
+        const safeName = escapeHtml(f.name);
         const bodyInner = items.length
           ? items.map(item => renderDeferredItem(item)).join('')
           : `<div class="folder-empty-hint">Empty — drag tabs here</div>`;
-        const safeName = escapeHtml(f.name);
         return `
-          <div class="folder" data-folder-id="${f.id}" data-droppable="folder">
-            <div class="folder-header" data-action="toggle-folder" data-folder-id="${f.id}">
-              <span class="folder-chevron ${f.collapsed ? '' : 'open'}">${ICON_FOLDER_CHEVRON}</span>
+          <div class="folder" data-folder-id="${f.id}" data-droppable="folder" style="--folder-accent:${color}">
+            <div class="folder-header" data-action="toggle-folder" data-folder-id="${f.id}" draggable="true">
+              <span class="folder-dot" style="background:${color}"></span>
+              <span class="folder-chevron ${expanded ? 'open' : ''}">${ICON_FOLDER_CHEVRON}</span>
               <span class="folder-name" title="${safeName}">${safeName}</span>
-              <span class="folder-count">${items.length}</span>
+              <span class="folder-count">${allItems.length}</span>
               <button class="folder-menu-btn" data-action="folder-menu" data-folder-id="${f.id}" title="Folder options" type="button">${ICON_DOTS}</button>
             </div>
-            <div class="folder-body"${f.collapsed ? ' style="display:none"' : ''}>${bodyInner}</div>
+            <div class="folder-body"${expanded ? '' : ' style="display:none"'}>${bodyInner}</div>
           </div>`;
       }).join('');
+
+      listEl.innerHTML = (savedQuery && rendered.trim() === '')
+        ? `<div class="folder-empty-hint" style="padding:8px 2px">No matches in folders.</div>`
+        : rendered;
     }
   } catch (err) {
     console.warn('[tab-out] Could not load folders:', err);
@@ -1444,6 +1613,15 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  // ---- Collapse / expand ALL folders ----
+  if (action === 'toggle-all-folders') {
+    const folders = await getFolders();
+    const anyExpanded = folders.some(f => !f.collapsed);
+    await setAllFoldersCollapsed(anyExpanded); // if any open → collapse all, else expand all
+    await renderFoldersColumn();
+    return;
+  }
+
   // ---- Collapse / expand a folder (click anywhere on its header) ----
   if (action === 'toggle-folder') {
     const fid     = actionEl.dataset.folderId;
@@ -1470,18 +1648,14 @@ document.addEventListener('click', async (e) => {
     closeFolderDeleteDialog();
     return;
   }
-  if (action === 'folder-delete-keep') {
-    if (pendingDeleteFolderId) await deleteFolder(pendingDeleteFolderId, 'inbox');
+  if (action === 'folder-delete-keep' || action === 'folder-delete-all') {
+    const mode = action === 'folder-delete-all' ? 'delete' : 'inbox';
+    let snapshot = null;
+    if (pendingDeleteFolderId) snapshot = await deleteFolder(pendingDeleteFolderId, mode);
     closeFolderDeleteDialog();
     await refreshSavedAndFolders();
-    showToast('Folder deleted — tabs moved to inbox');
-    return;
-  }
-  if (action === 'folder-delete-all') {
-    if (pendingDeleteFolderId) await deleteFolder(pendingDeleteFolderId, 'delete');
-    closeFolderDeleteDialog();
-    await refreshSavedAndFolders();
-    showToast('Folder and its tabs deleted');
+    const undo = snapshot ? async () => { await restoreDeletedFolder(snapshot); await refreshSavedAndFolders(); } : undefined;
+    showToast(mode === 'delete' ? 'Folder and its tabs deleted' : 'Folder deleted — tabs moved to inbox', undo);
     return;
   }
 
@@ -1619,7 +1793,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Dismiss a saved tab (removes it entirely) ----
+  // ---- Dismiss a saved tab (removes it entirely, with Undo) ----
   if (action === 'dismiss-deferred') {
     const id = actionEl.dataset.deferredId;
     if (!id) return;
@@ -1634,6 +1808,11 @@ document.addEventListener('click', async (e) => {
         refreshSavedAndFolders();
       }, 300);
     }
+    showToast('Removed', async () => {
+      await undismissSavedTab(id);
+      await refreshSavedAndFolders();
+      flashItem(id);
+    });
     return;
   }
 
@@ -1728,6 +1907,13 @@ document.addEventListener('click', async (e) => {
     showToast('All tabs closed. Fresh start.');
     return;
   }
+});
+
+// ---- Saved search — filter the inbox + folders as the user types ----
+document.addEventListener('input', async (e) => {
+  if (e.target.id !== 'savedSearch') return;
+  savedQuery = e.target.value.trim().toLowerCase();
+  await refreshSavedAndFolders();
 });
 
 // ---- Archive toggle — expand/collapse the archive section ----
@@ -1868,6 +2054,7 @@ async function openTabContextMenu(x, y, deferredId) {
     items.push({ label: '↩  Inbox', onClick: async () => {
       await moveTabToFolder(deferredId, null);
       await refreshSavedAndFolders();
+      flashItem(deferredId);
       showToast('Moved to inbox');
     }});
   }
@@ -1876,6 +2063,7 @@ async function openTabContextMenu(x, y, deferredId) {
     items.push({ label: '🗂  ' + f.name, onClick: async () => {
       await moveTabToFolder(deferredId, f.id);
       await refreshSavedAndFolders();
+      flashItem(deferredId);
       showToast(`Moved to “${f.name}”`);
     }});
   }
@@ -1886,6 +2074,7 @@ async function openTabContextMenu(x, y, deferredId) {
     if (folder) {
       await moveTabToFolder(deferredId, folder.id);
       await refreshSavedAndFolders();
+      flashItem(deferredId);
       showToast(`Moved to “${folder.name}”`);
     }
   }});
@@ -1893,7 +2082,11 @@ async function openTabContextMenu(x, y, deferredId) {
   items.push({ label: 'Remove', danger: true, onClick: async () => {
     await dismissSavedTab(deferredId);
     await refreshSavedAndFolders();
-    showToast('Removed');
+    showToast('Removed', async () => {
+      await undismissSavedTab(deferredId);
+      await refreshSavedAndFolders();
+      flashItem(deferredId);
+    });
   }});
 
   showContextMenu(x, y, items);
@@ -1916,6 +2109,10 @@ async function openFolderContextMenu(x, y, folderId) {
       await renderFoldersColumn();
     }},
     { label: 'Rename', onClick: () => startFolderRename(folderId) },
+    { label: 'Change color', onClick: async () => {
+      await cycleFolderColor(folderId);
+      await renderFoldersColumn();
+    }},
     { separator: true },
     { label: 'Delete folder', danger: true, onClick: () => openFolderDeleteDialog(folderId) },
   ]);
@@ -2017,65 +2214,110 @@ document.addEventListener('focusout', (e) => {
   }
 });
 
-// ─── Drag & drop: move saved tabs between inbox and folders ────────────────────
-
-let draggingDeferredId = null;
+// ─── Drag & drop ───────────────────────────────────────────────────────────────
+// Handles three kinds of drags:
+//   { kind:'saved',  id }          — a saved tab → into a folder or the inbox
+//   { kind:'open',   url, title }  — an open-tab chip → saved into a folder/inbox
+//   { kind:'folder', id }          — a folder header → reordered among folders
+let dragData = null;
 
 document.addEventListener('dragstart', (e) => {
-  const item = e.target.closest('.deferred-item');
-  if (!item) return;
-  draggingDeferredId = item.dataset.deferredId;
-  item.classList.add('dragging');
+  const item   = e.target.closest('.deferred-item');
+  const chip   = e.target.closest('.page-chip[data-action="focus-tab"]');
+  const header = e.target.closest('.folder-header');
+  if (item) {
+    dragData = { kind: 'saved', id: item.dataset.deferredId };
+    item.classList.add('dragging');
+  } else if (chip) {
+    dragData = { kind: 'open', url: chip.dataset.tabUrl, title: chip.dataset.tabTitle || chip.dataset.tabUrl };
+    chip.classList.add('dragging');
+  } else if (header) {
+    dragData = { kind: 'folder', id: header.dataset.folderId };
+    const fEl = header.closest('.folder');
+    if (fEl) fEl.classList.add('dragging');
+  } else {
+    return;
+  }
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', draggingDeferredId);
+    e.dataTransfer.setData('text/plain', dragData.id || dragData.url || '');
   }
 });
 
-document.addEventListener('dragend', (e) => {
-  const item = e.target.closest('.deferred-item');
-  if (item) item.classList.remove('dragging');
-  draggingDeferredId = null;
+document.addEventListener('dragend', () => {
+  document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
   document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+  dragData = null;
 });
 
 document.addEventListener('dragover', (e) => {
-  if (draggingDeferredId == null) return;
-  const zone = e.target.closest('[data-droppable]');
-  if (!zone) return;
+  if (!dragData) return;
+  let target = null;
+  if (dragData.kind === 'folder') {
+    const f = e.target.closest('.folder');
+    if (f && f.dataset.folderId !== dragData.id) target = f;
+  } else {
+    target = e.target.closest('[data-droppable]');
+  }
+  if (!target) return;
   e.preventDefault();
   if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-  if (!zone.classList.contains('drop-target')) {
+  if (!target.classList.contains('drop-target')) {
     document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-    zone.classList.add('drop-target');
+    target.classList.add('drop-target');
   }
 });
 
 document.addEventListener('dragleave', (e) => {
-  const zone = e.target.closest('[data-droppable]');
+  const zone = e.target.closest('.drop-target');
   if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove('drop-target');
 });
 
 document.addEventListener('drop', async (e) => {
+  if (!dragData) return;
+  const data = dragData;
+  dragData = null;
+  document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+
+  // Folder reorder
+  if (data.kind === 'folder') {
+    const targetFolder = e.target.closest('.folder');
+    if (targetFolder && targetFolder.dataset.folderId !== data.id) {
+      e.preventDefault();
+      await reorderFolders(data.id, targetFolder.dataset.folderId);
+      await renderFoldersColumn();
+    }
+    return;
+  }
+
   const zone = e.target.closest('[data-droppable]');
   if (!zone) return;
   e.preventDefault();
-  const id = draggingDeferredId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
-  draggingDeferredId = null;
-  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-  if (!id) return;
 
-  if (zone.dataset.droppable === 'inbox') {
-    await moveTabToFolder(id, null);
+  const targetFolderId = zone.dataset.droppable === 'folder' ? zone.dataset.folderId : null;
+  const folders = await getFolders();
+  const tname = targetFolderId
+    ? ((folders.find(f => f.id === targetFolderId) || {}).name || 'folder')
+    : 'inbox';
+
+  if (data.kind === 'saved') {
+    await moveTabToFolder(data.id, targetFolderId);
     await refreshSavedAndFolders();
-    showToast('Moved to inbox');
-  } else if (zone.dataset.droppable === 'folder') {
-    const fid = zone.dataset.folderId;
-    await moveTabToFolder(id, fid);
-    await refreshSavedAndFolders();
-    const folders = await getFolders();
-    const f = folders.find(ff => ff.id === fid);
-    showToast(`Moved to “${f ? f.name : 'folder'}”`);
+    flashItem(data.id);
+    showToast(targetFolderId ? `Moved to “${tname}”` : 'Moved to inbox');
+  } else if (data.kind === 'open') {
+    // Save the open tab into the target, then close it (mirrors Save-for-later)
+    const newId = await saveTabForLater({ url: data.url, title: data.title }, targetFolderId);
+    try {
+      const allTabs = await chrome.tabs.query({});
+      const match = allTabs.find(t => t.url === data.url);
+      if (match) await chrome.tabs.remove(match.id);
+      await fetchOpenTabs();
+    } catch {}
+    await renderStaticDashboard();
+    flashItem(newId);
+    showToast(targetFolderId ? `Saved to “${tname}”` : 'Saved to inbox');
   }
 });
 

@@ -81,6 +81,9 @@
         <div class="section-count" id="deferredCount"></div>
       </div>
 
+      <!-- Search across the inbox and all folders -->
+      <input type="text" class="saved-search" id="savedSearch" placeholder="Search saved tabs…">
+
       <!-- Active checklist items — injected by renderDeferredList() in app.js -->
       <div class="deferred-list" id="deferredList"></div>
 
@@ -108,6 +111,9 @@
       <div class="section-header">
         <h2>Folders</h2>
         <div class="section-line"></div>
+        <button class="folders-collapse-all" data-action="toggle-all-folders" title="Collapse / expand all" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg>
+        </button>
         <button class="new-folder-btn" data-action="new-folder" title="New folder" type="button">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
           New folder
