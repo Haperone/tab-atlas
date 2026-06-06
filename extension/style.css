@@ -56,12 +56,40 @@ body::before {
 
 /* ---- Header ---- */
 header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 48px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--neutral);
+}
+
+/* Centered "Open Shir-Man" button — horizontally centered in the header,
+   independent of the greeting on the left. */
+.header-homepage-btn {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  transform: translateX(-50%);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(120, 168, 200, 0.32);
+  border-radius: 999px;
+  padding: 14px 32px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.header-homepage-btn:hover {
+  background: var(--surface-strong-hover);
+  transform: translateX(-50%) translateY(-1px) scale(1.03);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4);
 }
 
 .header-left h1 {
@@ -960,6 +988,16 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
     align-items: stretch;
   }
 
+  /* Un-center the button so it doesn't overlap the greeting */
+  .header-homepage-btn {
+    position: static;
+    transform: none;
+    align-self: flex-start;
+  }
+  .header-homepage-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+  }
+
   .dashboard-columns {
     flex-direction: column;
   }
@@ -1211,9 +1249,17 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
    FOLDERS COLUMN
    ================================================================ */
 
-/* Widen the canvas when side columns are present so 3 columns fit */
+/* Widen the canvas when side columns are present so 3 columns fit.
+   Width is tuned so the open-tabs column stays a single-card-wide ribbon
+   (same feel as before) rather than a multi-column grid. */
 .container.dashboard-wide {
-  max-width: 1360px;
+  max-width: 1280px;
+}
+
+/* In the 3-column layout, keep the open-tabs cards as a vertical ribbon
+   (one per row) instead of letting the grid pack two across. */
+.container.dashboard-wide .missions {
+  grid-template-columns: 1fr;
 }
 
 /* Saved tabs are draggable into folders */
@@ -1493,45 +1539,3 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .dialog-btn.danger:hover { background: rgba(201, 110, 114, 0.18); }
 
 
-/* ================================================================
-   FLOATING "Open Shir-Man" BUTTON
-   ================================================================ */
-
-.floating-homepage-btn {
-  position: fixed;
-  right: 28px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 90;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--text);
-  background: var(--surface-strong);
-  border: 1px solid rgba(120, 168, 200, 0.3);
-  border-radius: 999px;
-  padding: 13px 22px;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
-  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-.floating-homepage-btn:hover {
-  background: var(--surface-strong-hover);
-  transform: translateY(-50%) scale(1.04);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
-}
-
-/* On screens too narrow for the right margin, dock to the bottom-right
-   corner so the button never sits on top of the columns. */
-@media (max-width: 1700px) {
-  .floating-homepage-btn {
-    top: auto;
-    bottom: 26px;
-    transform: none;
-  }
-  .floating-homepage-btn:hover {
-    transform: translateY(-2px) scale(1.03);
-  }
-}
