@@ -285,6 +285,124 @@ async function dismissSavedTab(id) {
 
 
 /* ----------------------------------------------------------------
+   FOLDERS — chrome.storage.local (backward compatible)
+
+   Folders live under a NEW "folders" key, separate from "deferred".
+   Saved tabs gain an optional "folderId" field:
+     - folderId absent / null  → the tab is in the inbox (Saved for later)
+     - folderId === <id>        → the tab lives inside that folder
+
+   Existing saved tabs have no folderId, so they all stay in the inbox.
+   Nothing is ever deleted or rewritten in bulk — only the touched record
+   changes. Rolling back to an older build simply ignores these fields.
+
+   Folder shape stored under the "folders" key:
+   [
+     { id: "1712345678901", name: "Reading", collapsed: false,
+       createdAt: "2026-06-06T10:00:00.000Z" },
+     ...
+   ]
+   ---------------------------------------------------------------- */
+
+/**
+ * getFolders()
+ *
+ * Returns the list of folders (empty array if none exist yet).
+ */
+async function getFolders() {
+  const { folders = [] } = await chrome.storage.local.get('folders');
+  return folders;
+}
+
+/**
+ * createFolder(name)
+ *
+ * Adds a new folder and returns it. Empty names are ignored.
+ */
+async function createFolder(name) {
+  const clean = (name || '').trim();
+  if (!clean) return null;
+  const folders = await getFolders();
+  const folder = {
+    id:        Date.now().toString(),
+    name:      clean,
+    collapsed: false,
+    createdAt: new Date().toISOString(),
+  };
+  folders.push(folder);
+  await chrome.storage.local.set({ folders });
+  return folder;
+}
+
+/**
+ * renameFolder(id, name)
+ *
+ * Renames a folder. Empty names are ignored (folder keeps its old name).
+ */
+async function renameFolder(id, name) {
+  const clean = (name || '').trim();
+  if (!clean) return;
+  const folders = await getFolders();
+  const folder = folders.find(f => f.id === id);
+  if (folder) {
+    folder.name = clean;
+    await chrome.storage.local.set({ folders });
+  }
+}
+
+/**
+ * setFolderCollapsed(id, collapsed)
+ *
+ * Persists a folder's collapsed/expanded state.
+ */
+async function setFolderCollapsed(id, collapsed) {
+  const folders = await getFolders();
+  const folder = folders.find(f => f.id === id);
+  if (folder) {
+    folder.collapsed = !!collapsed;
+    await chrome.storage.local.set({ folders });
+  }
+}
+
+/**
+ * deleteFolder(id, mode)
+ *
+ * Removes a folder. The tabs that lived inside it are handled per `mode`:
+ *   'inbox'  → tabs return to the inbox (folderId cleared)        [safe default]
+ *   'delete' → tabs are dismissed along with the folder
+ */
+async function deleteFolder(id, mode = 'inbox') {
+  const folders = await getFolders();
+  const nextFolders = folders.filter(f => f.id !== id);
+
+  const { deferred = [] } = await chrome.storage.local.get('deferred');
+  for (const tab of deferred) {
+    if (tab.folderId === id) {
+      if (mode === 'delete') tab.dismissed = true;
+      else                   tab.folderId  = null; // back to inbox
+    }
+  }
+
+  await chrome.storage.local.set({ folders: nextFolders, deferred });
+}
+
+/**
+ * moveTabToFolder(deferredId, folderId)
+ *
+ * Moves a saved tab into a folder, or back to the inbox when folderId
+ * is null/empty. Only the single record is touched.
+ */
+async function moveTabToFolder(deferredId, folderId) {
+  const { deferred = [] } = await chrome.storage.local.get('deferred');
+  const tab = deferred.find(t => t.id === deferredId);
+  if (tab) {
+    tab.folderId = folderId || null;
+    await chrome.storage.local.set({ deferred });
+  }
+}
+
+
+/* ----------------------------------------------------------------
    UI HELPERS
    ---------------------------------------------------------------- */
 
@@ -939,18 +1057,22 @@ async function renderDeferredColumn() {
   try {
     const { active, archived } = await getSavedTabs();
 
+    // Inbox = active saved tabs that haven't been filed into a folder.
+    // (Tabs with a folderId are rendered inside the Folders column instead.)
+    const inbox = active.filter(t => !t.folderId);
+
     // Hide the entire column if there's nothing to show
-    if (active.length === 0 && archived.length === 0) {
+    if (inbox.length === 0 && archived.length === 0) {
       column.style.display = 'none';
       return;
     }
 
     column.style.display = 'block';
 
-    // Render active checklist items
-    if (active.length > 0) {
-      countEl.textContent = `${active.length} item${active.length !== 1 ? 's' : ''}`;
-      list.innerHTML = active.map(item => renderDeferredItem(item)).join('');
+    // Render active checklist items (inbox only)
+    if (inbox.length > 0) {
+      countEl.textContent = `${inbox.length} item${inbox.length !== 1 ? 's' : ''}`;
+      list.innerHTML = inbox.map(item => renderDeferredItem(item)).join('');
       list.style.display = 'block';
       empty.style.display = 'none';
     } else {
@@ -990,7 +1112,7 @@ function renderDeferredItem(item) {
   const safeDomain = escapeHtml(domain);
 
   return `
-    <div class="deferred-item" data-deferred-id="${item.id}">
+    <div class="deferred-item" data-deferred-id="${item.id}" draggable="true">
       <input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">
       <div class="deferred-info">
         <a href="${safeUrl}" target="_blank" rel="noopener" class="deferred-title" title="${safeTitle}">
@@ -1023,6 +1145,96 @@ function renderArchiveItem(item) {
       </a>
       <span class="archive-item-date">${ago}</span>
     </div>`;
+}
+
+
+/* ----------------------------------------------------------------
+   FOLDERS — Render Column
+   ---------------------------------------------------------------- */
+
+// Chevron (points right; rotated to point down when the folder is open)
+const ICON_FOLDER_CHEVRON = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>`;
+// Vertical "…" options icon
+const ICON_DOTS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 20.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>`;
+
+/**
+ * renderFoldersColumn()
+ *
+ * Renders the "Folders" column: a list of folders, each with its filed
+ * tabs. Folders can be collapsed. The column appears whenever there are
+ * folders OR there are saved tabs available to file.
+ */
+async function renderFoldersColumn() {
+  const column = document.getElementById('foldersColumn');
+  const listEl = document.getElementById('foldersList');
+  const emptyEl = document.getElementById('foldersEmpty');
+  if (!column) return;
+
+  try {
+    const folders = await getFolders();
+    const { active } = await getSavedTabs();
+
+    // Nothing to organize and no folders yet → hide the whole column
+    if (folders.length === 0 && active.length === 0) {
+      column.style.display = 'none';
+      updateLayoutWidth();
+      return;
+    }
+
+    column.style.display = 'block';
+
+    if (folders.length === 0) {
+      listEl.innerHTML = '';
+      emptyEl.style.display = 'block';
+    } else {
+      emptyEl.style.display = 'none';
+
+      // Bucket active tabs by their folderId
+      const byFolder = {};
+      for (const t of active) {
+        if (t.folderId) (byFolder[t.folderId] = byFolder[t.folderId] || []).push(t);
+      }
+
+      listEl.innerHTML = folders.map(f => {
+        const items = byFolder[f.id] || [];
+        const bodyInner = items.length
+          ? items.map(item => renderDeferredItem(item)).join('')
+          : `<div class="folder-empty-hint">Empty — drag tabs here</div>`;
+        const safeName = escapeHtml(f.name);
+        return `
+          <div class="folder" data-folder-id="${f.id}" data-droppable="folder">
+            <div class="folder-header" data-action="toggle-folder" data-folder-id="${f.id}">
+              <span class="folder-chevron ${f.collapsed ? '' : 'open'}">${ICON_FOLDER_CHEVRON}</span>
+              <span class="folder-name" title="${safeName}">${safeName}</span>
+              <span class="folder-count">${items.length}</span>
+              <button class="folder-menu-btn" data-action="folder-menu" data-folder-id="${f.id}" title="Folder options" type="button">${ICON_DOTS}</button>
+            </div>
+            <div class="folder-body"${f.collapsed ? ' style="display:none"' : ''}>${bodyInner}</div>
+          </div>`;
+      }).join('');
+    }
+  } catch (err) {
+    console.warn('[tab-out] Could not load folders:', err);
+    column.style.display = 'none';
+  }
+
+  updateLayoutWidth();
+}
+
+/**
+ * updateLayoutWidth()
+ *
+ * Widens the container when any side column (Saved for later / Folders)
+ * is visible, so three columns have room to breathe. Falls back to the
+ * narrow single-column width when only Open tabs is showing.
+ */
+function updateLayoutWidth() {
+  const container = document.querySelector('.container');
+  const deferred  = document.getElementById('deferredColumn');
+  const folders   = document.getElementById('foldersColumn');
+  const wide = (deferred && deferred.style.display !== 'none') ||
+               (folders  && folders.style.display  !== 'none');
+  if (container) container.classList.toggle('dashboard-wide', wide);
 }
 
 
@@ -1188,6 +1400,9 @@ async function renderStaticDashboard() {
 
   // --- Render "Saved for Later" column ---
   await renderDeferredColumn();
+
+  // --- Render "Folders" column ---
+  await renderFoldersColumn();
 }
 
 async function renderDashboard() {
@@ -1210,10 +1425,63 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
-  // ---- Open homepage button (top-right header link) ----
+  // ---- Open homepage button (floating Shir-Man link) ----
   if (action === 'open-homepage') {
     const url = actionEl.dataset.homepageUrl;
     if (url) chrome.tabs.create({ url });
+    return;
+  }
+
+  // ---- Reveal the inline "new folder" name input ----
+  if (action === 'new-folder') {
+    const row   = document.getElementById('newFolderInputRow');
+    const input = document.getElementById('newFolderInput');
+    if (row && input) {
+      row.style.display = 'block';
+      input.value = '';
+      input.focus();
+    }
+    return;
+  }
+
+  // ---- Collapse / expand a folder (click anywhere on its header) ----
+  if (action === 'toggle-folder') {
+    const fid     = actionEl.dataset.folderId;
+    const folders = await getFolders();
+    const f       = folders.find(ff => ff.id === fid);
+    if (f) {
+      await setFolderCollapsed(fid, !f.collapsed);
+      await renderFoldersColumn();
+    }
+    return;
+  }
+
+  // ---- Folder "…" options menu ----
+  if (action === 'folder-menu') {
+    e.stopPropagation(); // don't also toggle the folder
+    const fid  = actionEl.dataset.folderId;
+    const rect = actionEl.getBoundingClientRect();
+    await openFolderContextMenu(rect.right, rect.bottom, fid);
+    return;
+  }
+
+  // ---- Folder delete dialog buttons ----
+  if (action === 'folder-delete-cancel') {
+    closeFolderDeleteDialog();
+    return;
+  }
+  if (action === 'folder-delete-keep') {
+    if (pendingDeleteFolderId) await deleteFolder(pendingDeleteFolderId, 'inbox');
+    closeFolderDeleteDialog();
+    await refreshSavedAndFolders();
+    showToast('Folder deleted — tabs moved to inbox');
+    return;
+  }
+  if (action === 'folder-delete-all') {
+    if (pendingDeleteFolderId) await deleteFolder(pendingDeleteFolderId, 'delete');
+    closeFolderDeleteDialog();
+    await refreshSavedAndFolders();
+    showToast('Folder and its tabs deleted');
     return;
   }
 
@@ -1325,7 +1593,7 @@ document.addEventListener('click', async (e) => {
     }
 
     showToast('Saved for later');
-    await renderDeferredColumn();
+    await refreshSavedAndFolders();
     return;
   }
 
@@ -1344,7 +1612,7 @@ document.addEventListener('click', async (e) => {
         item.classList.add('removing');
         setTimeout(() => {
           item.remove();
-          renderDeferredColumn(); // refresh counts and archive
+          refreshSavedAndFolders(); // refresh counts, archive & folders
         }, 300);
       }, 800);
     }
@@ -1363,7 +1631,7 @@ document.addEventListener('click', async (e) => {
       item.classList.add('removing');
       setTimeout(() => {
         item.remove();
-        renderDeferredColumn();
+        refreshSavedAndFolders();
       }, 300);
     }
     return;
@@ -1503,6 +1771,353 @@ document.addEventListener('input', async (e) => {
     console.warn('[tab-out] Archive search failed:', err);
   }
 });
+
+
+/* ----------------------------------------------------------------
+   FOLDERS — Interactions (drag & drop, context menus, dialogs)
+   ---------------------------------------------------------------- */
+
+/**
+ * refreshSavedAndFolders()
+ *
+ * Re-renders both right-hand columns after a folder/move operation.
+ */
+async function refreshSavedAndFolders() {
+  await renderDeferredColumn();
+  await renderFoldersColumn();
+}
+
+// ─── Custom context menu engine ───────────────────────────────────────────────
+
+/**
+ * showContextMenu(x, y, items)
+ *
+ * Renders a small context menu at (x, y). `items` is an array of:
+ *   { label, onClick, danger? }   — a clickable row
+ *   { heading: true, label }       — a non-clickable section label
+ *   { separator: true }            — a divider
+ * The menu is repositioned to stay within the viewport.
+ */
+function showContextMenu(x, y, items) {
+  const menu = document.getElementById('contextMenu');
+  if (!menu) return;
+  menu.innerHTML = '';
+
+  for (const it of items) {
+    if (it.separator) {
+      const sep = document.createElement('div');
+      sep.className = 'context-menu-sep';
+      menu.appendChild(sep);
+    } else if (it.heading) {
+      const h = document.createElement('div');
+      h.className = 'context-menu-heading';
+      h.textContent = it.label;
+      menu.appendChild(h);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'context-menu-item' + (it.danger ? ' danger' : '');
+      btn.textContent = it.label;
+      btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        closeContextMenu();
+        if (it.onClick) await it.onClick();
+      });
+      menu.appendChild(btn);
+    }
+  }
+
+  // Show first (so we can measure), then clamp into the viewport
+  menu.style.display = 'block';
+  menu.style.left = '0px';
+  menu.style.top  = '0px';
+  const rect = menu.getBoundingClientRect();
+  let px = x, py = y;
+  if (px + rect.width  > window.innerWidth  - 8) px = window.innerWidth  - rect.width  - 8;
+  if (py + rect.height > window.innerHeight - 8) py = window.innerHeight - rect.height - 8;
+  menu.style.left = Math.max(8, px) + 'px';
+  menu.style.top  = Math.max(8, py) + 'px';
+}
+
+function closeContextMenu() {
+  const menu = document.getElementById('contextMenu');
+  if (menu && menu.style.display !== 'none') {
+    menu.style.display = 'none';
+    menu.innerHTML = '';
+  }
+}
+
+/**
+ * openTabContextMenu(x, y, deferredId)
+ *
+ * Builds the right-click menu for a saved tab: open, move to inbox/folder,
+ * create a new folder, or remove.
+ */
+async function openTabContextMenu(x, y, deferredId) {
+  const { deferred = [] } = await chrome.storage.local.get('deferred');
+  const tab = deferred.find(t => t.id === deferredId);
+  if (!tab) return;
+  const folders = await getFolders();
+
+  const items = [];
+  items.push({ label: 'Open in new tab', onClick: () => { if (tab.url) chrome.tabs.create({ url: tab.url }); } });
+  items.push({ separator: true });
+  items.push({ heading: true, label: 'Move to' });
+
+  if (tab.folderId) {
+    items.push({ label: '↩  Inbox', onClick: async () => {
+      await moveTabToFolder(deferredId, null);
+      await refreshSavedAndFolders();
+      showToast('Moved to inbox');
+    }});
+  }
+  for (const f of folders) {
+    if (f.id === tab.folderId) continue;
+    items.push({ label: '🗂  ' + f.name, onClick: async () => {
+      await moveTabToFolder(deferredId, f.id);
+      await refreshSavedAndFolders();
+      showToast(`Moved to “${f.name}”`);
+    }});
+  }
+  items.push({ label: '＋  New folder…', onClick: async () => {
+    const name = (window.prompt('New folder name:') || '').trim();
+    if (!name) return;
+    const folder = await createFolder(name);
+    if (folder) {
+      await moveTabToFolder(deferredId, folder.id);
+      await refreshSavedAndFolders();
+      showToast(`Moved to “${folder.name}”`);
+    }
+  }});
+  items.push({ separator: true });
+  items.push({ label: 'Remove', danger: true, onClick: async () => {
+    await dismissSavedTab(deferredId);
+    await refreshSavedAndFolders();
+    showToast('Removed');
+  }});
+
+  showContextMenu(x, y, items);
+}
+
+/**
+ * openFolderContextMenu(x, y, folderId)
+ *
+ * Builds the right-click / "…" menu for a folder: collapse/expand,
+ * rename, or delete.
+ */
+async function openFolderContextMenu(x, y, folderId) {
+  const folders = await getFolders();
+  const f = folders.find(ff => ff.id === folderId);
+  if (!f) return;
+
+  showContextMenu(x, y, [
+    { label: f.collapsed ? 'Expand' : 'Collapse', onClick: async () => {
+      await setFolderCollapsed(folderId, !f.collapsed);
+      await renderFoldersColumn();
+    }},
+    { label: 'Rename', onClick: () => startFolderRename(folderId) },
+    { separator: true },
+    { label: 'Delete folder', danger: true, onClick: () => openFolderDeleteDialog(folderId) },
+  ]);
+}
+
+/**
+ * startFolderRename(folderId)
+ *
+ * Swaps a folder's name label for an inline text input. Enter / blur saves,
+ * Escape cancels.
+ */
+function startFolderRename(folderId) {
+  const header = document.querySelector(`.folder-header[data-folder-id="${folderId}"]`);
+  if (!header) return;
+  const nameSpan = header.querySelector('.folder-name');
+  if (!nameSpan) return;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'folder-rename-input';
+  input.value = nameSpan.textContent;
+  input.maxLength = 60;
+  nameSpan.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  const commit = async (save) => {
+    if (done) return;
+    done = true;
+    if (save && input.value.trim()) await renameFolder(folderId, input.value);
+    await renderFoldersColumn();
+  };
+  input.addEventListener('click',    (ev) => ev.stopPropagation());
+  input.addEventListener('mousedown',(ev) => ev.stopPropagation());
+  input.addEventListener('keydown',  (ev) => {
+    ev.stopPropagation();
+    if (ev.key === 'Enter')  { ev.preventDefault(); commit(true); }
+    if (ev.key === 'Escape') { ev.preventDefault(); commit(false); }
+  });
+  input.addEventListener('blur', () => commit(true));
+}
+
+// ─── Folder delete dialog ─────────────────────────────────────────────────────
+
+let pendingDeleteFolderId = null;
+
+async function openFolderDeleteDialog(folderId) {
+  const folders = await getFolders();
+  const f = folders.find(ff => ff.id === folderId);
+  if (!f) return;
+
+  const { active } = await getSavedTabs();
+  const count = active.filter(t => t.folderId === folderId).length;
+
+  pendingDeleteFolderId = folderId;
+  document.getElementById('folderDeleteTitle').textContent = `Delete “${f.name}”?`;
+  document.getElementById('folderDeleteText').textContent = count > 0
+    ? `This folder has ${count} tab${count !== 1 ? 's' : ''}. Keep them (move to inbox) or delete them along with the folder?`
+    : 'This folder is empty.';
+  const dialog = document.getElementById('folderDeleteDialog');
+  if (dialog) dialog.style.display = 'flex';
+}
+
+function closeFolderDeleteDialog() {
+  const dialog = document.getElementById('folderDeleteDialog');
+  if (dialog) dialog.style.display = 'none';
+  pendingDeleteFolderId = null;
+}
+
+// ─── New-folder inline input (Enter to create, Esc/blur to cancel) ─────────────
+
+document.addEventListener('keydown', async (e) => {
+  if (!e.target || e.target.id !== 'newFolderInput') return;
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const name = e.target.value.trim();
+    document.getElementById('newFolderInputRow').style.display = 'none';
+    e.target.value = '';
+    if (name) {
+      await createFolder(name);
+      await renderFoldersColumn();
+      showToast(`Folder “${name}” created`);
+    }
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    document.getElementById('newFolderInputRow').style.display = 'none';
+    e.target.value = '';
+  }
+});
+
+document.addEventListener('focusout', (e) => {
+  if (e.target && e.target.id === 'newFolderInput') {
+    // Delay so a pending Enter keydown can finish first
+    setTimeout(() => {
+      const row = document.getElementById('newFolderInputRow');
+      if (row) row.style.display = 'none';
+    }, 150);
+  }
+});
+
+// ─── Drag & drop: move saved tabs between inbox and folders ────────────────────
+
+let draggingDeferredId = null;
+
+document.addEventListener('dragstart', (e) => {
+  const item = e.target.closest('.deferred-item');
+  if (!item) return;
+  draggingDeferredId = item.dataset.deferredId;
+  item.classList.add('dragging');
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggingDeferredId);
+  }
+});
+
+document.addEventListener('dragend', (e) => {
+  const item = e.target.closest('.deferred-item');
+  if (item) item.classList.remove('dragging');
+  draggingDeferredId = null;
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+});
+
+document.addEventListener('dragover', (e) => {
+  if (draggingDeferredId == null) return;
+  const zone = e.target.closest('[data-droppable]');
+  if (!zone) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  if (!zone.classList.contains('drop-target')) {
+    document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+    zone.classList.add('drop-target');
+  }
+});
+
+document.addEventListener('dragleave', (e) => {
+  const zone = e.target.closest('[data-droppable]');
+  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove('drop-target');
+});
+
+document.addEventListener('drop', async (e) => {
+  const zone = e.target.closest('[data-droppable]');
+  if (!zone) return;
+  e.preventDefault();
+  const id = draggingDeferredId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
+  draggingDeferredId = null;
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+  if (!id) return;
+
+  if (zone.dataset.droppable === 'inbox') {
+    await moveTabToFolder(id, null);
+    await refreshSavedAndFolders();
+    showToast('Moved to inbox');
+  } else if (zone.dataset.droppable === 'folder') {
+    const fid = zone.dataset.folderId;
+    await moveTabToFolder(id, fid);
+    await refreshSavedAndFolders();
+    const folders = await getFolders();
+    const f = folders.find(ff => ff.id === fid);
+    showToast(`Moved to “${f ? f.name : 'folder'}”`);
+  }
+});
+
+// ─── Right-click → open the relevant context menu ──────────────────────────────
+
+document.addEventListener('contextmenu', async (e) => {
+  const item   = e.target.closest('.deferred-item');
+  const folder = e.target.closest('.folder-header');
+  if (item) {
+    e.preventDefault();
+    await openTabContextMenu(e.clientX, e.clientY, item.dataset.deferredId);
+  } else if (folder) {
+    e.preventDefault();
+    await openFolderContextMenu(e.clientX, e.clientY, folder.dataset.folderId);
+  } else {
+    closeContextMenu();
+  }
+});
+
+// ─── Dismiss menus / dialog on outside interaction ─────────────────────────────
+
+document.addEventListener('mousedown', (e) => {
+  // Close the context menu when clicking outside of it
+  const menu = document.getElementById('contextMenu');
+  if (menu && menu.style.display !== 'none' && !e.target.closest('#contextMenu')) {
+    closeContextMenu();
+  }
+  // Close the delete dialog when clicking its backdrop
+  const overlay = document.getElementById('folderDeleteDialog');
+  if (overlay && overlay.style.display !== 'none' && e.target === overlay) {
+    closeFolderDeleteDialog();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeContextMenu();
+    closeFolderDeleteDialog();
+  }
+});
+
+window.addEventListener('scroll', () => closeContextMenu(), true);
 
 
 /* ----------------------------------------------------------------

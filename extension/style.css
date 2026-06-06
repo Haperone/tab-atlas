@@ -81,34 +81,6 @@ header {
   text-transform: uppercase;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-link-btn {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--text);
-  background: var(--surface-strong);
-  border: 1px solid rgba(120, 168, 200, 0.28);
-  border-radius: 999px;
-  padding: 10px 16px;
-  cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  white-space: nowrap;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-}
-
-.header-link-btn:hover {
-  background: var(--surface-strong-hover);
-  opacity: 1;
-  transform: translateY(-1px);
-}
-
 /* ---- Tab cleanup banner ---- */
 .tab-cleanup-banner {
   background: linear-gradient(135deg, rgba(120, 168, 200, 0.12), rgba(120, 168, 200, 0.18));
@@ -988,16 +960,14 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
     align-items: stretch;
   }
 
-  .header-actions {
-    justify-content: flex-start;
-  }
-
   .dashboard-columns {
     flex-direction: column;
   }
-  .deferred-column {
+  .deferred-column,
+  .folders-column {
     width: 100%;
     position: static;
+    max-height: none;
   }
 }
 
@@ -1234,4 +1204,334 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   color: var(--muted);
   opacity: 0.6;
   flex-shrink: 0;
+}
+
+
+/* ================================================================
+   FOLDERS COLUMN
+   ================================================================ */
+
+/* Widen the canvas when side columns are present so 3 columns fit */
+.container.dashboard-wide {
+  max-width: 1360px;
+}
+
+/* Saved tabs are draggable into folders */
+.deferred-item {
+  cursor: grab;
+}
+.deferred-item.dragging {
+  opacity: 0.4;
+}
+
+/* Third column — mirrors the saved-for-later column */
+.folders-column {
+  width: 300px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 32px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+.folders-column .section-header { animation: fadeUp 0.5s ease 0.14s both; }
+
+/* "+ New folder" button in the column header */
+.new-folder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  background: rgba(120, 168, 200, 0.08);
+  border: 1px solid rgba(120, 168, 200, 0.28);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.new-folder-btn svg { width: 13px; height: 13px; }
+.new-folder-btn:hover {
+  background: rgba(120, 168, 200, 0.14);
+  border-color: var(--accent-primary);
+}
+
+/* Inline name inputs (new folder + rename) */
+.new-folder-input-row { margin: 2px 0 10px; }
+.new-folder-input,
+.folder-rename-input {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(120, 168, 200, 0.35);
+  border-radius: 6px;
+  padding: 8px 10px;
+  outline: none;
+}
+.new-folder-input::placeholder { color: var(--muted); }
+.new-folder-input:focus,
+.folder-rename-input:focus { border-color: var(--accent-primary); }
+.folder-rename-input {
+  font-weight: 600;
+  padding: 3px 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* A folder card */
+.folder {
+  border: 1px solid rgba(127, 146, 171, 0.12);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: var(--card-bg);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.folder-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.folder-chevron svg { width: 12px; height: 12px; }
+.folder-chevron.open { transform: rotate(90deg); }
+
+.folder-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-count {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(127, 146, 171, 0.12);
+  border-radius: 999px;
+  padding: 1px 8px;
+  flex-shrink: 0;
+}
+
+.folder-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+.folder-menu-btn svg { width: 15px; height: 15px; }
+.folder-header:hover .folder-menu-btn { opacity: 1; }
+.folder-menu-btn:hover {
+  background: rgba(127, 146, 171, 0.14);
+  color: var(--text);
+}
+
+.folder-body { padding: 0 10px 4px; }
+.folder-empty-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  padding: 6px 2px 8px;
+}
+
+/* Folders empty state */
+.folders-empty {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  padding: 8px 2px;
+}
+
+/* Drop-zone highlights while dragging */
+.deferred-column.drop-target {
+  outline: 2px dashed var(--accent-primary);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+.folder.drop-target {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(120, 168, 200, 0.3);
+  background: rgba(120, 168, 200, 0.06);
+}
+
+
+/* ================================================================
+   CONTEXT MENU
+   ================================================================ */
+
+.context-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 190px;
+  max-width: 280px;
+  background: var(--surface-strong);
+  border: 1px solid rgba(127, 146, 171, 0.22);
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  font-family: 'DM Sans', sans-serif;
+}
+.context-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s;
+}
+.context-menu-item:hover { background: rgba(120, 168, 200, 0.14); }
+.context-menu-item.danger { color: var(--accent-danger); }
+.context-menu-item.danger:hover { background: rgba(201, 110, 114, 0.16); }
+.context-menu-heading {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  padding: 6px 10px 3px;
+}
+.context-menu-sep {
+  height: 1px;
+  background: rgba(127, 146, 171, 0.16);
+  margin: 4px 6px;
+}
+
+
+/* ================================================================
+   DIALOG (folder delete confirmation)
+   ================================================================ */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+.dialog {
+  width: 92%;
+  max-width: 400px;
+  background: var(--card-bg);
+  border: 1px solid rgba(127, 146, 171, 0.2);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.dialog-title {
+  font-family: 'Newsreader', serif;
+  font-size: 19px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.dialog-text {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.dialog-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(127, 146, 171, 0.22);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dialog-btn:hover { background: var(--surface-strong-hover); }
+.dialog-btn.danger {
+  color: var(--accent-danger);
+  border-color: rgba(201, 110, 114, 0.4);
+  background: rgba(201, 110, 114, 0.1);
+}
+.dialog-btn.danger:hover { background: rgba(201, 110, 114, 0.18); }
+
+
+/* ================================================================
+   FLOATING "Open Shir-Man" BUTTON
+   ================================================================ */
+
+.floating-homepage-btn {
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(120, 168, 200, 0.3);
+  border-radius: 999px;
+  padding: 13px 22px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.floating-homepage-btn:hover {
+  background: var(--surface-strong-hover);
+  transform: translateY(-50%) scale(1.04);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+/* On screens too narrow for the right margin, dock to the bottom-right
+   corner so the button never sits on top of the columns. */
+@media (max-width: 1700px) {
+  .floating-homepage-btn {
+    top: auto;
+    bottom: 26px;
+    transform: none;
+  }
+  .floating-homepage-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+  }
 }

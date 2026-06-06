@@ -26,16 +26,6 @@
       <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
       <div class="date" id="dateDisplay"></div>
     </div>
-    <div class="header-actions">
-      <button
-        class="header-link-btn"
-        data-action="open-homepage"
-        data-homepage-url="https://shir-man.com/homepage/"
-        type="button"
-      >
-        Open Shir-Man
-      </button>
-    </div>
   </header>
 
   <!-- ================================================================
@@ -75,7 +65,7 @@
     </div>
 
     <!-- RIGHT COLUMN: Saved for Later checklist -->
-    <div class="deferred-column" id="deferredColumn" style="display:none">
+    <div class="deferred-column" id="deferredColumn" style="display:none" data-droppable="inbox">
       <div class="section-header">
         <h2>Saved for later</h2>
         <div class="section-line"></div>
@@ -104,6 +94,31 @@
       </div>
     </div>
 
+    <!-- THIRD COLUMN: Folders — organize saved tabs into collapsible folders -->
+    <div class="folders-column" id="foldersColumn" style="display:none">
+      <div class="section-header">
+        <h2>Folders</h2>
+        <div class="section-line"></div>
+        <button class="new-folder-btn" data-action="new-folder" title="New folder" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          New folder
+        </button>
+      </div>
+
+      <!-- Inline "new folder" name input — toggled by JS -->
+      <div class="new-folder-input-row" id="newFolderInputRow" style="display:none">
+        <input type="text" class="new-folder-input" id="newFolderInput" placeholder="Folder name…" maxlength="60">
+      </div>
+
+      <!-- Folder list — injected by renderFoldersColumn() in app.js -->
+      <div class="folders-list" id="foldersList"></div>
+
+      <!-- Empty state — shown when there are no folders yet -->
+      <div class="folders-empty" id="foldersEmpty" style="display:none">
+        No folders yet. Create one, then drag saved tabs in — or right-click a saved tab to move it.
+      </div>
+    </div>
+
   </div><!-- end .dashboard-columns -->
 
   <!-- ================================================================
@@ -122,6 +137,42 @@
   </footer>
 
 </div><!-- end .container -->
+
+<!-- ================================================================
+     FLOATING "Open Shir-Man" button — pinned to the right edge,
+     vertically centered. Drops to the bottom-right corner on
+     narrower screens so it never overlaps the columns.
+     ================================================================ -->
+<button
+  class="floating-homepage-btn"
+  data-action="open-homepage"
+  data-homepage-url="https://shir-man.com/homepage/"
+  type="button"
+>
+  Open Shir-Man
+</button>
+
+<!-- ================================================================
+     CONTEXT MENU — custom right-click menu for saved tabs & folders.
+     Contents + position are set by app.js; hidden by default.
+     ================================================================ -->
+<div class="context-menu" id="contextMenu" style="display:none"></div>
+
+<!-- ================================================================
+     FOLDER DELETE DIALOG — asks whether to keep tabs (move to inbox)
+     or delete them along with the folder. Hidden by default.
+     ================================================================ -->
+<div class="dialog-overlay" id="folderDeleteDialog" style="display:none">
+  <div class="dialog">
+    <div class="dialog-title" id="folderDeleteTitle">Delete folder?</div>
+    <div class="dialog-text" id="folderDeleteText"></div>
+    <div class="dialog-actions">
+      <button class="dialog-btn" data-action="folder-delete-cancel" type="button">Cancel</button>
+      <button class="dialog-btn" data-action="folder-delete-keep" type="button">Keep tabs (move to inbox)</button>
+      <button class="dialog-btn danger" data-action="folder-delete-all" type="button">Delete tabs too</button>
+    </div>
+  </div>
+</div>
 
 <!-- ================================================================
      TOAST — floats above everything, used for action confirmations
