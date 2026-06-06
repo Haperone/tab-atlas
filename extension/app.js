@@ -836,7 +836,7 @@ function renderDomainCard(group) {
   </span>`;
 
   const dupeBadge = hasDupes
-    ? `<span class="open-tabs-badge" style="color:var(--accent-amber);background:rgba(200,113,58,0.08);">
+    ? `<span class="open-tabs-badge" style="color:var(--accent-primary);background:rgba(120,168,200,0.12);">
         ${totalExtras} duplicate${totalExtras !== 1 ? 's' : ''}
       </span>`
     : '';
@@ -895,7 +895,7 @@ function renderDomainCard(group) {
   }
 
   return `
-    <div class="mission-card domain-card ${hasDupes ? 'has-amber-bar' : 'has-neutral-bar'}" data-domain-id="${stableId}">
+    <div class="mission-card domain-card ${hasDupes ? 'has-primary-bar' : 'has-neutral-bar'}" data-domain-id="${stableId}">
       <div class="status-bar"></div>
       <div class="mission-content">
         <div class="mission-top">
@@ -1433,7 +1433,7 @@ document.addEventListener('click', async (e) => {
           setTimeout(() => badge.remove(), 200);
         }
       });
-      card.classList.remove('has-amber-bar');
+      card.classList.remove('has-primary-bar');
       card.classList.add('has-neutral-bar');
     }
 

@@ -6,14 +6,14 @@
 
 :root {
   color-scheme: dark;
-  --ink: #f3eee5;
-  --paper: #0f1216;
-  --warm-gray: #28303a;
+  --text: #f3eee5;
+  --bg: #0f1216;
+  --neutral: #28303a;
   --muted: #93a0ad;
-  --accent-amber: #78a8c8;
-  --accent-sage: #73937a;
-  --accent-slate: #7f92ab;
-  --accent-rose: #c96e72;
+  --accent-primary: #78a8c8;
+  --accent-success: #73937a;
+  --accent-info: #7f92ab;
+  --accent-danger: #c96e72;
   --status-active: #6ca180;
   --status-cooling: #8fb8d4;
   --status-abandoned: #c96e72;
@@ -30,8 +30,8 @@ body {
   background:
     radial-gradient(circle at top, rgba(127, 146, 171, 0.16), transparent 32%),
     radial-gradient(circle at 20% 20%, rgba(120, 168, 200, 0.08), transparent 28%),
-    linear-gradient(180deg, #12161b 0%, var(--paper) 55%, #0b0d10 100%);
-  color: var(--ink);
+    linear-gradient(180deg, #12161b 0%, var(--bg) 55%, #0b0d10 100%);
+  color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -61,7 +61,7 @@ header {
   align-items: flex-start;
   margin-bottom: 48px;
   padding-bottom: 24px;
-  border-bottom: 1px solid var(--warm-gray);
+  border-bottom: 1px solid var(--neutral);
 }
 
 .header-left h1 {
@@ -69,7 +69,7 @@ header {
   font-weight: 300;
   font-size: 28px;
   letter-spacing: -0.5px;
-  color: var(--ink);
+  color: var(--text);
   margin-bottom: 4px;
 }
 
@@ -92,7 +92,7 @@ header {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
-  color: var(--ink);
+  color: var(--text);
   background: var(--surface-strong);
   border: 1px solid rgba(120, 168, 200, 0.28);
   border-radius: 999px;
@@ -141,12 +141,12 @@ header {
 .tab-cleanup-icon svg {
   width: 18px;
   height: 18px;
-  color: var(--accent-amber);
+  color: var(--accent-primary);
 }
 
 .tab-cleanup-text {
   font-size: 13px;
-  color: var(--ink);
+  color: var(--text);
   line-height: 1.5;
 }
 
@@ -162,7 +162,7 @@ header {
   border-radius: 6px;
   border: 1px solid rgba(120, 168, 200, 0.28);
   background: rgba(27, 34, 42, 0.88);
-  color: var(--ink);
+  color: var(--text);
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -192,7 +192,7 @@ header {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(179, 90, 90, 0.1);
+  background: rgba(201, 110, 114, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -207,7 +207,7 @@ header {
 
 .nudge-text {
   font-size: 13px;
-  color: var(--ink);
+  color: var(--text);
   line-height: 1.5;
 }
 
@@ -236,7 +236,7 @@ header {
 .section-line {
   flex: 1;
   height: 1px;
-  background: var(--warm-gray);
+  background: var(--neutral);
 }
 
 .section-count {
@@ -282,7 +282,7 @@ header {
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--warm-gray);
+  background: var(--neutral);
 }
 
 .mission-card::after {
@@ -295,8 +295,8 @@ header {
 }
 
 .mission-card.has-active-bar::before { background: var(--status-active); }
-.mission-card.has-amber-bar::before { background: var(--accent-amber); }
-.mission-card.has-neutral-bar::before { background: var(--warm-gray); }
+.mission-card.has-primary-bar::before { background: var(--accent-primary); }
+.mission-card.has-neutral-bar::before { background: var(--neutral); }
 
 .mission-card.has-active-bar {
   border-color: rgba(108, 161, 128, 0.22);
@@ -307,7 +307,7 @@ header {
     0 0 18px rgba(108, 161, 128, 0.06);
 }
 
-.mission-card.has-amber-bar {
+.mission-card.has-primary-bar {
   border-color: rgba(120, 168, 200, 0.26);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.025),
@@ -362,7 +362,7 @@ header {
 .mission-name {
   font-weight: 700;
   font-size: 15px;
-  color: var(--ink);
+  color: var(--text);
   letter-spacing: -0.2px;
   text-shadow: 0 0 12px rgba(255, 255, 255, 0.04);
 }
@@ -388,7 +388,7 @@ header {
 
 .mission-tag.abandoned {
   color: var(--status-abandoned);
-  background: rgba(179, 90, 90, 0.08);
+  background: rgba(201, 110, 114, 0.08);
 }
 
 /* Tab indicator badge — shows how many Chrome tabs are still open for this mission */
@@ -398,7 +398,7 @@ header {
   gap: 4px;
   font-size: 10px;
   font-weight: 500;
-  color: var(--accent-amber);
+  color: var(--accent-primary);
   background: rgba(120, 168, 200, 0.12);
   border: 1px solid rgba(120, 168, 200, 0.18);
   padding: 2px 8px;
@@ -426,7 +426,7 @@ header {
 /* ---- Tab row — each tab is a full-width row with favicon, title, and actions ---- */
 .page-chip {
   font-size: 13px;
-  color: var(--ink);
+  color: var(--text);
   background: transparent;
   padding: 8px 4px;
   border-radius: 0;
@@ -465,7 +465,7 @@ header {
 
 /* Duplicate badge */
 .chip-dupe-badge {
-  color: var(--accent-amber);
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
@@ -510,13 +510,13 @@ header {
 }
 
 .chip-save:hover {
-  color: var(--accent-sage);
-  background: rgba(90, 122, 98, 0.08);
+  color: var(--accent-success);
+  background: rgba(115, 147, 122, 0.08);
 }
 
 .chip-close:hover {
   color: var(--status-abandoned);
-  background: rgba(179, 90, 90, 0.08);
+  background: rgba(201, 110, 114, 0.08);
 }
 
 .page-chip.clickable {
@@ -547,7 +547,7 @@ header {
   font-size: 20px;
   font-family: 'Newsreader', serif;
   font-weight: 300;
-  color: var(--ink);
+  color: var(--text);
   line-height: 1;
 }
 
@@ -571,7 +571,7 @@ header {
   font-weight: 500;
   padding: 5px 14px;
   border-radius: 4px;
-  border: 1px solid var(--warm-gray);
+  border: 1px solid var(--neutral);
   background: var(--card-bg);
   color: var(--muted);
   cursor: pointer;
@@ -582,8 +582,8 @@ header {
 }
 
 .action-btn:hover {
-  border-color: var(--ink);
-  color: var(--ink);
+  border-color: var(--text);
+  color: var(--text);
 }
 
 .action-btn svg {
@@ -593,7 +593,7 @@ header {
 
 .action-btn.primary {
   background: var(--surface-strong);
-  color: var(--ink);
+  color: var(--text);
   border-color: var(--surface-strong);
 }
 
@@ -603,24 +603,24 @@ header {
 
 .action-btn.close-tabs {
   border-color: rgba(120, 168, 200, 0.34);
-  color: var(--accent-amber);
+  color: var(--accent-primary);
   background: rgba(120, 168, 200, 0.08);
 }
 
 .action-btn.close-tabs:hover {
   background: rgba(120, 168, 200, 0.14);
-  border-color: var(--accent-amber);
+  border-color: var(--accent-primary);
 }
 
 .action-btn.save-tabs {
   border-color: rgba(115, 147, 122, 0.32);
-  color: var(--accent-sage);
+  color: var(--accent-success);
   background: rgba(115, 147, 122, 0.08);
 }
 
 .action-btn.save-tabs:hover {
   background: rgba(115, 147, 122, 0.14);
-  border-color: var(--accent-sage);
+  border-color: var(--accent-success);
 }
 
 .action-btn.danger {
@@ -639,7 +639,7 @@ header {
   left: 50%;
   transform: translateX(-50%) translateY(80px);
   background: var(--surface-strong);
-  color: var(--ink);
+  color: var(--text);
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
@@ -671,7 +671,7 @@ header {
 footer {
   margin-top: 48px;
   padding-top: 20px;
-  border-top: 1px solid var(--warm-gray);
+  border-top: 1px solid var(--neutral);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -690,7 +690,7 @@ footer {
   font-family: 'Newsreader', serif;
   font-size: 28px;
   font-weight: 300;
-  color: var(--ink);
+  color: var(--text);
   line-height: 1;
   transition: all 0.3s;
 }
@@ -712,7 +712,7 @@ footer {
   font-family: 'DM Sans', sans-serif;
   font-size: 11px;
   font-weight: 500;
-  color: var(--accent-amber);
+  color: var(--accent-primary);
   background: none;
   border: none;
   cursor: pointer;
@@ -754,13 +754,13 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* ---- Neutral status bar (domain-grouped cards, no AI color) ---- */
 .status-bar.neutral {
-  background: var(--warm-gray);
+  background: var(--neutral);
 }
 
 /* ---- "Domain" tag on static domain cards ---- */
 .mission-tag.neutral {
   color: var(--muted);
-  background: rgba(154, 145, 138, 0.1);
+  background: rgba(127, 146, 171, 0.1);
 }
 
 /* ================================================================
@@ -790,12 +790,12 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(90, 122, 98, 0.1);
-  border: 1.5px solid rgba(90, 122, 98, 0.3);
+  background: rgba(115, 147, 122, 0.1);
+  border: 1.5px solid rgba(115, 147, 122, 0.3);
 
   /* Soft sage glow */
-  box-shadow: 0 0 0 8px rgba(90, 122, 98, 0.05),
-              0 0 0 16px rgba(90, 122, 98, 0.03);
+  box-shadow: 0 0 0 8px rgba(115, 147, 122, 0.05),
+              0 0 0 16px rgba(115, 147, 122, 0.03);
 
   display: flex;
   align-items: center;
@@ -808,7 +808,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .empty-checkmark svg {
   width: 26px;
   height: 26px;
-  color: var(--accent-sage);
+  color: var(--accent-success);
   stroke-width: 2.5;
 }
 
@@ -822,7 +822,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   font-size: 20px;
   font-weight: 400;
   font-style: italic;
-  color: var(--ink);
+  color: var(--text);
   letter-spacing: -0.3px;
 }
 
@@ -849,9 +849,9 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   justify-content: space-between;
   gap: 12px;
 
-  /* Sage green tint — matches accent-sage but very light */
-  background: linear-gradient(135deg, rgba(90, 122, 98, 0.05), rgba(90, 122, 98, 0.10));
-  border: 1px solid rgba(90, 122, 98, 0.22);
+  /* Soft green tint — matches accent-success but very light */
+  background: linear-gradient(135deg, rgba(115, 147, 122, 0.05), rgba(115, 147, 122, 0.10));
+  border: 1px solid rgba(115, 147, 122, 0.22);
   border-radius: 8px;
   padding: 10px 16px;
 
@@ -879,14 +879,14 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .update-banner-icon {
   width: 16px;
   height: 16px;
-  color: var(--accent-sage);
+  color: var(--accent-success);
   flex-shrink: 0;
   opacity: 0.85;
 }
 
 .update-banner-text {
   font-size: 13px;
-  color: var(--ink);
+  color: var(--text);
   font-weight: 400;
   line-height: 1.4;
   opacity: 0.85;
@@ -906,7 +906,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   font-size: 12px;
   font-weight: 500;
   color: #fff;
-  background: var(--accent-sage);
+  background: var(--accent-success);
   border: none;
   border-radius: 5px;
   padding: 5px 12px;
@@ -943,8 +943,8 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .update-banner-dismiss:hover {
-  background: rgba(26, 22, 19, 0.06);
-  color: var(--ink);
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text);
 }
 
 .update-banner-dismiss svg {
@@ -1007,7 +1007,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   align-items: flex-start;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(154, 145, 138, 0.12);
+  border-bottom: 1px solid rgba(127, 146, 171, 0.12);
   animation: fadeUp 0.3s ease both;
 }
 
@@ -1021,7 +1021,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid var(--warm-gray);
+  border: 2px solid var(--neutral);
   border-radius: 4px;
   cursor: pointer;
   flex-shrink: 0;
@@ -1031,12 +1031,12 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .deferred-checkbox:hover {
-  border-color: var(--accent-sage);
+  border-color: var(--accent-success);
 }
 
 .deferred-checkbox:checked {
-  background: var(--accent-sage);
-  border-color: var(--accent-sage);
+  background: var(--accent-success);
+  border-color: var(--accent-success);
 }
 
 /* Checkmark inside the checkbox */
@@ -1060,7 +1060,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 .deferred-title {
   font-size: 13px;
-  color: var(--ink);
+  color: var(--text);
   text-decoration: none;
   display: block;
   overflow: hidden;
@@ -1070,7 +1070,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .deferred-title:hover {
-  color: var(--accent-amber);
+  color: var(--accent-primary);
 }
 
 .deferred-meta {
@@ -1134,7 +1134,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .deferred-archive {
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid var(--warm-gray);
+  border-top: 1px solid var(--neutral);
 }
 
 .archive-toggle {
@@ -1155,7 +1155,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-toggle:hover {
-  color: var(--ink);
+  color: var(--text);
 }
 
 .archive-chevron {
@@ -1183,17 +1183,17 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   font-size: 12px;
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid var(--warm-gray);
+  border: 1px solid var(--neutral);
   border-radius: 6px;
   background: var(--card-bg);
-  color: var(--ink);
+  color: var(--text);
   outline: none;
   transition: border-color 0.2s;
   margin-bottom: 12px;
 }
 
 .archive-search:focus {
-  border-color: var(--accent-amber);
+  border-color: var(--accent-primary);
 }
 
 .archive-search::placeholder {
@@ -1206,7 +1206,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   align-items: center;
   gap: 8px;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(154, 145, 138, 0.08);
+  border-bottom: 1px solid rgba(127, 146, 171, 0.08);
 }
 
 .archive-item:last-child {
@@ -1226,7 +1226,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-item-title:hover {
-  color: var(--ink);
+  color: var(--text);
 }
 
 .archive-item-date {
