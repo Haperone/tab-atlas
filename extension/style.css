@@ -1563,9 +1563,26 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 /* Drag affordances */
-.folder-header { cursor: grab; }
+.folder-header { cursor: pointer; }
 .page-chip.dragging,
 .folder.dragging { opacity: 0.45; }
+
+/* Folder reorder grip */
+.folder-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--muted);
+  cursor: grab;
+  opacity: 0.35;
+  transition: opacity 0.15s;
+}
+.folder-drag-handle svg { width: 14px; height: 14px; }
+.folder-header:hover .folder-drag-handle { opacity: 0.85; }
+.folder-drag-handle:active { cursor: grabbing; }
 
 /* Collapse / expand-all button in the Folders header */
 .folders-collapse-all {

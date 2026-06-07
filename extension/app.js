@@ -1365,6 +1365,8 @@ function renderArchiveItem(item) {
 const ICON_FOLDER_CHEVRON = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>`;
 // Vertical "…" options icon
 const ICON_DOTS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 20.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>`;
+// Six-dot drag grip
+const ICON_GRIP = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>`;
 
 /**
  * renderFoldersColumn()
@@ -1418,7 +1420,8 @@ async function renderFoldersColumn() {
           : `<div class="folder-empty-hint">Empty — drag tabs here</div>`;
         return `
           <div class="folder" data-folder-id="${f.id}" data-droppable="folder"${accentStyle}>
-            <div class="folder-header" data-action="toggle-folder" data-folder-id="${f.id}" draggable="true">
+            <div class="folder-header" data-action="toggle-folder" data-folder-id="${f.id}">
+              <span class="folder-drag-handle" draggable="true" title="Drag to reorder">${ICON_GRIP}</span>
               <span class="folder-dot"></span>
               <span class="folder-chevron ${expanded ? 'open' : ''}">${ICON_FOLDER_CHEVRON}</span>
               <span class="folder-name" title="${safeName}">${safeName}</span>
@@ -1684,6 +1687,7 @@ document.addEventListener('click', async (e) => {
 
   // ---- Collapse / expand a folder (DOM-only, no re-render → no flicker) ----
   if (action === 'toggle-folder') {
+    if (e.target.closest('.folder-drag-handle')) return; // ignore clicks on the grip
     const fid       = actionEl.dataset.folderId;
     const folderEl  = actionEl.closest('.folder');
     if (!folderEl) return;
