@@ -1020,7 +1020,8 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   gap: 10px;
   padding: 10px 0;
   border-bottom: 1px solid rgba(127, 146, 171, 0.12);
-  animation: fadeUp 0.3s ease both;
+  /* No entry animation here: it would replay on every re-render and make
+     the list flicker when tabs move between the inbox and folders. */
 }
 
 .deferred-item:last-child {
@@ -1627,5 +1628,35 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   animation: itemFlash 1s ease;
   border-radius: 6px;
 }
+
+/* Colour-picker swatches inside the folder context menu */
+.context-menu-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 10px 8px;
+}
+.context-menu-swatches .swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s, border-color 0.1s;
+}
+.context-menu-swatches .swatch:hover { transform: scale(1.15); }
+.context-menu-swatches .swatch.active { border-color: var(--text); }
+.context-menu-swatches .swatch-none {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-strong);
+  border: 1px solid rgba(127, 146, 171, 0.3);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+}
+.context-menu-swatches .swatch-none.active { border-color: var(--text); color: var(--text); }
 
 

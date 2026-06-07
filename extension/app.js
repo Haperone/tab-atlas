@@ -335,13 +335,12 @@ async function getFolders() {
 }
 
 /**
- * folderColor(folder, index)
+ * folderColor(folder)
  *
- * Resolves a folder's accent colour, falling back to a palette slot for
- * folders created before colours existed.
+ * Resolves a folder's accent colour, or null when none is set.
  */
-function folderColor(folder, index = 0) {
-  return folder.color || FOLDER_COLORS[index % FOLDER_COLORS.length];
+function folderColor(folder) {
+  return folder.color || null;
 }
 
 /**
@@ -357,7 +356,7 @@ async function createFolder(name) {
     id:        Date.now().toString() + Math.random().toString(36).slice(2, 6),
     name:      clean,
     collapsed: false,
-    color:     FOLDER_COLORS[folders.length % FOLDER_COLORS.length],
+    color:     null, // no colour by default — the user sets one from the menu
     createdAt: new Date().toISOString(),
   };
   folders.push(folder);
@@ -366,16 +365,15 @@ async function createFolder(name) {
 }
 
 /**
- * cycleFolderColor(id)
+ * setFolderColor(id, color)
  *
- * Advances a folder's accent colour to the next one in the palette.
+ * Sets a folder's accent colour (pass null to clear it).
  */
-async function cycleFolderColor(id) {
+async function setFolderColor(id, color) {
   const folders = await getFolders();
   const folder = folders.find(f => f.id === id);
   if (folder) {
-    const i = FOLDER_COLORS.indexOf(folder.color);
-    folder.color = FOLDER_COLORS[(i + 1) % FOLDER_COLORS.length];
+    folder.color = color || null;
     await chrome.storage.local.set({ folders });
   }
 }
@@ -1360,15 +1358,16 @@ async function renderFoldersColumn() {
         // While searching, skip folders with no matching tabs
         if (savedQuery && items.length === 0) return '';
         const expanded = savedQuery ? true : !f.collapsed;
-        const color    = folderColor(f, i);
+        const color    = folderColor(f);
+        const accentStyle = color ? ` style="--folder-accent:${color}"` : '';
         const safeName = escapeHtml(f.name);
         const bodyInner = items.length
           ? items.map(item => renderDeferredItem(item)).join('')
           : `<div class="folder-empty-hint">Empty — drag tabs here</div>`;
         return `
-          <div class="folder" data-folder-id="${f.id}" data-droppable="folder" style="--folder-accent:${color}">
+          <div class="folder" data-folder-id="${f.id}" data-droppable="folder"${accentStyle}>
             <div class="folder-header" data-action="toggle-folder" data-folder-id="${f.id}" draggable="true">
-              <span class="folder-dot" style="background:${color}"></span>
+              <span class="folder-dot"></span>
               <span class="folder-chevron ${expanded ? 'open' : ''}">${ICON_FOLDER_CHEVRON}</span>
               <span class="folder-name" title="${safeName}">${safeName}</span>
               <span class="folder-count">${allItems.length}</span>
@@ -1613,24 +1612,32 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Collapse / expand ALL folders ----
+  // ---- Collapse / expand ALL folders (DOM-only, no re-render → no flicker) ----
   if (action === 'toggle-all-folders') {
     const folders = await getFolders();
-    const anyExpanded = folders.some(f => !f.collapsed);
-    await setAllFoldersCollapsed(anyExpanded); // if any open → collapse all, else expand all
-    await renderFoldersColumn();
+    const collapse = folders.some(f => !f.collapsed); // any open → collapse all
+    document.querySelectorAll('#foldersList .folder').forEach(folderEl => {
+      const body    = folderEl.querySelector('.folder-body');
+      const chevron = folderEl.querySelector('.folder-chevron');
+      if (!body) return;
+      body.style.display = collapse ? 'none' : '';
+      if (chevron) chevron.classList.toggle('open', !collapse);
+    });
+    await setAllFoldersCollapsed(collapse);
     return;
   }
 
-  // ---- Collapse / expand a folder (click anywhere on its header) ----
+  // ---- Collapse / expand a folder (DOM-only, no re-render → no flicker) ----
   if (action === 'toggle-folder') {
-    const fid     = actionEl.dataset.folderId;
-    const folders = await getFolders();
-    const f       = folders.find(ff => ff.id === fid);
-    if (f) {
-      await setFolderCollapsed(fid, !f.collapsed);
-      await renderFoldersColumn();
-    }
+    const fid       = actionEl.dataset.folderId;
+    const folderEl  = actionEl.closest('.folder');
+    if (!folderEl) return;
+    const body      = folderEl.querySelector('.folder-body');
+    const chevron   = folderEl.querySelector('.folder-chevron');
+    const collapsed = body.style.display !== 'none';
+    body.style.display = collapsed ? 'none' : '';
+    if (chevron) chevron.classList.toggle('open', !collapsed);
+    await setFolderCollapsed(fid, collapsed);
     return;
   }
 
@@ -1731,7 +1738,11 @@ document.addEventListener('click', async (e) => {
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
 
-    showToast('Tab closed');
+    showToast('Tab closed', async () => {
+      try { await chrome.tabs.create({ url: tabUrl, active: false }); } catch {}
+      await fetchOpenTabs();
+      await renderStaticDashboard();
+    });
     return;
   }
 
@@ -1743,8 +1754,9 @@ document.addEventListener('click', async (e) => {
     if (!tabUrl) return;
 
     // Save to chrome.storage.local
+    let savedId;
     try {
-      await saveTabForLater({ url: tabUrl, title: tabTitle });
+      savedId = await saveTabForLater({ url: tabUrl, title: tabTitle });
     } catch (err) {
       console.error('[tab-out] Failed to save tab:', err);
       showToast('Failed to save tab');
@@ -1766,7 +1778,12 @@ document.addEventListener('click', async (e) => {
       setTimeout(() => chip.remove(), 200);
     }
 
-    showToast('Saved for later');
+    showToast('Saved for later', async () => {
+      try { await chrome.tabs.create({ url: tabUrl, active: false }); } catch {}
+      if (savedId) await dismissSavedTab(savedId);
+      await fetchOpenTabs();
+      await renderStaticDashboard();
+    });
     await refreshSavedAndFolders();
     return;
   }
@@ -1845,7 +1862,11 @@ document.addEventListener('click', async (e) => {
     if (idx !== -1) domainGroups.splice(idx, 1);
 
     const groupLabel = group.domain === '__landing-pages__' ? 'Homepages' : (group.label || friendlyDomain(group.domain));
-    showToast(`Closed ${urls.length} tab${urls.length !== 1 ? 's' : ''} from ${groupLabel}`);
+    showToast(`Closed ${urls.length} tab${urls.length !== 1 ? 's' : ''} from ${groupLabel}`, async () => {
+      for (const u of urls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+      await fetchOpenTabs();
+      await renderStaticDashboard();
+    });
 
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
@@ -1904,7 +1925,11 @@ document.addEventListener('click', async (e) => {
       animateCardOut(c);
     });
 
-    showToast('All tabs closed. Fresh start.');
+    showToast('All tabs closed. Fresh start.', async () => {
+      for (const u of allUrls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+      await fetchOpenTabs();
+      await renderStaticDashboard();
+    });
     return;
   }
 });
@@ -1999,6 +2024,30 @@ function showContextMenu(x, y, items) {
       h.className = 'context-menu-heading';
       h.textContent = it.label;
       menu.appendChild(h);
+    } else if (it.swatches) {
+      const row = document.createElement('div');
+      row.className = 'context-menu-swatches';
+      // "No colour" option
+      const none = document.createElement('button');
+      none.type = 'button';
+      none.className = 'swatch swatch-none' + (!it.current ? ' active' : '');
+      none.title = 'No colour';
+      none.textContent = '✕';
+      none.addEventListener('click', async (ev) => {
+        ev.stopPropagation(); closeContextMenu(); if (it.onPick) await it.onPick(null);
+      });
+      row.appendChild(none);
+      for (const c of FOLDER_COLORS) {
+        const sw = document.createElement('button');
+        sw.type = 'button';
+        sw.className = 'swatch' + (it.current === c ? ' active' : '');
+        sw.style.background = c;
+        sw.addEventListener('click', async (ev) => {
+          ev.stopPropagation(); closeContextMenu(); if (it.onPick) await it.onPick(c);
+        });
+        row.appendChild(sw);
+      }
+      menu.appendChild(row);
     } else {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -2109,8 +2158,10 @@ async function openFolderContextMenu(x, y, folderId) {
       await renderFoldersColumn();
     }},
     { label: 'Rename', onClick: () => startFolderRename(folderId) },
-    { label: 'Change color', onClick: async () => {
-      await cycleFolderColor(folderId);
+    { separator: true },
+    { heading: true, label: 'Color' },
+    { swatches: true, current: f.color || null, onPick: async (color) => {
+      await setFolderColor(folderId, color);
       await renderFoldersColumn();
     }},
     { separator: true },
@@ -2302,6 +2353,12 @@ document.addEventListener('drop', async (e) => {
     : 'inbox';
 
   if (data.kind === 'saved') {
+    // No-op if dropped back into the same place — avoids a needless re-render
+    const { deferred = [] } = await chrome.storage.local.get('deferred');
+    const tab = deferred.find(t => t.id === data.id);
+    const current = tab ? (tab.folderId || null) : null;
+    if (current === targetFolderId) return;
+
     await moveTabToFolder(data.id, targetFolderId);
     await refreshSavedAndFolders();
     flashItem(data.id);
