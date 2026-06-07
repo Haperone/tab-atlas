@@ -1660,3 +1660,88 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .context-menu-swatches .swatch-none.active { border-color: var(--text); color: var(--text); }
 
 
+/* ================================================================
+   OPEN-TABS FILTER / PRIVACY MODE
+   ================================================================ */
+
+/* Filter box above the open-tabs grid */
+.open-search {
+  width: 100%;
+  max-width: 420px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(127, 146, 171, 0.18);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  outline: none;
+}
+.open-search::placeholder { color: var(--muted); }
+.open-search:focus { border-color: rgba(120, 168, 200, 0.5); }
+
+/* Privacy-mode toggle button (top-right corner) */
+.privacy-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 95;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: var(--surface-strong);
+  border: 1px solid rgba(127, 146, 171, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+}
+.privacy-toggle svg { width: 18px; height: 18px; }
+.privacy-toggle:hover {
+  opacity: 1;
+  color: var(--text);
+  border-color: rgba(120, 168, 200, 0.4);
+  background: var(--surface-strong-hover);
+}
+
+/* Full-screen clock that hides the dashboard during screen sharing */
+.privacy-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background:
+    radial-gradient(circle at top, rgba(127, 146, 171, 0.10), transparent 40%),
+    linear-gradient(180deg, #12161b 0%, var(--bg) 60%, #0b0d10 100%);
+  cursor: pointer;
+}
+.privacy-clock {
+  font-family: 'Newsreader', serif;
+  font-weight: 300;
+  font-size: clamp(64px, 14vw, 160px);
+  letter-spacing: -2px;
+  color: var(--text);
+  line-height: 1;
+}
+.privacy-date {
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.privacy-hint {
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+

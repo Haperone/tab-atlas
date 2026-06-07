@@ -45,6 +45,7 @@ async function fetchOpenTabs() {
       title:    t.title,
       windowId: t.windowId,
       active:   t.active,
+      pinned:   !!t.pinned,
       // Flag Tab Out's own pages so we can detect duplicate new tabs
       isTabOut: t.url === newtabUrl || t.url === 'chrome://newtab/',
     }));
@@ -878,6 +879,30 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * favIcon(pageUrl, size)
+ *
+ * Returns a favicon URL for a page. Prefers Chrome's built-in, locally
+ * cached favicon service (chrome-extension://<id>/_favicon/…, requires the
+ * "favicon" permission) — that's offline-friendly, works for intranet sites,
+ * and sends NO request to any external server. Falls back to a domain-based
+ * service only when that API isn't available (e.g. the preview harness).
+ * The returned string is already safe to drop into an HTML attribute.
+ */
+function favIcon(pageUrl, size = 16) {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+      const u = new URL(chrome.runtime.getURL('/_favicon/'));
+      u.searchParams.set('pageUrl', pageUrl || '');
+      u.searchParams.set('size', String(size));
+      return escapeHtml(u.toString());
+    }
+  } catch {}
+  let domain = '';
+  try { domain = new URL(pageUrl).hostname; } catch {}
+  return domain ? `https://www.google.com/s2/favicons?domain=${escapeHtml(domain)}&sz=${size}` : '';
+}
+
 function stripTitleNoise(title) {
   if (!title) return '';
   // Strip leading notification count: "(2) Title"
@@ -1034,7 +1059,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     const safeTitle = escapeHtml(label);
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${escapeHtml(domain)}&sz=16` : '';
+    const faviconUrl = favIcon(tab.url, 16);
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
       <span class="chip-text">${safeTitle}</span>${dupeTag}
@@ -1115,7 +1140,7 @@ function renderDomainCard(group) {
     const safeTitle = escapeHtml(label);
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${escapeHtml(domain)}&sz=16` : '';
+    const faviconUrl = favIcon(tab.url, 16);
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
       <span class="chip-text">${safeTitle}</span>${dupeTag}
@@ -1262,7 +1287,7 @@ async function renderDeferredColumn() {
 function renderDeferredItem(item) {
   let domain = '';
   try { domain = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${escapeHtml(domain)}&sz=16`;
+  const faviconUrl = favIcon(item.url, 16);
   const ago = timeAgo(item.savedAt);
   const safeUrl   = escapeHtml(item.url || '');
   const safeTitle = escapeHtml(item.title || item.url || '');
@@ -1571,6 +1596,9 @@ async function renderStaticDashboard() {
 
   // --- Render "Folders" column ---
   await renderFoldersColumn();
+
+  // --- Re-apply the open-tabs filter if one is active ---
+  if (openQuery.trim()) applyOpenFilter();
 }
 
 async function renderDashboard() {
@@ -1909,30 +1937,97 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Close ALL open tabs ----
+  // ---- Close ALL open tabs (ask about pinned tabs first) ----
   if (action === 'close-all-open-tabs') {
-    const allUrls = openTabs
-      .filter(t => t.url && !t.url.startsWith('chrome') && !t.url.startsWith('about:'))
-      .map(t => t.url);
-    await closeTabsByUrls(allUrls);
-    playCloseSound();
+    const closable    = closableTabs(true);   // includes pinned
+    const pinnedCount = closable.filter(t => t.pinned).length;
+    if (pinnedCount > 0) {
+      openCloseAllDialog(pinnedCount);         // ask: keep pinned or close them too?
+    } else {
+      await doCloseAll(true);
+    }
+    return;
+  }
 
-    document.querySelectorAll('#openTabsMissions .mission-card').forEach(c => {
-      shootConfetti(
-        c.getBoundingClientRect().left + c.offsetWidth / 2,
-        c.getBoundingClientRect().top  + c.offsetHeight / 2
-      );
-      animateCardOut(c);
-    });
+  // ---- Close-all dialog buttons ----
+  if (action === 'close-all-cancel')      { closeCloseAllDialog(); return; }
+  if (action === 'close-all-keep-pinned') { closeCloseAllDialog(); await doCloseAll(false); return; }
+  if (action === 'close-all-with-pinned') { closeCloseAllDialog(); await doCloseAll(true);  return; }
 
-    showToast('All tabs closed. Fresh start.', async () => {
-      for (const u of allUrls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
-      await fetchOpenTabs();
-      await renderStaticDashboard();
-    });
+  // ---- Toggle privacy mode ----
+  if (action === 'toggle-privacy') {
+    e.stopPropagation();
+    togglePrivacy();
     return;
   }
 });
+
+/**
+ * closableTabs(includePinned)
+ *
+ * The real web tabs we're allowed to bulk-close (skips chrome://, about:,
+ * and Tab Out's own pages). Pinned tabs are excluded unless includePinned.
+ */
+function closableTabs(includePinned) {
+  return openTabs.filter(t =>
+    t.url &&
+    !t.url.startsWith('chrome') &&
+    !t.url.startsWith('about:') &&
+    !t.isTabOut &&
+    (includePinned || !t.pinned)
+  );
+}
+
+/**
+ * doCloseAll(includePinned)
+ *
+ * Closes the closable tabs (optionally including pinned), with a confetti
+ * send-off and an Undo toast that reopens them.
+ */
+async function doCloseAll(includePinned) {
+  const targets = closableTabs(includePinned);
+  const urls = targets.map(t => t.url);
+  const ids  = targets.map(t => t.id);
+  if (ids.length === 0) { showToast('Nothing to close'); return; }
+
+  try { await chrome.tabs.remove(ids); } catch {}
+  await fetchOpenTabs();
+  playCloseSound();
+
+  document.querySelectorAll('#openTabsMissions .mission-card').forEach(c => {
+    shootConfetti(
+      c.getBoundingClientRect().left + c.offsetWidth / 2,
+      c.getBoundingClientRect().top  + c.offsetHeight / 2
+    );
+    animateCardOut(c);
+  });
+
+  // Re-render shortly after the animation so any kept pinned tabs reappear
+  setTimeout(() => renderStaticDashboard(), 360);
+
+  const kept = closableTabs(true).length; // pinned still open, if any kept
+  const msg = (!includePinned && kept > 0)
+    ? `Closed ${ids.length} tab${ids.length !== 1 ? 's' : ''} — kept ${kept} pinned`
+    : 'All tabs closed. Fresh start.';
+  showToast(msg, async () => {
+    for (const u of urls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+  });
+}
+
+function openCloseAllDialog(pinnedCount) {
+  const dialog = document.getElementById('closeAllDialog');
+  const text   = document.getElementById('closeAllText');
+  if (text) text.textContent =
+    `You have ${pinnedCount} pinned tab${pinnedCount !== 1 ? 's' : ''}. Close ${pinnedCount !== 1 ? 'them' : 'it'} too, or keep ${pinnedCount !== 1 ? 'them' : 'it'}?`;
+  if (dialog) dialog.style.display = 'flex';
+}
+
+function closeCloseAllDialog() {
+  const dialog = document.getElementById('closeAllDialog');
+  if (dialog) dialog.style.display = 'none';
+}
 
 // ---- Saved search — filter the inbox + folders as the user types ----
 document.addEventListener('input', async (e) => {
@@ -2402,21 +2497,195 @@ document.addEventListener('mousedown', (e) => {
   if (menu && menu.style.display !== 'none' && !e.target.closest('#contextMenu')) {
     closeContextMenu();
   }
-  // Close the delete dialog when clicking its backdrop
-  const overlay = document.getElementById('folderDeleteDialog');
-  if (overlay && overlay.style.display !== 'none' && e.target === overlay) {
-    closeFolderDeleteDialog();
-  }
+  // Close dialogs when clicking their backdrop
+  const fd = document.getElementById('folderDeleteDialog');
+  if (fd && fd.style.display !== 'none' && e.target === fd) closeFolderDeleteDialog();
+  const cd = document.getElementById('closeAllDialog');
+  if (cd && cd.style.display !== 'none' && e.target === cd) closeCloseAllDialog();
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeContextMenu();
-    closeFolderDeleteDialog();
-  }
+  if (e.key !== 'Escape') return;
+
+  // Privacy mode always wins: if it's on, Esc exits it.
+  if (privacyOn) { setPrivacy(false); return; }
+
+  // Let focused fields handle their own Escape (search, rename, new folder)
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+
+  // Esc first dismisses any open menu/dialog; only then enters privacy mode
+  let closed = false;
+  const menu = document.getElementById('contextMenu');
+  if (menu && menu.style.display !== 'none') { closeContextMenu(); closed = true; }
+  const fd = document.getElementById('folderDeleteDialog');
+  if (fd && fd.style.display !== 'none') { closeFolderDeleteDialog(); closed = true; }
+  const cd = document.getElementById('closeAllDialog');
+  if (cd && cd.style.display !== 'none') { closeCloseAllDialog(); closed = true; }
+  if (!closed) setPrivacy(true);
 });
 
 window.addEventListener('scroll', () => closeContextMenu(), true);
+
+
+/* ----------------------------------------------------------------
+   OPEN-TABS FILTER ("/" to focus; supports domain: and url: operators)
+   ---------------------------------------------------------------- */
+
+let openQuery = '';
+
+function parseOpenQuery(q) {
+  const f = { domain: [], url: [], text: [] };
+  for (const part of q.split(/\s+/).filter(Boolean)) {
+    if (part.startsWith('domain:'))   f.domain.push(part.slice(7));
+    else if (part.startsWith('url:')) f.url.push(part.slice(4));
+    else                              f.text.push(part);
+  }
+  return f;
+}
+
+function chipMatchesQuery(chip, f) {
+  const url   = (chip.dataset.tabUrl   || '').toLowerCase();
+  const title = (chip.dataset.tabTitle || '').toLowerCase();
+  let domain = '';
+  try { domain = new URL(chip.dataset.tabUrl).hostname.toLowerCase(); } catch {}
+  for (const d of f.domain) if (!domain.includes(d)) return false;
+  for (const u of f.url)    if (!url.includes(u))    return false;
+  for (const t of f.text)   if (!(title.includes(t) || url.includes(t) || domain.includes(t))) return false;
+  return true;
+}
+
+/**
+ * applyOpenFilter()
+ *
+ * Filters the open-tabs cards in place (no re-render). When the query is
+ * cleared, re-renders once to restore the normal "+N more" overflow state.
+ */
+function applyOpenFilter() {
+  const q = openQuery.trim().toLowerCase();
+  const missions = document.getElementById('openTabsMissions');
+  if (!missions) return;
+
+  if (!q) { renderStaticDashboard(); return; }
+
+  const f = parseOpenQuery(q);
+  missions.querySelectorAll('.mission-card').forEach(card => {
+    // Reveal any collapsed overflow so matches hidden behind "+N more" show
+    const overflow = card.querySelector('.page-chips-overflow');
+    if (overflow) overflow.style.display = 'contents';
+    const moreBtn = card.querySelector('[data-action="expand-chips"]');
+    if (moreBtn) moreBtn.style.display = 'none';
+
+    let anyVisible = false;
+    card.querySelectorAll('.page-chip[data-action="focus-tab"]').forEach(chip => {
+      const show = chipMatchesQuery(chip, f);
+      chip.style.display = show ? '' : 'none';
+      if (show) anyVisible = true;
+    });
+    card.style.display = anyVisible ? '' : 'none';
+  });
+}
+
+// Focus the open-tabs filter when the user presses "/"
+document.addEventListener('keydown', (e) => {
+  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target;
+  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  if (typing) return;
+  const input = document.getElementById('openSearch');
+  if (input) { e.preventDefault(); input.focus(); }
+});
+
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'openSearch') return;
+  openQuery = e.target.value;
+  applyOpenFilter();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.target && e.target.id === 'openSearch' && e.key === 'Escape') {
+    e.preventDefault();
+    e.target.value = '';
+    openQuery = '';
+    applyOpenFilter();
+    e.target.blur();
+  }
+});
+
+
+/* ----------------------------------------------------------------
+   PRIVACY MODE — a clock screen that hides the dashboard
+   ---------------------------------------------------------------- */
+
+let privacyOn = false;
+let privacyTimer = null;
+
+function paintPrivacyClock() {
+  const now = new Date();
+  const clock = document.getElementById('privacyClock');
+  const date  = document.getElementById('privacyDate');
+  if (clock) clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (date)  date.textContent  = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function setPrivacy(on) {
+  privacyOn = on;
+  const screen = document.getElementById('privacyScreen');
+  if (!screen) return;
+  if (on) {
+    paintPrivacyClock();
+    screen.style.display = 'flex';
+    clearInterval(privacyTimer);
+    privacyTimer = setInterval(paintPrivacyClock, 1000);
+  } else {
+    screen.style.display = 'none';
+    clearInterval(privacyTimer);
+    privacyTimer = null;
+  }
+}
+
+function togglePrivacy() { setPrivacy(!privacyOn); }
+
+
+/* ----------------------------------------------------------------
+   AUTO-REFRESH — keep the dashboard in sync with real tab changes
+   ---------------------------------------------------------------- */
+
+let autoRefreshTimer = null;
+
+// Don't redraw while the user is mid-interaction — it would be disruptive.
+function autoRefreshBlocked() {
+  if (dragData) return true;
+  if (privacyOn) return true;
+  const menu    = document.getElementById('contextMenu');
+  if (menu && menu.style.display !== 'none') return true;
+  for (const id of ['folderDeleteDialog', 'closeAllDialog']) {
+    const d = document.getElementById(id);
+    if (d && d.style.display !== 'none') return true;
+  }
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return true;
+  return false;
+}
+
+function scheduleAutoRefresh() {
+  clearTimeout(autoRefreshTimer);
+  autoRefreshTimer = setTimeout(async () => {
+    if (autoRefreshBlocked()) { scheduleAutoRefresh(); return; } // try again shortly
+    await renderStaticDashboard();
+    if (openQuery.trim()) applyOpenFilter();
+  }, 450);
+}
+
+try {
+  if (typeof chrome !== 'undefined' && chrome.tabs) {
+    chrome.tabs.onCreated.addListener(scheduleAutoRefresh);
+    chrome.tabs.onRemoved.addListener(scheduleAutoRefresh);
+    chrome.tabs.onUpdated.addListener(scheduleAutoRefresh);
+    if (chrome.tabs.onMoved)    chrome.tabs.onMoved.addListener(scheduleAutoRefresh);
+    if (chrome.tabs.onAttached) chrome.tabs.onAttached.addListener(scheduleAutoRefresh);
+  }
+} catch {}
 
 
 /* ----------------------------------------------------------------
