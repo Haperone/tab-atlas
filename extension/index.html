@@ -61,6 +61,14 @@
        Right: saved for later checklist
        The right column only renders when it has items (JS controls this)
        ================================================================ -->
+
+  <!-- Unified search across all columns (open tabs, saved, folders).
+       Focus with "/". Supports domain: and url: operators + free text. -->
+  <div class="global-search-row">
+    <svg class="global-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+    <input type="text" class="global-search" id="globalSearch" placeholder="Search everything…  press /  —  try domain:github or url:docs">
+  </div>
+
   <div class="dashboard-columns" id="dashboardColumns">
 
     <!-- LEFT COLUMN: Open tabs -->
@@ -70,8 +78,6 @@
         <div class="section-line"></div>
         <div class="section-count" id="openTabsSectionCount"></div>
       </div>
-      <!-- Filter open tabs — focus with "/" ; supports domain: and url: operators -->
-      <input type="text" class="open-search" id="openSearch" placeholder="Filter open tabs…  press / — try domain:github or url:docs">
       <div class="missions" id="openTabsMissions"></div>
     </div>
 
@@ -82,9 +88,6 @@
         <div class="section-line"></div>
         <div class="section-count" id="deferredCount"></div>
       </div>
-
-      <!-- Search across the inbox and all folders -->
-      <input type="text" class="saved-search" id="savedSearch" placeholder="Search saved tabs…">
 
       <!-- Active checklist items — injected by renderDeferredList() in app.js -->
       <div class="deferred-list" id="deferredList"></div>

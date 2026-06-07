@@ -1200,21 +1200,48 @@ function renderDomainCard(group) {
  * "Saved for Later" checklist column. Shows active items as a checklist
  * and completed items in a collapsible archive.
  */
-// Live search query for the inbox + folders (lowercased; '' = no filter)
+// Live search query shared by all columns (lowercased; '' = no filter)
 let savedQuery = '';
+
+/**
+ * parseSearch(q)
+ *
+ * Splits a query into operators (domain:, url:) and free-text terms.
+ */
+function parseSearch(q) {
+  const f = { domain: [], url: [], text: [] };
+  for (const part of (q || '').split(/\s+/).filter(Boolean)) {
+    if (part.startsWith('domain:'))   f.domain.push(part.slice(7));
+    else if (part.startsWith('url:')) f.url.push(part.slice(4));
+    else                              f.text.push(part);
+  }
+  return f;
+}
+
+/**
+ * recordMatches(url, title, parsed)
+ *
+ * True when a {url, title} record satisfies every term in a parsed query.
+ */
+function recordMatches(url, title, f) {
+  url   = (url   || '').toLowerCase();
+  title = (title || '').toLowerCase();
+  let domain = '';
+  try { domain = new URL(url).hostname.toLowerCase(); } catch {}
+  for (const d of f.domain) if (!domain.includes(d)) return false;
+  for (const u of f.url)    if (!url.includes(u))    return false;
+  for (const t of f.text)   if (!(title.includes(t) || url.includes(t) || domain.includes(t))) return false;
+  return true;
+}
 
 /**
  * savedMatches(item)
  *
- * True when a saved tab matches the current search query (title / url / domain).
+ * True when a saved tab matches the current search query.
  */
 function savedMatches(item) {
   if (!savedQuery) return true;
-  let domain = '';
-  try { domain = new URL(item.url).hostname; } catch {}
-  return (item.title || '').toLowerCase().includes(savedQuery) ||
-         (item.url   || '').toLowerCase().includes(savedQuery) ||
-         domain.toLowerCase().includes(savedQuery);
+  return recordMatches(item.url, item.title, parseSearch(savedQuery));
 }
 
 async function renderDeferredColumn() {
@@ -2029,13 +2056,6 @@ function closeCloseAllDialog() {
   if (dialog) dialog.style.display = 'none';
 }
 
-// ---- Saved search — filter the inbox + folders as the user types ----
-document.addEventListener('input', async (e) => {
-  if (e.target.id !== 'savedSearch') return;
-  savedQuery = e.target.value.trim().toLowerCase();
-  await refreshSavedAndFolders();
-});
-
 // ---- Archive toggle — expand/collapse the archive section ----
 document.addEventListener('click', (e) => {
   const toggle = e.target.closest('#archiveToggle');
@@ -2534,27 +2554,6 @@ window.addEventListener('scroll', () => closeContextMenu(), true);
 
 let openQuery = '';
 
-function parseOpenQuery(q) {
-  const f = { domain: [], url: [], text: [] };
-  for (const part of q.split(/\s+/).filter(Boolean)) {
-    if (part.startsWith('domain:'))   f.domain.push(part.slice(7));
-    else if (part.startsWith('url:')) f.url.push(part.slice(4));
-    else                              f.text.push(part);
-  }
-  return f;
-}
-
-function chipMatchesQuery(chip, f) {
-  const url   = (chip.dataset.tabUrl   || '').toLowerCase();
-  const title = (chip.dataset.tabTitle || '').toLowerCase();
-  let domain = '';
-  try { domain = new URL(chip.dataset.tabUrl).hostname.toLowerCase(); } catch {}
-  for (const d of f.domain) if (!domain.includes(d)) return false;
-  for (const u of f.url)    if (!url.includes(u))    return false;
-  for (const t of f.text)   if (!(title.includes(t) || url.includes(t) || domain.includes(t))) return false;
-  return true;
-}
-
 /**
  * applyOpenFilter()
  *
@@ -2568,7 +2567,7 @@ function applyOpenFilter() {
 
   if (!q) { renderStaticDashboard(); return; }
 
-  const f = parseOpenQuery(q);
+  const f = parseSearch(q);
   missions.querySelectorAll('.mission-card').forEach(card => {
     // Reveal any collapsed overflow so matches hidden behind "+N more" show
     const overflow = card.querySelector('.page-chips-overflow');
@@ -2578,7 +2577,7 @@ function applyOpenFilter() {
 
     let anyVisible = false;
     card.querySelectorAll('.page-chip[data-action="focus-tab"]').forEach(chip => {
-      const show = chipMatchesQuery(chip, f);
+      const show = recordMatches(chip.dataset.tabUrl, chip.dataset.tabTitle, f);
       chip.style.display = show ? '' : 'none';
       if (show) anyVisible = true;
     });
@@ -2586,28 +2585,36 @@ function applyOpenFilter() {
   });
 }
 
-// Focus the open-tabs filter when the user presses "/"
+// ─── Unified search: one box filters open tabs + inbox + folders ───────────────
+
+async function runGlobalSearch(value) {
+  const q = (value || '').trim().toLowerCase();
+  savedQuery = q;
+  openQuery  = q;
+  // Re-render saved + folders (filtered), then filter the open-tabs grid
+  await refreshSavedAndFolders();
+  applyOpenFilter();
+}
+
+// Focus the search box when the user presses "/"
 document.addEventListener('keydown', (e) => {
   if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
   const t = e.target;
-  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
-  if (typing) return;
-  const input = document.getElementById('openSearch');
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  const input = document.getElementById('globalSearch');
   if (input) { e.preventDefault(); input.focus(); }
 });
 
 document.addEventListener('input', (e) => {
-  if (e.target.id !== 'openSearch') return;
-  openQuery = e.target.value;
-  applyOpenFilter();
+  if (e.target.id !== 'globalSearch') return;
+  runGlobalSearch(e.target.value);
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.target && e.target.id === 'openSearch' && e.key === 'Escape') {
+  if (e.target && e.target.id === 'globalSearch' && e.key === 'Escape') {
     e.preventDefault();
     e.target.value = '';
-    openQuery = '';
-    applyOpenFilter();
+    runGlobalSearch('');
     e.target.blur();
   }
 });

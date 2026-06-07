@@ -1588,21 +1588,6 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   background: rgba(127, 146, 171, 0.1);
 }
 
-/* Search across the inbox + folders */
-.saved-search {
-  width: 100%;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  color: var(--text);
-  background: var(--surface-strong);
-  border: 1px solid rgba(127, 146, 171, 0.18);
-  border-radius: 6px;
-  padding: 7px 10px;
-  margin-bottom: 12px;
-  outline: none;
-}
-.saved-search::placeholder { color: var(--muted); }
-.saved-search:focus { border-color: rgba(120, 168, 200, 0.5); }
 
 /* Undo affordance inside the toast */
 .toast-undo {
@@ -1664,22 +1649,39 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
    OPEN-TABS FILTER / PRIVACY MODE
    ================================================================ */
 
-/* Filter box above the open-tabs grid */
-.open-search {
+/* Unified search row above all columns */
+.global-search-row {
+  position: relative;
+  margin-bottom: 28px;
+}
+.global-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.global-search {
   width: 100%;
-  max-width: 420px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text);
   background: var(--surface-strong);
-  border: 1px solid rgba(127, 146, 171, 0.18);
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-bottom: 16px;
+  border: 1px solid rgba(127, 146, 171, 0.2);
+  border-radius: 10px;
+  padding: 13px 16px 13px 44px;
   outline: none;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.open-search::placeholder { color: var(--muted); }
-.open-search:focus { border-color: rgba(120, 168, 200, 0.5); }
+.global-search::placeholder { color: var(--muted); }
+.global-search:focus {
+  border-color: rgba(120, 168, 200, 0.55);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(120, 168, 200, 0.12);
+}
 
 /* Privacy-mode toggle button (top-right corner) */
 .privacy-toggle {
