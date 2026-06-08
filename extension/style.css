@@ -342,7 +342,7 @@ header {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.004)),
     var(--card-bg);
-  border: 1px solid rgba(var(--neutral-rgb), 0.1);
+  border: 1px solid rgba(var(--neutral-rgb), 0.22);
   border-radius: 8px;
   padding: 16px 18px;
   display: flex;
@@ -1419,7 +1419,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* A folder card */
 .folder {
-  border: 1px solid rgba(var(--neutral-rgb), 0.12);
+  border: 1px solid rgba(var(--neutral-rgb), 0.22);
   border-radius: 8px;
   margin-bottom: 10px;
   background: var(--card-bg);
