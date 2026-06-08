@@ -294,14 +294,25 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ---- Scrollbars — thin, rounded, theme-tinted (everywhere) ---- */
-* {
-  scrollbar-width: thin;                                  /* Firefox */
-  scrollbar-color: rgba(var(--neutral-rgb), 0.45) transparent;
-}
+/* ---- Scrollbars — thin, rounded, theme-tinted (everywhere) ----
+   Use ONLY the WebKit pseudo-elements (full control, incl. hiding the arrow
+   buttons). The standard scrollbar-width/scrollbar-color are intentionally
+   NOT set: in current Chrome they switch to the system scrollbar and make it
+   ignore these rules (so the up/down arrows would come back). */
 ::-webkit-scrollbar { width: 11px; height: 11px; }
-::-webkit-scrollbar-button { display: none; width: 0; height: 0; }   /* no up/down arrows */
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:single-button,
+::-webkit-scrollbar-button:double-button,
+::-webkit-scrollbar-button:start,
+::-webkit-scrollbar-button:end,
+::-webkit-scrollbar-button:vertical,
+::-webkit-scrollbar-button:horizontal {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
 ::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-track-piece { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: rgba(var(--neutral-rgb), 0.4);
   border: 3px solid transparent;        /* padding so the thumb looks slim */
