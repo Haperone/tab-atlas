@@ -2689,15 +2689,12 @@ function togglePrivacy() { setPrivacy(!privacyOn); }
 
 const THEME_OPTIONS = [
   { id: 'default',    label: 'Default',          color: '#78a8c8', group: 'dark' },
-  { id: 'midnight',   label: 'Midnight',         color: '#e0a75a', group: 'dark' },
   { id: 'graphite',   label: 'Graphite',         color: '#d4af37', group: 'dark' },
   { id: 'solarized',  label: 'Solarized',        color: '#2f9bd8', group: 'dark' },
   { id: 'dracula',    label: 'Dracula',          color: '#bd93f9', group: 'dark' },
-  { id: 'nord',       label: 'Nord',             color: '#88c0d0', group: 'dark' },
   { id: 'tokyonight', label: 'Tokyo Night',      color: '#7aa2f7', group: 'dark' },
   { id: 'gruvbox',    label: 'Gruvbox',          color: '#fabd2f', group: 'dark' },
   { id: 'mocha',      label: 'Catppuccin Mocha', color: '#cba6f7', group: 'dark' },
-  { id: 'rosepine',   label: 'Rosé Pine',        color: '#ebbcba', group: 'dark' },
   { id: 'monokai',    label: 'Monokai',          color: '#a6e22e', group: 'dark' },
   { id: 'obsidian',   label: 'Obsidian',         color: '#818cf8', group: 'dark' },
   { id: 'paper',      label: 'Paper (light)',    color: '#c0623a', group: 'light' },
@@ -2705,7 +2702,10 @@ const THEME_OPTIONS = [
 ];
 
 function currentTheme() {
-  try { return localStorage.getItem('tabout-theme') || 'default'; } catch { return 'default'; }
+  let t = 'default';
+  try { t = localStorage.getItem('tabout-theme') || 'default'; } catch {}
+  // Fall back to default if the saved theme no longer exists (e.g. removed)
+  return THEME_OPTIONS.some(o => o.id === t) ? t : 'default';
 }
 
 function applyTheme(id) {
@@ -2810,13 +2810,13 @@ document.addEventListener('error', (e) => {
    INITIALIZE
    ---------------------------------------------------------------- */
 
-// Safety net: make sure the saved theme is applied even if theme-init.js
-// didn't run for some reason (keeps the dashboard and the picker in sync).
+// Safety net: make sure a valid saved theme is applied even if theme-init.js
+// didn't run (keeps the dashboard and the picker in sync, and heals a stored
+// theme that has since been removed).
 try {
-  const savedTheme = localStorage.getItem('tabout-theme') || 'default';
-  if (document.documentElement.dataset.theme !== savedTheme) {
-    document.documentElement.dataset.theme = savedTheme;
-  }
+  const t = currentTheme();
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('tabout-theme', t);
 } catch {}
 
 renderDashboard();

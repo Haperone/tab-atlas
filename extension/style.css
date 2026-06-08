@@ -6,7 +6,7 @@
 
 /* ============================================================
    THEMES
-   Default (this :root) + [data-theme="midnight"|"graphite"|"solarized"].
+   Default (this :root) + a set of [data-theme="…"] palettes.
    The *-rgb vars feed the translucent rgba() tints throughout the UI so a
    theme can recolour everything by overriding a handful of values.
    ============================================================ */
@@ -32,30 +32,6 @@
   --neutral-rgb: 127, 146, 171;
   --danger-rgb: 201, 110, 114;
   --success-rgb: 115, 147, 122;
-}
-
-/* Midnight — deep cosmic violet with a warm gold accent */
-[data-theme="midnight"] {
-  color-scheme: dark;
-  --text: #e8e6f8;
-  --bg: #0a0712;
-  --neutral: #241c36;
-  --muted: #9484b4;
-  --accent-primary: #e0a75a;
-  --accent-success: #7ab39a;
-  --accent-info: #8a9cc2;
-  --accent-danger: #d88a8a;
-  --status-active: #5fc98a;
-  --status-cooling: #e0b958;
-  --status-abandoned: #e07a7a;
-  --card-bg: #130d20;
-  --surface-strong: #1b1430;
-  --surface-strong-hover: #241a3d;
-  --shadow: rgba(0, 0, 0, 0.55);
-  --accent-rgb: 224, 167, 90;
-  --neutral-rgb: 138, 121, 170;
-  --danger-rgb: 216, 138, 138;
-  --success-rgb: 122, 179, 154;
 }
 
 /* Graphite — near-black slate with a gold accent */
@@ -130,30 +106,6 @@
   --success-rgb: 80, 250, 123;
 }
 
-/* Nord — cool arctic frost */
-[data-theme="nord"] {
-  color-scheme: dark;
-  --text: #eceff4;
-  --bg: #2e3440;
-  --neutral: #3d4555;
-  --muted: #8a93a5;
-  --accent-primary: #88c0d0;
-  --accent-success: #a3be8c;
-  --accent-info: #81a1c1;
-  --accent-danger: #bf616a;
-  --status-active: #a3be8c;
-  --status-cooling: #ebcb8b;
-  --status-abandoned: #bf616a;
-  --card-bg: #353c4a;
-  --surface-strong: #3b4252;
-  --surface-strong-hover: #434c5e;
-  --shadow: rgba(0, 0, 0, 0.35);
-  --accent-rgb: 136, 192, 208;
-  --neutral-rgb: 76, 86, 106;
-  --danger-rgb: 191, 97, 106;
-  --success-rgb: 163, 190, 140;
-}
-
 /* Tokyo Night — deep indigo with electric blue */
 [data-theme="tokyonight"] {
   color-scheme: dark;
@@ -224,30 +176,6 @@
   --neutral-rgb: 108, 112, 134;
   --danger-rgb: 243, 139, 168;
   --success-rgb: 166, 227, 161;
-}
-
-/* Rosé Pine — muted rose and gold on deep mauve */
-[data-theme="rosepine"] {
-  color-scheme: dark;
-  --text: #e0def4;
-  --bg: #191724;
-  --neutral: #2a273f;
-  --muted: #908caa;
-  --accent-primary: #ebbcba;
-  --accent-success: #9ccfd8;
-  --accent-info: #c4a7e7;
-  --accent-danger: #eb6f92;
-  --status-active: #9ccfd8;
-  --status-cooling: #f6c177;
-  --status-abandoned: #eb6f92;
-  --card-bg: #1f1d2e;
-  --surface-strong: #26233a;
-  --surface-strong-hover: #2f2b44;
-  --shadow: rgba(0, 0, 0, 0.45);
-  --accent-rgb: 235, 188, 186;
-  --neutral-rgb: 110, 106, 134;
-  --danger-rgb: 235, 111, 146;
-  --success-rgb: 156, 207, 216;
 }
 
 /* Monokai — classic vivid green / pink / orange */
