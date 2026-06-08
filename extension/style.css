@@ -1273,6 +1273,13 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   overscroll-behavior: contain;
 }
 
+/* Breathing room on the right so the scrollbar doesn't hug the content */
+.dashboard-columns .active-section,
+.deferred-column,
+.folders-column {
+  padding-right: 10px;
+}
+
 /* On narrow screens, stack vertically */
 @media (max-width: 800px) {
   header {
