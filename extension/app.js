@@ -2688,10 +2688,20 @@ function togglePrivacy() { setPrivacy(!privacyOn); }
    ---------------------------------------------------------------- */
 
 const THEME_OPTIONS = [
-  { id: 'default',   label: 'Default',   color: '#78a8c8' },
-  { id: 'midnight',  label: 'Midnight',  color: '#e0a75a' },
-  { id: 'graphite',  label: 'Graphite',  color: '#d4af37' },
-  { id: 'solarized', label: 'Solarized', color: '#268bd2' },
+  { id: 'default',    label: 'Default',          color: '#78a8c8', group: 'dark' },
+  { id: 'midnight',   label: 'Midnight',         color: '#e0a75a', group: 'dark' },
+  { id: 'graphite',   label: 'Graphite',         color: '#d4af37', group: 'dark' },
+  { id: 'solarized',  label: 'Solarized',        color: '#2f9bd8', group: 'dark' },
+  { id: 'dracula',    label: 'Dracula',          color: '#bd93f9', group: 'dark' },
+  { id: 'nord',       label: 'Nord',             color: '#88c0d0', group: 'dark' },
+  { id: 'tokyonight', label: 'Tokyo Night',      color: '#7aa2f7', group: 'dark' },
+  { id: 'gruvbox',    label: 'Gruvbox',          color: '#fabd2f', group: 'dark' },
+  { id: 'mocha',      label: 'Catppuccin Mocha', color: '#cba6f7', group: 'dark' },
+  { id: 'rosepine',   label: 'Rosé Pine',        color: '#ebbcba', group: 'dark' },
+  { id: 'monokai',    label: 'Monokai',          color: '#a6e22e', group: 'dark' },
+  { id: 'obsidian',   label: 'Obsidian',         color: '#818cf8', group: 'dark' },
+  { id: 'paper',      label: 'Paper (light)',    color: '#c0623a', group: 'light' },
+  { id: 'latte',      label: 'Catppuccin Latte', color: '#8839ef', group: 'light' },
 ];
 
 function currentTheme() {
@@ -2705,15 +2715,21 @@ function applyTheme(id) {
 
 function openThemeMenu(x, y) {
   const cur = currentTheme();
-  showContextMenu(x, y, [
-    { heading: true, label: 'Theme' },
-    ...THEME_OPTIONS.map(t => ({
-      label: t.label,
-      swatchColor: t.color,
-      checked: t.id === cur,
-      onClick: () => { applyTheme(t.id); showToast(`Theme: ${t.label}`); },
-    })),
-  ]);
+  const items = [];
+  const addGroup = (label, group) => {
+    items.push({ heading: true, label });
+    for (const t of THEME_OPTIONS.filter(o => o.group === group)) {
+      items.push({
+        label: t.label,
+        swatchColor: t.color,
+        checked: t.id === cur,
+        onClick: () => { applyTheme(t.id); showToast(`Theme: ${t.label}`); },
+      });
+    }
+  };
+  addGroup('Dark', 'dark');
+  addGroup('Light', 'light');
+  showContextMenu(x, y, items);
 }
 
 

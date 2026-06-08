@@ -106,6 +106,261 @@
   --success-rgb: 147, 163, 0;
 }
 
+/* Dracula — vivid purple/pink on a slate base */
+[data-theme="dracula"] {
+  color-scheme: dark;
+  --text: #f8f8f2;
+  --bg: #21222c;
+  --neutral: #383a4d;
+  --muted: #8b8fa3;
+  --accent-primary: #bd93f9;
+  --accent-success: #50fa7b;
+  --accent-info: #8be9fd;
+  --accent-danger: #ff5555;
+  --status-active: #50fa7b;
+  --status-cooling: #f1fa8c;
+  --status-abandoned: #ff5555;
+  --card-bg: #282a36;
+  --surface-strong: #343746;
+  --surface-strong-hover: #3d4153;
+  --shadow: rgba(0, 0, 0, 0.42);
+  --accent-rgb: 189, 147, 249;
+  --neutral-rgb: 98, 114, 164;
+  --danger-rgb: 255, 85, 85;
+  --success-rgb: 80, 250, 123;
+}
+
+/* Nord — cool arctic frost */
+[data-theme="nord"] {
+  color-scheme: dark;
+  --text: #eceff4;
+  --bg: #2e3440;
+  --neutral: #3d4555;
+  --muted: #8a93a5;
+  --accent-primary: #88c0d0;
+  --accent-success: #a3be8c;
+  --accent-info: #81a1c1;
+  --accent-danger: #bf616a;
+  --status-active: #a3be8c;
+  --status-cooling: #ebcb8b;
+  --status-abandoned: #bf616a;
+  --card-bg: #353c4a;
+  --surface-strong: #3b4252;
+  --surface-strong-hover: #434c5e;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --accent-rgb: 136, 192, 208;
+  --neutral-rgb: 76, 86, 106;
+  --danger-rgb: 191, 97, 106;
+  --success-rgb: 163, 190, 140;
+}
+
+/* Tokyo Night — deep indigo with electric blue */
+[data-theme="tokyonight"] {
+  color-scheme: dark;
+  --text: #c0caf5;
+  --bg: #16161e;
+  --neutral: #2a2e45;
+  --muted: #787c99;
+  --accent-primary: #7aa2f7;
+  --accent-success: #9ece6a;
+  --accent-info: #7dcfff;
+  --accent-danger: #f7768e;
+  --status-active: #9ece6a;
+  --status-cooling: #e0af68;
+  --status-abandoned: #f7768e;
+  --card-bg: #1a1b26;
+  --surface-strong: #24283b;
+  --surface-strong-hover: #2c3047;
+  --shadow: rgba(0, 0, 0, 0.5);
+  --accent-rgb: 122, 162, 247;
+  --neutral-rgb: 86, 95, 137;
+  --danger-rgb: 247, 118, 142;
+  --success-rgb: 158, 206, 106;
+}
+
+/* Gruvbox — warm retro earth tones */
+[data-theme="gruvbox"] {
+  color-scheme: dark;
+  --text: #ebdbb2;
+  --bg: #1d2021;
+  --neutral: #3c3836;
+  --muted: #a89984;
+  --accent-primary: #fabd2f;
+  --accent-success: #b8bb26;
+  --accent-info: #83a598;
+  --accent-danger: #fb4934;
+  --status-active: #b8bb26;
+  --status-cooling: #fabd2f;
+  --status-abandoned: #fb4934;
+  --card-bg: #282828;
+  --surface-strong: #3c3836;
+  --surface-strong-hover: #454340;
+  --shadow: rgba(0, 0, 0, 0.42);
+  --accent-rgb: 250, 189, 47;
+  --neutral-rgb: 124, 111, 100;
+  --danger-rgb: 251, 73, 52;
+  --success-rgb: 184, 187, 38;
+}
+
+/* Catppuccin Mocha — soft pastel dark */
+[data-theme="mocha"] {
+  color-scheme: dark;
+  --text: #cdd6f4;
+  --bg: #181825;
+  --neutral: #313244;
+  --muted: #9399b2;
+  --accent-primary: #cba6f7;
+  --accent-success: #a6e3a1;
+  --accent-info: #89dceb;
+  --accent-danger: #f38ba8;
+  --status-active: #a6e3a1;
+  --status-cooling: #f9e2af;
+  --status-abandoned: #f38ba8;
+  --card-bg: #1e1e2e;
+  --surface-strong: #313244;
+  --surface-strong-hover: #3a3c54;
+  --shadow: rgba(0, 0, 0, 0.42);
+  --accent-rgb: 203, 166, 247;
+  --neutral-rgb: 108, 112, 134;
+  --danger-rgb: 243, 139, 168;
+  --success-rgb: 166, 227, 161;
+}
+
+/* Rosé Pine — muted rose and gold on deep mauve */
+[data-theme="rosepine"] {
+  color-scheme: dark;
+  --text: #e0def4;
+  --bg: #191724;
+  --neutral: #2a273f;
+  --muted: #908caa;
+  --accent-primary: #ebbcba;
+  --accent-success: #9ccfd8;
+  --accent-info: #c4a7e7;
+  --accent-danger: #eb6f92;
+  --status-active: #9ccfd8;
+  --status-cooling: #f6c177;
+  --status-abandoned: #eb6f92;
+  --card-bg: #1f1d2e;
+  --surface-strong: #26233a;
+  --surface-strong-hover: #2f2b44;
+  --shadow: rgba(0, 0, 0, 0.45);
+  --accent-rgb: 235, 188, 186;
+  --neutral-rgb: 110, 106, 134;
+  --danger-rgb: 235, 111, 146;
+  --success-rgb: 156, 207, 216;
+}
+
+/* Monokai — classic vivid green / pink / orange */
+[data-theme="monokai"] {
+  color-scheme: dark;
+  --text: #f8f8f2;
+  --bg: #1e1f1c;
+  --neutral: #3a3b34;
+  --muted: #a59f85;
+  --accent-primary: #a6e22e;
+  --accent-success: #a6e22e;
+  --accent-info: #66d9ef;
+  --accent-danger: #f92672;
+  --status-active: #a6e22e;
+  --status-cooling: #e6db74;
+  --status-abandoned: #f92672;
+  --card-bg: #272822;
+  --surface-strong: #34352e;
+  --surface-strong-hover: #3d3e36;
+  --shadow: rgba(0, 0, 0, 0.42);
+  --accent-rgb: 166, 226, 46;
+  --neutral-rgb: 117, 113, 94;
+  --danger-rgb: 249, 38, 114;
+  --success-rgb: 166, 226, 46;
+}
+
+/* Obsidian — clean neutral near-black with an indigo accent */
+[data-theme="obsidian"] {
+  color-scheme: dark;
+  --text: #e6e6ea;
+  --bg: #0b0b0d;
+  --neutral: #232329;
+  --muted: #8a8a93;
+  --accent-primary: #818cf8;
+  --accent-success: #6ee7b7;
+  --accent-info: #7dd3fc;
+  --accent-danger: #fb7185;
+  --status-active: #6ee7b7;
+  --status-cooling: #fcd34d;
+  --status-abandoned: #fb7185;
+  --card-bg: #131316;
+  --surface-strong: #1c1c21;
+  --surface-strong-hover: #26262d;
+  --shadow: rgba(0, 0, 0, 0.55);
+  --accent-rgb: 129, 140, 248;
+  --neutral-rgb: 138, 138, 147;
+  --danger-rgb: 251, 113, 133;
+  --success-rgb: 110, 231, 183;
+}
+
+/* Paper — warm cream LIGHT theme (the original Tab Out look) */
+[data-theme="paper"] {
+  color-scheme: light;
+  --text: #1f1a16;
+  --bg: #f4f0e8;
+  --neutral: #e0d8ca;
+  --muted: #6f675f;
+  --accent-primary: #c0623a;
+  --accent-success: #4f7158;
+  --accent-info: #5a6b7a;
+  --accent-danger: #b14a4a;
+  --status-active: #3d7a4a;
+  --status-cooling: #a4762a;
+  --status-abandoned: #b14a4a;
+  --card-bg: #fffdf9;
+  --surface-strong: #ffffff;
+  --surface-strong-hover: #f6f1e7;
+  --shadow: rgba(60, 45, 30, 0.12);
+  --accent-rgb: 192, 98, 58;
+  --neutral-rgb: 150, 138, 120;
+  --danger-rgb: 177, 74, 74;
+  --success-rgb: 79, 113, 88;
+}
+
+/* Catppuccin Latte — soft pastel LIGHT theme */
+[data-theme="latte"] {
+  color-scheme: light;
+  --text: #4c4f69;
+  --bg: #eff1f5;
+  --neutral: #ccd0da;
+  --muted: #6c6f85;
+  --accent-primary: #8839ef;
+  --accent-success: #40a02b;
+  --accent-info: #209fb5;
+  --accent-danger: #d20f39;
+  --status-active: #40a02b;
+  --status-cooling: #df8e1d;
+  --status-abandoned: #d20f39;
+  --card-bg: #ffffff;
+  --surface-strong: #e6e9ef;
+  --surface-strong-hover: #dce0e8;
+  --shadow: rgba(76, 79, 105, 0.13);
+  --accent-rgb: 136, 57, 239;
+  --neutral-rgb: 124, 127, 147;
+  --danger-rgb: 210, 15, 57;
+  --success-rgb: 64, 160, 43;
+}
+
+/* ---- Light-theme element polish ---- */
+[data-theme="paper"] .mission-card,
+[data-theme="paper"] .folder,
+[data-theme="latte"] .mission-card,
+[data-theme="latte"] .folder {
+  background: var(--card-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 20px var(--shadow);
+}
+/* The faint dark noise texture reads as grime on light backgrounds */
+[data-theme="paper"] body::before,
+[data-theme="latte"] body::before { display: none; }
+/* Soften the heavy inset white highlight that's meant for dark cards */
+[data-theme="paper"] .mission-card::after,
+[data-theme="latte"] .mission-card::after { box-shadow: none; }
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -1521,6 +1776,8 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   z-index: 200;
   min-width: 190px;
   max-width: 280px;
+  max-height: 80vh;
+  overflow-y: auto;
   background: var(--surface-strong);
   border: 1px solid rgba(var(--neutral-rgb), 0.22);
   border-radius: 10px;
