@@ -26,6 +26,14 @@
 // All open tabs — populated by fetchOpenTabs()
 let openTabs = [];
 
+// Signature of the last-rendered tab set, so auto-refresh can skip redraws
+// when nothing relevant changed (a tab just updating its favicon/title fires
+// events but shouldn't re-render and flicker the whole dashboard).
+let lastTabSignature = null;
+function tabsSignature(list) {
+  return (list || []).map(t => `${t.id}|${t.url || ''}|${t.pinned ? 1 : 0}`).join('§');
+}
+
 /**
  * fetchOpenTabs()
  *
@@ -1629,6 +1637,9 @@ async function renderStaticDashboard() {
 
   // --- Re-apply the open-tabs filter if one is active ---
   if (openQuery.trim()) applyOpenFilter();
+
+  // Remember what we just rendered so auto-refresh can skip no-op redraws
+  lastTabSignature = tabsSignature(openTabs);
 }
 
 async function renderDashboard() {
@@ -2735,6 +2746,15 @@ function scheduleAutoRefresh() {
     // opening — the initial render already shows the right tabs.
     if (Date.now() - pageOpenedAt < 1500) return;
     if (autoRefreshBlocked()) { scheduleAutoRefresh(); return; } // try again shortly
+
+    // Only redraw if the relevant tab set actually changed. Background tabs
+    // constantly fire onUpdated (favicon/title/loading) — those must not
+    // re-render the whole dashboard, which is what caused the jitter.
+    try {
+      const sig = tabsSignature(await chrome.tabs.query({}));
+      if (sig === lastTabSignature) return;
+    } catch { return; }
+
     await renderStaticDashboard();
     if (openQuery.trim()) applyOpenFilter();
   }, 450);
