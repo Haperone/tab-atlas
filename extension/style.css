@@ -96,9 +96,9 @@
   --status-active: #93a300;
   --status-cooling: #c79612;
   --status-abandoned: #e0413e;
-  --card-bg: #042730;
-  --surface-strong: #073039;
-  --surface-strong-hover: #0a3b46;
+  --card-bg: #073642;
+  --surface-strong: #0a4250;
+  --surface-strong-hover: #0e5060;
   --shadow: rgba(0, 0, 0, 0.5);
   --accent-rgb: 47, 155, 216;
   --neutral-rgb: 91, 123, 129;
