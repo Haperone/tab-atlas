@@ -86,9 +86,9 @@
 [data-theme="solarized"] {
   color-scheme: dark;
   --text: #b3c0c0;
-  --bg: #001a22;
-  --neutral: #08313c;
-  --muted: #5b7b81;
+  --bg: #00222b;
+  --neutral: #0c3a45;
+  --muted: #5f8186;
   --accent-primary: #2f9bd8;
   --accent-success: #93a300;
   --accent-info: #2aa198;
@@ -96,9 +96,9 @@
   --status-active: #93a300;
   --status-cooling: #c79612;
   --status-abandoned: #e0413e;
-  --card-bg: #073642;
-  --surface-strong: #0a4250;
-  --surface-strong-hover: #0e5060;
+  --card-bg: #00141b;
+  --surface-strong: #022e39;
+  --surface-strong-hover: #033a47;
   --shadow: rgba(0, 0, 0, 0.5);
   --accent-rgb: 47, 155, 216;
   --neutral-rgb: 91, 123, 129;
