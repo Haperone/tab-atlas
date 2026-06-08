@@ -2769,4 +2769,14 @@ document.addEventListener('error', (e) => {
 /* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
+
+// Safety net: make sure the saved theme is applied even if theme-init.js
+// didn't run for some reason (keeps the dashboard and the picker in sync).
+try {
+  const savedTheme = localStorage.getItem('tabout-theme') || 'default';
+  if (document.documentElement.dataset.theme !== savedTheme) {
+    document.documentElement.dataset.theme = savedTheme;
+  }
+} catch {}
+
 renderDashboard();

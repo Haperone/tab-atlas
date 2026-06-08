@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Out</title>
 
-  <!-- Apply the saved theme before first paint to avoid a flash of the default -->
-  <script>
-    try { document.documentElement.dataset.theme = localStorage.getItem('tabout-theme') || 'default'; } catch (e) {}
-  </script>
+  <!-- Apply the saved theme before first paint (external file: MV3 CSP blocks inline scripts) -->
+  <script src="theme-init.js"></script>
 
   <!-- Google Fonts: Newsreader (for headings/numbers) + DM Sans (for body text) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
