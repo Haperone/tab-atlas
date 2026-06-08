@@ -294,6 +294,25 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ---- Scrollbars — thin, rounded, theme-tinted (everywhere) ---- */
+* {
+  scrollbar-width: thin;                                  /* Firefox */
+  scrollbar-color: rgba(var(--neutral-rgb), 0.45) transparent;
+}
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--neutral-rgb), 0.4);
+  border: 3px solid transparent;        /* padding so the thumb looks slim */
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--neutral-rgb), 0.62);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner { background: transparent; }
+
 body {
   font-family: 'DM Sans', sans-serif;
   background:
@@ -1229,10 +1248,16 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   align-items: flex-start;
 }
 
-/* Open tabs column takes most of the space */
+/* Open tabs column takes most of the space — and scrolls on its own, the
+   same way the other two columns do (consistent + keeps the header in view) */
 .dashboard-columns .active-section {
   flex: 1;
   min-width: 0;
+  position: sticky;
+  top: 32px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Saved for later column — fixed width on the right, scrolls independently.
@@ -1269,11 +1294,13 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   .dashboard-columns {
     flex-direction: column;
   }
+  .dashboard-columns .active-section,
   .deferred-column,
   .folders-column {
     width: 100%;
     position: static;
     max-height: none;
+    overflow: visible;
   }
 }
 
