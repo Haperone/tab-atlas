@@ -1111,7 +1111,7 @@ function renderDomainCard(group) {
   </span>`;
 
   const dupeBadge = hasDupes
-    ? `<span class="open-tabs-badge" style="color:var(--accent-primary);background:rgba(120,168,200,0.12);">
+    ? `<span class="open-tabs-badge" style="color:var(--accent-primary);background:rgba(var(--accent-rgb),0.12);">
         ${totalExtras} duplicate${totalExtras !== 1 ? 's' : ''}
       </span>`
     : '';
@@ -1991,6 +1991,14 @@ document.addEventListener('click', async (e) => {
     togglePrivacy();
     return;
   }
+
+  // ---- Open the theme picker ----
+  if (action === 'toggle-theme-menu') {
+    e.stopPropagation();
+    const rect = actionEl.getBoundingClientRect();
+    openThemeMenu(rect.right, rect.bottom + 6);
+    return;
+  }
 });
 
 /**
@@ -2171,7 +2179,13 @@ function showContextMenu(x, y, items) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'context-menu-item' + (it.danger ? ' danger' : '');
-      btn.textContent = it.label;
+      if (it.swatchColor) {
+        btn.innerHTML =
+          `<span class="context-menu-theme-sw" style="background:${escapeHtml(it.swatchColor)}"></span>` +
+          escapeHtml(it.label) + (it.checked ? ' ✓' : '');
+      } else {
+        btn.textContent = it.label;
+      }
       btn.addEventListener('click', async (ev) => {
         ev.stopPropagation();
         closeContextMenu();
@@ -2656,6 +2670,40 @@ function setPrivacy(on) {
 }
 
 function togglePrivacy() { setPrivacy(!privacyOn); }
+
+
+/* ----------------------------------------------------------------
+   THEMES — switch the colour palette via [data-theme] (saved locally)
+   ---------------------------------------------------------------- */
+
+const THEME_OPTIONS = [
+  { id: 'default',   label: 'Default',   color: '#78a8c8' },
+  { id: 'midnight',  label: 'Midnight',  color: '#e0a75a' },
+  { id: 'graphite',  label: 'Graphite',  color: '#d4af37' },
+  { id: 'solarized', label: 'Solarized', color: '#268bd2' },
+];
+
+function currentTheme() {
+  try { return localStorage.getItem('tabout-theme') || 'default'; } catch { return 'default'; }
+}
+
+function applyTheme(id) {
+  document.documentElement.dataset.theme = id;
+  try { localStorage.setItem('tabout-theme', id); } catch {}
+}
+
+function openThemeMenu(x, y) {
+  const cur = currentTheme();
+  showContextMenu(x, y, [
+    { heading: true, label: 'Theme' },
+    ...THEME_OPTIONS.map(t => ({
+      label: t.label,
+      swatchColor: t.color,
+      checked: t.id === cur,
+      onClick: () => { applyTheme(t.id); showToast(`Theme: ${t.label}`); },
+    })),
+  ]);
+}
 
 
 /* ----------------------------------------------------------------
