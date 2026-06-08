@@ -240,10 +240,10 @@
   --status-active: #3d7a4a;
   --status-cooling: #a4762a;
   --status-abandoned: #b14a4a;
-  --card-bg: #fffdf9;
-  --surface-strong: #ffffff;
-  --surface-strong-hover: #f6f1e7;
-  --shadow: rgba(60, 45, 30, 0.12);
+  --card-bg: #faf6ed;
+  --surface-strong: #fdfaf3;
+  --surface-strong-hover: #f1ebdf;
+  --shadow: rgba(60, 45, 30, 0.10);
   --accent-rgb: 192, 98, 58;
   --neutral-rgb: 150, 138, 120;
   --danger-rgb: 177, 74, 74;
@@ -264,22 +264,25 @@
   --status-active: #40a02b;
   --status-cooling: #df8e1d;
   --status-abandoned: #d20f39;
-  --card-bg: #ffffff;
-  --surface-strong: #e6e9ef;
-  --surface-strong-hover: #dce0e8;
-  --shadow: rgba(76, 79, 105, 0.13);
+  --card-bg: #f6f7fb;
+  --surface-strong: #fbfbfd;
+  --surface-strong-hover: #e9ecf2;
+  --shadow: rgba(76, 79, 105, 0.10);
   --accent-rgb: 136, 57, 239;
   --neutral-rgb: 124, 127, 147;
   --danger-rgb: 210, 15, 57;
   --success-rgb: 64, 160, 43;
 }
 
-/* ---- Light-theme element polish ---- */
+/* ---- Light-theme element polish ----
+   Cards are only a hair lighter than the canvas (tinted, never stark white),
+   so the separation comes from a crisp hairline border + a soft shadow. */
 [data-theme="paper"] .mission-card,
 [data-theme="paper"] .folder,
 [data-theme="latte"] .mission-card,
 [data-theme="latte"] .folder {
   background: var(--card-bg);
+  border-color: rgba(var(--neutral-rgb), 0.4);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 20px var(--shadow);
 }
 /* The faint dark noise texture reads as grime on light backgrounds */
