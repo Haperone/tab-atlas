@@ -2711,6 +2711,7 @@ function openThemeMenu(x, y) {
    ---------------------------------------------------------------- */
 
 let autoRefreshTimer = null;
+const pageOpenedAt = Date.now();
 
 // Don't redraw while the user is mid-interaction — it would be disruptive.
 function autoRefreshBlocked() {
@@ -2730,6 +2731,9 @@ function autoRefreshBlocked() {
 function scheduleAutoRefresh() {
   clearTimeout(autoRefreshTimer);
   autoRefreshTimer = setTimeout(async () => {
+    // Ignore the burst of tab events fired while this new-tab page is itself
+    // opening — the initial render already shows the right tabs.
+    if (Date.now() - pageOpenedAt < 1500) return;
     if (autoRefreshBlocked()) { scheduleAutoRefresh(); return; } // try again shortly
     await renderStaticDashboard();
     if (openQuery.trim()) applyOpenFilter();
