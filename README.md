@@ -41,7 +41,7 @@ Tab Out replaces your Chrome new‑tab page with a calm dashboard of everything 
 ## Install (Load unpacked)
 
 ```bash
-git clone https://github.com/Haperone/tab-out.git
+git clone https://github.com/Haperone/tab-atlas.git
 ```
 
 1. Open Chrome → `chrome://extensions`
