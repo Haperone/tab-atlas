@@ -1,8 +1,8 @@
-# Tab Out
+# Tab Atlas
 
 **Keep tabs on your tabs.**
 
-Tab Out replaces your Chrome new‑tab page with a calm dashboard of everything you have open — grouped by domain, searchable, themeable, and organised into folders. No server, no account, no external requests. Everything lives on your machine.
+Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everything you have open — grouped by domain, searchable, themeable, and organised into folders. No server, no account, no external requests. Everything lives on your machine.
 
 ---
 
@@ -48,7 +48,7 @@ git clone https://github.com/Haperone/tab-atlas.git
 2. Enable **Developer mode** (top‑right toggle)
 3. Click **Load unpacked**
 4. Select the `extension/` folder inside the cloned repo
-5. Open a new tab — you’ll see Tab Out
+5. Open a new tab — you’ll see Tab Atlas
 
 > It runs as long as the folder stays on disk and Developer mode is on. Moving/renaming the folder changes the extension ID and resets local data.
 
@@ -74,4 +74,4 @@ To update: `git pull`, then hit **Reload** on the extension card in `chrome://ex
 
 MIT — see [`LICENSE`](LICENSE).
 
-Tab Out is based on the original **[Tab Out](https://github.com/zarazhangrui/tab-out)** by **Zara Zhang** (MIT). This is a personal fork with folders, search, themes, drag‑and‑drop, undo, privacy mode and more.
+Tab Atlas is based on the original **[Tab Out](https://github.com/zarazhangrui/tab-out)** by **Zara Zhang** (MIT). This is a personal fork with folders, search, themes, drag‑and‑drop, undo, privacy mode and more.
