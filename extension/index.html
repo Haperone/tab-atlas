@@ -72,6 +72,13 @@
     <input type="text" class="global-search" id="globalSearch" placeholder="Search everything…  press /  —  try domain:github or url:docs">
   </div>
 
+  <!-- Open Chrome tab groups — click a chip to save the group as a folder.
+       Shown by renderTabGroupsBar() only when groups exist. -->
+  <div class="tab-groups-bar" id="tabGroupsBar" style="display:none">
+    <span class="tab-groups-bar-label">Tab groups open — click to save as a folder:</span>
+    <div class="tab-groups-bar-chips" id="tabGroupsBarChips"></div>
+  </div>
+
   <div class="dashboard-columns" id="dashboardColumns">
 
     <!-- LEFT COLUMN: Open tabs -->
@@ -121,9 +128,6 @@
         <div class="section-line"></div>
         <button class="folders-collapse-all" data-action="toggle-all-folders" title="Collapse / expand all" type="button">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg>
-        </button>
-        <button class="folders-collapse-all" data-action="folders-from-group" title="Save an open Chrome tab group as a folder" type="button">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m0 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m0 0h7.5m0-9v9" /></svg>
         </button>
         <button class="new-folder-btn" data-action="new-folder" title="New folder" type="button">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>

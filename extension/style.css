@@ -2088,3 +2088,47 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 
+
+
+/* ================================================================
+   OPEN TAB GROUPS BAR (group → folder)
+   ================================================================ */
+.tab-groups-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin: 0 0 26px;
+  padding: 11px 15px;
+  background: rgba(var(--accent-rgb), 0.06);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  border-radius: 10px;
+}
+.tab-groups-bar-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.tab-groups-bar-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(var(--neutral-rgb), 0.25);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.group-chip:hover {
+  background: var(--surface-strong-hover);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  transform: translateY(-1px);
+}
+.group-chip-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.group-chip-arrow { font-size: 10px; color: var(--muted); font-weight: 500; }
+.group-chip:hover .group-chip-arrow { color: var(--accent-primary); }

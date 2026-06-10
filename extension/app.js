@@ -630,26 +630,32 @@ async function groupToFolder(groupId) {
 }
 
 /**
- * openGroupPickerMenu(x, y)
+ * renderTabGroupsBar()
  *
- * Lists the current Chrome tab groups so one can be stashed into a folder.
+ * Shows a bar of the currently-open Chrome tab groups (only when any exist).
+ * Each chip saves that group into a folder when clicked — a discoverable
+ * entry point for the group → folder conversion.
  */
-async function openGroupPickerMenu(x, y) {
-  if (typeof chrome === 'undefined' || !chrome.tabGroups) {
-    showToast('Tab groups not available'); return;
-  }
-  let groups = [];
-  try { groups = await chrome.tabGroups.query({}); } catch {}
-  if (!groups.length) { showToast('No open tab groups'); return; }
+async function renderTabGroupsBar() {
+  const bar     = document.getElementById('tabGroupsBar');
+  const chipsEl = document.getElementById('tabGroupsBarChips');
+  if (!bar || !chipsEl) return;
 
-  showContextMenu(x, y, [
-    { heading: true, label: 'Save a tab group as a folder' },
-    ...groups.map(g => ({
-      label: g.title || '(untitled group)',
-      swatchColor: groupColorToHex(g.color) || '#9aa0a6',
-      onClick: () => groupToFolder(g.id),
-    })),
-  ]);
+  let groups = [];
+  try { if (typeof chrome !== 'undefined' && chrome.tabGroups) groups = await chrome.tabGroups.query({}); } catch {}
+
+  if (!groups.length) { bar.style.display = 'none'; return; }
+
+  chipsEl.innerHTML = groups.map(g => {
+    const hex  = groupColorToHex(g.color) || '#9aa0a6';
+    const name = escapeHtml(g.title || 'group');
+    return `<button class="group-chip" data-action="group-to-folder" data-group-id="${g.id}" title="Save “${name}” to a folder">
+      <span class="group-chip-dot" style="background:${hex}"></span>
+      <span class="group-chip-name">${name}</span>
+      <span class="group-chip-arrow">→ folder</span>
+    </button>`;
+  }).join('');
+  bar.style.display = 'flex';
 }
 
 
@@ -1782,6 +1788,9 @@ async function renderStaticDashboard() {
   // --- Render "Folders" column ---
   await renderFoldersColumn();
 
+  // --- Open Chrome tab groups bar ---
+  await renderTabGroupsBar();
+
   // --- Re-apply the open-tabs filter if one is active ---
   if (openQuery.trim()) applyOpenFilter();
 
@@ -1828,11 +1837,10 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Save an open Chrome tab group into a folder ----
-  if (action === 'folders-from-group') {
-    e.stopPropagation();
-    const rect = actionEl.getBoundingClientRect();
-    await openGroupPickerMenu(rect.right, rect.bottom + 6);
+  // ---- Save an open Chrome tab group into a folder (tab-groups bar chip) ----
+  if (action === 'group-to-folder') {
+    const gid = Number(actionEl.dataset.groupId);
+    if (Number.isFinite(gid)) await groupToFolder(gid);
     return;
   }
 
@@ -2939,6 +2947,16 @@ try {
     chrome.tabs.onUpdated.addListener(scheduleAutoRefresh);
     if (chrome.tabs.onMoved)    chrome.tabs.onMoved.addListener(scheduleAutoRefresh);
     if (chrome.tabs.onAttached) chrome.tabs.onAttached.addListener(scheduleAutoRefresh);
+  }
+} catch {}
+
+// Keep the tab-groups bar live as groups are created/closed/renamed/recoloured
+try {
+  if (typeof chrome !== 'undefined' && chrome.tabGroups) {
+    const refreshBar = () => renderTabGroupsBar();
+    chrome.tabGroups.onCreated.addListener(refreshBar);
+    chrome.tabGroups.onRemoved.addListener(refreshBar);
+    chrome.tabGroups.onUpdated.addListener(refreshBar);
   }
 } catch {}
 
