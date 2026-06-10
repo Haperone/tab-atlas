@@ -507,6 +507,153 @@ async function moveTabToFolder(deferredId, folderId) {
 
 
 /* ----------------------------------------------------------------
+   FOLDERS ⇄ CHROME TAB GROUPS
+
+   A folder (saved/parked tabs) can be opened as a native Chrome tab group
+   (live tabs), and a Chrome tab group can be stashed back into a folder.
+   Full conversion: folder→group removes the folder; group→folder closes the
+   group's tabs. Requires the "tabGroups" permission.
+   ---------------------------------------------------------------- */
+
+// Chrome's 8 named group colours, as RGB, for nearest-match mapping
+const CHROME_GROUP_COLORS = {
+  grey:   [95, 99, 104],   blue:   [26, 115, 232], red:    [217, 48, 37],
+  yellow: [249, 171, 0],   green:  [30, 142, 62],  pink:   [208, 24, 132],
+  purple: [147, 52, 230],  cyan:   [0, 123, 131],  orange: [250, 144, 62],
+};
+// Reverse: a Chrome group colour → a pleasant folder hex (grey = no colour)
+const GROUP_COLOR_TO_HEX = {
+  grey: null, blue: '#78a8c8', red: '#c96e72', yellow: '#c7a85a',
+  green: '#73937a', pink: '#c98ab0', purple: '#9a8ac0', cyan: '#6fae9e', orange: '#c8916e',
+};
+
+// Exact mapping for our folder palette (RGB-nearest mis-sorts a few warm tones)
+const FOLDER_HEX_TO_GROUP = {
+  '#78a8c8': 'blue', '#73937a': 'green', '#c8916e': 'orange', '#9a8ac0': 'purple',
+  '#c96e72': 'red',  '#6fae9e': 'cyan',  '#c7a85a': 'yellow',
+};
+function hexToGroupColor(hex) {
+  if (!hex) return 'grey';
+  const key = hex.toLowerCase();
+  if (FOLDER_HEX_TO_GROUP[key]) return FOLDER_HEX_TO_GROUP[key];
+  const m = key.replace('#', '').match(/.{2}/g);
+  if (!m) return 'grey';
+  const [r, g, b] = m.map(x => parseInt(x, 16));
+  let best = 'blue', bestD = Infinity;
+  for (const [name, c] of Object.entries(CHROME_GROUP_COLORS)) {
+    const d = (r - c[0]) ** 2 + (g - c[1]) ** 2 + (b - c[2]) ** 2;
+    if (d < bestD) { bestD = d; best = name; }
+  }
+  return best;
+}
+function groupColorToHex(name) { return GROUP_COLOR_TO_HEX[name] || null; }
+
+/**
+ * folderToGroup(folderId)
+ *
+ * Opens a folder's saved tabs as a native Chrome tab group (named + coloured
+ * after the folder), then deletes the folder (full conversion).
+ */
+async function folderToGroup(folderId) {
+  if (typeof chrome === 'undefined' || !chrome.tabGroups) {
+    showToast('Tab groups not available'); return;
+  }
+  const folders = await getFolders();
+  const folder = folders.find(f => f.id === folderId);
+  if (!folder) return;
+
+  const { active } = await getSavedTabs();
+  const items = active.filter(t => t.folderId === folderId);
+  if (items.length === 0) { showToast('Folder is empty'); return; }
+
+  // Open every saved tab (in the background)
+  const ids = [];
+  for (const it of items) {
+    try {
+      const tab = await chrome.tabs.create({ url: it.url, active: false });
+      if (tab && tab.id != null) ids.push(tab.id);
+    } catch {}
+  }
+  if (ids.length === 0) { showToast('Could not open the tabs'); return; }
+
+  // Group them and name/colour the group
+  try {
+    const groupId = await chrome.tabs.group({ tabIds: ids });
+    await chrome.tabGroups.update(groupId, { title: folder.name, color: hexToGroupColor(folder.color) });
+  } catch (e) {
+    console.warn('[tab-atlas] grouping failed:', e);
+    showToast('Opened the tabs, but couldn’t group them'); // keep the folder as a safety net
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+    return;
+  }
+
+  // Conversion: the data now lives in the open group → drop the folder
+  await deleteFolder(folderId, 'delete');
+  await fetchOpenTabs();
+  await renderStaticDashboard();
+  showToast(`Opened “${folder.name}” as a tab group`);
+}
+
+/**
+ * groupToFolder(groupId)
+ *
+ * Saves a Chrome tab group's open tabs into a new folder (named + coloured
+ * after the group), then closes those tabs (full conversion).
+ */
+async function groupToFolder(groupId) {
+  if (typeof chrome === 'undefined' || !chrome.tabGroups) {
+    showToast('Tab groups not available'); return;
+  }
+  let group, tabs;
+  try {
+    group = await chrome.tabGroups.get(groupId);
+    tabs  = await chrome.tabs.query({ groupId });
+  } catch (e) { console.warn(e); showToast('Could not read the group'); return; }
+
+  const savable = tabs.filter(t => t.url && !t.url.startsWith('chrome') && !t.url.startsWith('about:'));
+  if (savable.length === 0) { showToast('Group has nothing to save'); return; }
+
+  const folder = await createFolder(group.title || 'Tab group');
+  if (folder) {
+    await setFolderColor(folder.id, groupColorToHex(group.color));
+    for (const t of savable) {
+      try { await saveTabForLater({ url: t.url, title: t.title }, folder.id); } catch {}
+    }
+  }
+
+  // Conversion: close the group's tabs (the group disappears with them)
+  try { await chrome.tabs.remove(savable.map(t => t.id)); } catch {}
+  await fetchOpenTabs();
+  await renderStaticDashboard();
+  showToast(`Saved “${group.title || 'group'}” to a folder`);
+}
+
+/**
+ * openGroupPickerMenu(x, y)
+ *
+ * Lists the current Chrome tab groups so one can be stashed into a folder.
+ */
+async function openGroupPickerMenu(x, y) {
+  if (typeof chrome === 'undefined' || !chrome.tabGroups) {
+    showToast('Tab groups not available'); return;
+  }
+  let groups = [];
+  try { groups = await chrome.tabGroups.query({}); } catch {}
+  if (!groups.length) { showToast('No open tab groups'); return; }
+
+  showContextMenu(x, y, [
+    { heading: true, label: 'Save a tab group as a folder' },
+    ...groups.map(g => ({
+      label: g.title || '(untitled group)',
+      swatchColor: groupColorToHex(g.color) || '#9aa0a6',
+      onClick: () => groupToFolder(g.id),
+    })),
+  ]);
+}
+
+
+/* ----------------------------------------------------------------
    UI HELPERS
    ---------------------------------------------------------------- */
 
@@ -1681,6 +1828,14 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  // ---- Save an open Chrome tab group into a folder ----
+  if (action === 'folders-from-group') {
+    e.stopPropagation();
+    const rect = actionEl.getBoundingClientRect();
+    await openGroupPickerMenu(rect.right, rect.bottom + 6);
+    return;
+  }
+
   // ---- Collapse / expand ALL folders (DOM-only, no re-render → no flicker) ----
   if (action === 'toggle-all-folders') {
     const folders = await getFolders();
@@ -2302,6 +2457,7 @@ async function openFolderContextMenu(x, y, folderId) {
       await renderFoldersColumn();
     }},
     { label: 'Rename', onClick: () => startFolderRename(folderId) },
+    { label: 'Open as tab group', onClick: () => folderToGroup(folderId) },
     { separator: true },
     { heading: true, label: 'Color' },
     { swatches: true, current: f.color || null, onPick: async (color) => {
