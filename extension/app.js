@@ -1818,12 +1818,16 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
-  // ---- Open homepage button (floating Shir-Man link) ----
+  // ---- Open the shortcut button's link ----
   if (action === 'open-homepage') {
     const url = actionEl.dataset.homepageUrl;
     if (url) chrome.tabs.create({ url });
     return;
   }
+
+  // ---- Edit-button dialog ----
+  if (action === 'homepage-save')   { saveHomepageFromDialog(); return; }
+  if (action === 'homepage-cancel') { closeHomepageDialog();    return; }
 
   // ---- Reveal the inline "new folder" name input ----
   if (action === 'new-folder') {
@@ -2689,9 +2693,13 @@ document.addEventListener('drop', async (e) => {
 // ─── Right-click → open the relevant context menu ──────────────────────────────
 
 document.addEventListener('contextmenu', async (e) => {
-  const item   = e.target.closest('.deferred-item');
-  const folder = e.target.closest('.folder-header');
-  if (item) {
+  const item    = e.target.closest('.deferred-item');
+  const folder  = e.target.closest('.folder-header');
+  const homeBtn = e.target.closest('#homepageBtn');
+  if (homeBtn) {
+    e.preventDefault();
+    openHomepageDialog();
+  } else if (item) {
     e.preventDefault();
     await openTabContextMenu(e.clientX, e.clientY, item.dataset.deferredId);
   } else if (folder) {
@@ -2715,6 +2723,16 @@ document.addEventListener('mousedown', (e) => {
   if (fd && fd.style.display !== 'none' && e.target === fd) closeFolderDeleteDialog();
   const cd = document.getElementById('closeAllDialog');
   if (cd && cd.style.display !== 'none' && e.target === cd) closeCloseAllDialog();
+  const hp = document.getElementById('homepageDialog');
+  if (hp && hp.style.display !== 'none' && e.target === hp) closeHomepageDialog();
+});
+
+// Enter saves / Escape closes the edit-button dialog inputs
+document.addEventListener('keydown', (e) => {
+  const t = e.target;
+  if (!t || (t.id !== 'homepageLabelInput' && t.id !== 'homepageUrlInput')) return;
+  if (e.key === 'Enter')  { e.preventDefault(); saveHomepageFromDialog(); }
+  if (e.key === 'Escape') { e.preventDefault(); closeHomepageDialog(); }
 });
 
 document.addEventListener('keydown', (e) => {
@@ -2898,6 +2916,60 @@ function openThemeMenu(x, y) {
 
 
 /* ----------------------------------------------------------------
+   HEADER SHORTCUT BUTTON — editable label + URL (saved in localStorage)
+   ---------------------------------------------------------------- */
+
+const HOMEPAGE_DEFAULTS = { label: 'Open Shir-Man', url: 'https://shir-man.com/homepage/' };
+
+function getHomepage() {
+  try {
+    return {
+      label: localStorage.getItem('tabout-homepage-label') || HOMEPAGE_DEFAULTS.label,
+      url:   localStorage.getItem('tabout-homepage-url')   || HOMEPAGE_DEFAULTS.url,
+    };
+  } catch { return { ...HOMEPAGE_DEFAULTS }; }
+}
+
+function applyHomepageButton() {
+  const btn = document.getElementById('homepageBtn');
+  if (!btn) return;
+  const { label, url } = getHomepage();
+  btn.textContent = label;
+  btn.dataset.homepageUrl = url;
+}
+
+function openHomepageDialog() {
+  const { label, url } = getHomepage();
+  const li = document.getElementById('homepageLabelInput');
+  const ui = document.getElementById('homepageUrlInput');
+  if (li) li.value = label;
+  if (ui) ui.value = url;
+  const d = document.getElementById('homepageDialog');
+  if (d) d.style.display = 'flex';
+  if (li) { li.focus(); li.select(); }
+}
+
+function closeHomepageDialog() {
+  const d = document.getElementById('homepageDialog');
+  if (d) d.style.display = 'none';
+}
+
+function saveHomepageFromDialog() {
+  let label = (document.getElementById('homepageLabelInput')?.value || '').trim();
+  let url   = (document.getElementById('homepageUrlInput')?.value || '').trim();
+  if (!label) label = HOMEPAGE_DEFAULTS.label;
+  if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try {
+    localStorage.setItem('tabout-homepage-label', label);
+    localStorage.setItem('tabout-homepage-url', url);
+  } catch {}
+  applyHomepageButton();
+  closeHomepageDialog();
+  showToast('Button updated');
+}
+
+
+/* ----------------------------------------------------------------
    AUTO-REFRESH — keep the dashboard in sync with real tab changes
    ---------------------------------------------------------------- */
 
@@ -2910,7 +2982,7 @@ function autoRefreshBlocked() {
   if (privacyOn) return true;
   const menu    = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') return true;
-  for (const id of ['folderDeleteDialog', 'closeAllDialog']) {
+  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'homepageDialog']) {
     const d = document.getElementById(id);
     if (d && d.style.display !== 'none') return true;
   }
@@ -2992,5 +3064,8 @@ try {
   document.documentElement.dataset.theme = t;
   localStorage.setItem('tabout-theme', t);
 } catch {}
+
+// Apply the saved (editable) header-button label + URL
+applyHomepageButton();
 
 renderDashboard();

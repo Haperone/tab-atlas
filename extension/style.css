@@ -1836,6 +1836,28 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   gap: 8px;
   justify-content: flex-end;
 }
+.dialog-field { margin-bottom: 14px; }
+.dialog-field label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.dialog-input {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(var(--neutral-rgb), 0.3);
+  border-radius: 8px;
+  padding: 9px 11px;
+  outline: none;
+}
+.dialog-input::placeholder { color: var(--muted); }
+.dialog-input:focus { border-color: rgba(var(--accent-rgb), 0.6); }
 .dialog-btn {
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;

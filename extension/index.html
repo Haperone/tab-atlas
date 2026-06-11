@@ -29,11 +29,13 @@
       <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
       <div class="date" id="dateDisplay"></div>
     </div>
-    <!-- Centered "Open Shir-Man" button -->
+    <!-- Centered shortcut button — label + URL are editable (right-click) -->
     <button
       class="header-homepage-btn"
+      id="homepageBtn"
       data-action="open-homepage"
       data-homepage-url="https://shir-man.com/homepage/"
+      title="Right-click to edit"
       type="button"
     >
       Open Shir-Man
@@ -173,6 +175,28 @@
      Contents + position are set by app.js; hidden by default.
      ================================================================ -->
 <div class="context-menu" id="contextMenu" style="display:none"></div>
+
+<!-- ================================================================
+     HEADER BUTTON EDITOR — change the shortcut button's label + URL.
+     Opened by right-clicking the header button. Hidden by default.
+     ================================================================ -->
+<div class="dialog-overlay" id="homepageDialog" style="display:none">
+  <div class="dialog">
+    <div class="dialog-title">Header button</div>
+    <div class="dialog-field">
+      <label for="homepageLabelInput">Label</label>
+      <input type="text" id="homepageLabelInput" class="dialog-input" maxlength="40" placeholder="Open Shir-Man">
+    </div>
+    <div class="dialog-field">
+      <label for="homepageUrlInput">URL</label>
+      <input type="text" id="homepageUrlInput" class="dialog-input" placeholder="https://example.com">
+    </div>
+    <div class="dialog-actions">
+      <button class="dialog-btn" data-action="homepage-cancel" type="button">Cancel</button>
+      <button class="dialog-btn" data-action="homepage-save" type="button">Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- ================================================================
      FOLDER DELETE DIALOG — asks whether to keep tabs (move to inbox)
