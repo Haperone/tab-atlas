@@ -1841,7 +1841,6 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (action === 'speeddial-add')    { openSpeedDialDialog(null);                  return; }
-  if (action === 'speeddial-hide')   { setSpeedDialEnabled(false); renderSpeedDial(); showToast('Shortcuts hidden — bring them back from the palette menu'); return; }
   if (action === 'speeddial-save')   { saveSpeedDialFromDialog();                   return; }
   if (action === 'speeddial-cancel') { closeSpeedDialDialog();                      return; }
 
@@ -2196,6 +2195,15 @@ document.addEventListener('click', async (e) => {
   if (action === 'toggle-privacy') {
     e.stopPropagation();
     togglePrivacy();
+    return;
+  }
+
+  // ---- Toggle the speed-dial shortcut strip ----
+  if (action === 'toggle-shortcuts') {
+    e.stopPropagation();
+    setSpeedDialEnabled(!speedDialEnabled());
+    renderSpeedDial();
+    updateShortcutsToggleTitle();
     return;
   }
 
@@ -2963,12 +2971,6 @@ function openThemeMenu(x, y) {
   };
   addGroup('Dark', 'dark');
   addGroup('Light', 'light');
-  // Layout toggle: show/hide the speed-dial shortcut strip
-  items.push({ separator: true });
-  items.push({
-    label: speedDialEnabled() ? 'Hide shortcuts' : 'Show shortcuts',
-    onClick: () => { setSpeedDialEnabled(!speedDialEnabled()); renderSpeedDial(); },
-  });
   showContextMenu(x, y, items);
 }
 
@@ -3203,8 +3205,6 @@ async function openSelectionMoveMenu(x, y) {
 const SPEEDDIAL_KEY         = 'tabout-speeddial';
 const SPEEDDIAL_ENABLED_KEY = 'tabout-speeddial-enabled';
 
-const ICON_EYE_OFF = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>`;
-
 function getSpeedDialItems() {
   try {
     const arr = JSON.parse(localStorage.getItem(SPEEDDIAL_KEY) || '[]');
@@ -3250,10 +3250,19 @@ function renderSpeedDial() {
   const addTile = `<button class="speed-tile speed-tile-add" data-action="speeddial-add" title="Add shortcut" type="button">
     <span class="speed-tile-plus">＋</span><span class="speed-tile-label">Add</span>
   </button>`;
-  const hideBtn = `<button class="speed-dial-hide" data-action="speeddial-hide" title="Hide shortcuts" type="button">${ICON_EYE_OFF}</button>`;
 
-  el.innerHTML = `<div class="speed-dial-tiles">${tiles}${addTile}</div>${hideBtn}`;
+  el.innerHTML = `<div class="speed-dial-tiles">${tiles}${addTile}</div>`;
   el.style.display = 'flex';
+}
+
+/**
+ * updateShortcutsToggleTitle()
+ *
+ * Keeps the corner toggle's tooltip in sync with the strip's visibility.
+ */
+function updateShortcutsToggleTitle() {
+  const btn = document.getElementById('shortcutsToggle');
+  if (btn) btn.title = speedDialEnabled() ? 'Hide shortcuts' : 'Show shortcuts';
 }
 
 let pendingSpeedDialId = null;
@@ -3403,7 +3412,8 @@ try {
 // Apply the saved (editable) header-button label + URL
 applyHomepageButton();
 
-// Paint the speed-dial shortcut strip
+// Paint the speed-dial shortcut strip + sync its corner toggle tooltip
 renderSpeedDial();
+updateShortcutsToggleTitle();
 
 renderDashboard();

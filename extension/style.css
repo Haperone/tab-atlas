@@ -2059,8 +2059,9 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   border-color: rgba(var(--accent-rgb), 0.4);
   background: var(--surface-strong-hover);
 }
-.privacy-toggle { right: 18px; }
-.theme-toggle   { right: 62px; }
+.privacy-toggle   { right: 18px; }
+.theme-toggle     { right: 62px; }
+.shortcuts-toggle { right: 106px; }
 
 /* Theme menu swatch (uses the context-menu engine) */
 .context-menu-theme-sw {
@@ -2198,23 +2199,6 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .speed-tile-add { color: var(--muted); border-style: dashed; }
 .speed-tile-add:hover { color: var(--accent-primary); }
 .speed-tile-plus { font-size: 15px; line-height: 1; }
-.speed-dial-hide {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  color: var(--muted);
-  background: none;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  opacity: 0.55;
-  transition: opacity 0.15s, color 0.15s, background 0.15s;
-}
-.speed-dial-hide svg { width: 17px; height: 17px; }
-.speed-dial-hide:hover { opacity: 1; color: var(--text); background: rgba(var(--neutral-rgb), 0.12); }
 
 
 /* ================================================================
