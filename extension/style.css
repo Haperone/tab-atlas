@@ -2154,3 +2154,124 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .group-chip-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .group-chip-arrow { font-size: 10px; color: var(--muted); font-weight: 500; }
 .group-chip:hover .group-chip-arrow { color: var(--accent-primary); }
+
+
+/* ================================================================
+   SPEED DIAL — editable grid of site shortcuts
+   ================================================================ */
+.speed-dial {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 26px;
+}
+.speed-dial.collapsed { justify-content: center; }
+.speed-dial-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.speed-tile {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 220px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid rgba(var(--neutral-rgb), 0.2);
+  border-radius: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.speed-tile:hover {
+  background: var(--surface-strong-hover);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  transform: translateY(-1px);
+}
+.speed-tile-fav { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+.speed-tile-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.speed-tile-add { color: var(--muted); border-style: dashed; }
+.speed-tile-add:hover { color: var(--accent-primary); }
+.speed-tile-plus { font-size: 15px; line-height: 1; }
+.speed-dial-hide {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+.speed-dial-hide svg { width: 17px; height: 17px; }
+.speed-dial-hide:hover { opacity: 1; color: var(--text); background: rgba(var(--neutral-rgb), 0.12); }
+.speed-dial-show {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: 1px dashed rgba(var(--neutral-rgb), 0.3);
+  border-radius: 999px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.speed-dial-show:hover { color: var(--accent-primary); border-color: rgba(var(--accent-rgb), 0.45); }
+
+
+/* ================================================================
+   MULTI-SELECT — highlighted chips + floating bulk-action bar
+   ================================================================ */
+.page-chip.clickable { user-select: none; }
+.page-chip.selected {
+  background: rgba(var(--accent-rgb), 0.16) !important;
+  box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+.page-chip.selected:hover { background: rgba(var(--accent-rgb), 0.22) !important; }
+
+.selection-bar {
+  position: fixed;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-strong);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: 999px;
+  padding: 8px 10px 8px 18px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  font-family: 'DM Sans', sans-serif;
+}
+.selection-count { font-size: 13px; font-weight: 600; color: var(--text); margin-right: 4px; }
+.selection-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--card-bg);
+  border: 1px solid rgba(var(--neutral-rgb), 0.22);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.selection-btn:hover { background: var(--surface-strong-hover); border-color: rgba(var(--accent-rgb), 0.4); }
+.selection-btn.danger { color: var(--accent-danger); border-color: rgba(var(--danger-rgb), 0.4); }
+.selection-btn.danger:hover { background: rgba(var(--danger-rgb), 0.14); }
+.selection-btn.ghost { background: none; border-color: transparent; color: var(--muted); padding: 7px 10px; }
+.selection-btn.ghost:hover { color: var(--text); background: rgba(var(--neutral-rgb), 0.12); }

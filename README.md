@@ -11,6 +11,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 **See & manage open tabs**
 - Open tabs **grouped by domain**, with homepages (Gmail, X, YouTube, GitHub, LinkedIn…) pulled into their own card
 - **Click any tab to jump to it** across windows — no new tab opened
+- **Multi‑select** — `Ctrl/⌘`‑click to pick tabs (`Shift`‑click for a range), then close, save, or file them into a folder in bulk
 - **Duplicate detection** flags repeated pages, with one‑click cleanup
 - **Close with style** — swoosh sound + confetti burst
 - **Pinned‑tab protection** — “Close all” asks before touching pinned tabs (with Undo)
@@ -31,6 +32,8 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 
 **Make it yours**
 - **11 themes** (9 dark + 2 light) — Default, Graphite, Solarized, Dracula, Tokyo Night, Gruvbox, Catppuccin Mocha, Monokai, Obsidian, Paper, Catppuccin Latte — picked from the top‑right palette and remembered across sessions
+- **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); can be hidden and brought back
+- **Editable header button** — right‑click the shortcut button to change its label and link
 
 **Private by design**
 - **100% local** — saved tabs/folders in `chrome.storage.local`, theme in `localStorage`

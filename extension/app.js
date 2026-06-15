@@ -1794,6 +1794,9 @@ async function renderStaticDashboard() {
   // --- Re-apply the open-tabs filter if one is active ---
   if (openQuery.trim()) applyOpenFilter();
 
+  // --- Re-paint the multi-select highlight + bar for the surviving tabs ---
+  updateSelectionUI();
+
   // Remember what we just rendered so auto-refresh can skip no-op redraws
   lastTabSignature = tabsSignature(openTabs);
 }
@@ -1828,6 +1831,30 @@ document.addEventListener('click', async (e) => {
   // ---- Edit-button dialog ----
   if (action === 'homepage-save')   { saveHomepageFromDialog(); return; }
   if (action === 'homepage-cancel') { closeHomepageDialog();    return; }
+
+  // ---- Speed-dial shortcuts ----
+  if (action === 'speeddial-open') {
+    const url = actionEl.dataset.url;
+    if (!url) return;
+    if (e.ctrlKey || e.metaKey) { try { chrome.tabs.create({ url }); } catch {} }
+    else                        { window.location.href = url; }
+    return;
+  }
+  if (action === 'speeddial-add')    { openSpeedDialDialog(null);                  return; }
+  if (action === 'speeddial-hide')   { setSpeedDialEnabled(false); renderSpeedDial(); showToast('Shortcuts hidden'); return; }
+  if (action === 'speeddial-show')   { setSpeedDialEnabled(true);  renderSpeedDial(); return; }
+  if (action === 'speeddial-save')   { saveSpeedDialFromDialog();                   return; }
+  if (action === 'speeddial-cancel') { closeSpeedDialDialog();                      return; }
+
+  // ---- Multi-select bulk actions ----
+  if (action === 'select-clear') { clearSelection();        return; }
+  if (action === 'select-close') { await closeSelectedTabs(); return; }
+  if (action === 'select-save')  { await saveSelectedTabs(null); return; }
+  if (action === 'select-move')  {
+    const rect = actionEl.getBoundingClientRect();
+    await openSelectionMoveMenu(rect.left, rect.top);
+    return;
+  }
 
   // ---- Reveal the inline "new folder" name input ----
   if (action === 'new-folder') {
@@ -1929,9 +1956,12 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Focus a specific tab ----
+  // ---- Focus a specific tab (modifier-clicks drive multi-select) ----
   if (action === 'focus-tab') {
     const tabUrl = actionEl.dataset.tabUrl;
+    if (e.ctrlKey || e.metaKey) { e.preventDefault(); toggleSelect(tabUrl);   return; }
+    if (e.shiftKey)             { e.preventDefault(); rangeSelectTo(tabUrl);  return; }
+    if (selectedTabUrls.size) clearSelection(); // a plain click drops the selection
     if (tabUrl) await focusTab(tabUrl);
     return;
   }
@@ -2693,12 +2723,20 @@ document.addEventListener('drop', async (e) => {
 // ─── Right-click → open the relevant context menu ──────────────────────────────
 
 document.addEventListener('contextmenu', async (e) => {
-  const item    = e.target.closest('.deferred-item');
-  const folder  = e.target.closest('.folder-header');
-  const homeBtn = e.target.closest('#homepageBtn');
+  const item      = e.target.closest('.deferred-item');
+  const folder    = e.target.closest('.folder-header');
+  const homeBtn   = e.target.closest('#homepageBtn');
+  const speedTile = e.target.closest('.speed-tile[data-action="speeddial-open"]');
   if (homeBtn) {
     e.preventDefault();
     openHomepageDialog();
+  } else if (speedTile) {
+    e.preventDefault();
+    const id = speedTile.dataset.id;
+    showContextMenu(e.clientX, e.clientY, [
+      { label: 'Edit',   onClick: () => openSpeedDialDialog(id) },
+      { label: 'Remove', danger: true, onClick: () => removeSpeedDial(id) },
+    ]);
   } else if (item) {
     e.preventDefault();
     await openTabContextMenu(e.clientX, e.clientY, item.dataset.deferredId);
@@ -2725,6 +2763,8 @@ document.addEventListener('mousedown', (e) => {
   if (cd && cd.style.display !== 'none' && e.target === cd) closeCloseAllDialog();
   const hp = document.getElementById('homepageDialog');
   if (hp && hp.style.display !== 'none' && e.target === hp) closeHomepageDialog();
+  const sd = document.getElementById('speedDialDialog');
+  if (sd && sd.style.display !== 'none' && e.target === sd) closeSpeedDialDialog();
 });
 
 // Enter saves / Escape closes the edit-button dialog inputs
@@ -2733,6 +2773,14 @@ document.addEventListener('keydown', (e) => {
   if (!t || (t.id !== 'homepageLabelInput' && t.id !== 'homepageUrlInput')) return;
   if (e.key === 'Enter')  { e.preventDefault(); saveHomepageFromDialog(); }
   if (e.key === 'Escape') { e.preventDefault(); closeHomepageDialog(); }
+});
+
+// Enter saves / Escape closes the speed-dial editor inputs
+document.addEventListener('keydown', (e) => {
+  const t = e.target;
+  if (!t || (t.id !== 'speedDialLabelInput' && t.id !== 'speedDialUrlInput')) return;
+  if (e.key === 'Enter')  { e.preventDefault(); saveSpeedDialFromDialog(); }
+  if (e.key === 'Escape') { e.preventDefault(); closeSpeedDialDialog(); }
 });
 
 document.addEventListener('keydown', (e) => {
@@ -2745,7 +2793,7 @@ document.addEventListener('keydown', (e) => {
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
 
-  // Esc first dismisses any open menu/dialog; only then enters privacy mode
+  // Esc first dismisses any open menu/dialog/selection; only then enters privacy
   let closed = false;
   const menu = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') { closeContextMenu(); closed = true; }
@@ -2753,6 +2801,11 @@ document.addEventListener('keydown', (e) => {
   if (fd && fd.style.display !== 'none') { closeFolderDeleteDialog(); closed = true; }
   const cd = document.getElementById('closeAllDialog');
   if (cd && cd.style.display !== 'none') { closeCloseAllDialog(); closed = true; }
+  const hp = document.getElementById('homepageDialog');
+  if (hp && hp.style.display !== 'none') { closeHomepageDialog(); closed = true; }
+  const sd = document.getElementById('speedDialDialog');
+  if (sd && sd.style.display !== 'none') { closeSpeedDialDialog(); closed = true; }
+  if (!closed && selectedTabUrls.size) { clearSelection(); closed = true; }
   if (!closed) setPrivacy(true);
 });
 
@@ -2970,6 +3023,285 @@ function saveHomepageFromDialog() {
 
 
 /* ----------------------------------------------------------------
+   MULTI-SELECT — pick several open tabs, then act on them in bulk
+
+   Ctrl/⌘-click toggles a tab into the selection; Shift-click selects a
+   range. A floating bar offers Close / Save for later / Move to folder.
+   Selection is keyed by URL so it survives re-renders (a background tab
+   updating its favicon won't lose your picks).
+   ---------------------------------------------------------------- */
+
+const selectedTabUrls = new Set();
+let lastSelectAnchorUrl = null;
+
+// Every open-tab chip that can be focused/selected (includes hidden overflow)
+function allSelectableChips() {
+  return Array.from(document.querySelectorAll('#openTabsMissions .page-chip[data-action="focus-tab"]'));
+}
+
+/**
+ * updateSelectionUI()
+ *
+ * Prunes the selection down to tabs still on screen, paints the highlight
+ * on selected chips, and shows/hides the floating action bar.
+ */
+function updateSelectionUI() {
+  const chips   = allSelectableChips();
+  const present = new Set(chips.map(c => c.dataset.tabUrl));
+  for (const u of [...selectedTabUrls]) if (!present.has(u)) selectedTabUrls.delete(u);
+
+  chips.forEach(c => c.classList.toggle('selected', selectedTabUrls.has(c.dataset.tabUrl)));
+
+  const bar   = document.getElementById('selectionBar');
+  const count = document.getElementById('selectionCount');
+  const n = selectedTabUrls.size;
+  if (n > 0) {
+    if (count) count.textContent = `${n} selected`;
+    if (bar) bar.style.display = 'flex';
+  } else {
+    if (bar) bar.style.display = 'none';
+    lastSelectAnchorUrl = null;
+  }
+}
+
+function clearSelection() { selectedTabUrls.clear(); updateSelectionUI(); }
+
+function toggleSelect(url) {
+  if (!url) return;
+  if (selectedTabUrls.has(url)) selectedTabUrls.delete(url);
+  else                          selectedTabUrls.add(url);
+  lastSelectAnchorUrl = url;
+  updateSelectionUI();
+}
+
+// Shift-click: select every visible chip between the anchor and this one
+function rangeSelectTo(url) {
+  if (!url) return;
+  const urls = allSelectableChips().filter(c => c.offsetParent !== null).map(c => c.dataset.tabUrl);
+  const b = urls.indexOf(url);
+  if (b === -1) { toggleSelect(url); return; }
+  const a = lastSelectAnchorUrl ? urls.indexOf(lastSelectAnchorUrl) : -1;
+  if (a === -1) { toggleSelect(url); return; }
+  const [lo, hi] = a < b ? [a, b] : [b, a];
+  for (let i = lo; i <= hi; i++) selectedTabUrls.add(urls[i]);
+  updateSelectionUI();
+}
+
+// Chrome tab ids for the currently-selected URLs (a URL may match several tabs)
+async function selectedTabIds() {
+  const urlSet = new Set(selectedTabUrls);
+  const all = await chrome.tabs.query({});
+  return all.filter(t => urlSet.has(t.url)).map(t => t.id);
+}
+
+/**
+ * closeSelectedTabs()
+ *
+ * Closes every selected tab at once, with confetti and an Undo that
+ * reopens them.
+ */
+async function closeSelectedTabs() {
+  const urls = [...selectedTabUrls];
+  if (!urls.length) return;
+  const ids = await selectedTabIds();
+  if (!ids.length) { clearSelection(); return; }
+
+  try { await chrome.tabs.remove(ids); } catch {}
+  await fetchOpenTabs();
+  playCloseSound();
+
+  const bar = document.getElementById('selectionBar');
+  if (bar) { const r = bar.getBoundingClientRect(); shootConfetti(r.left + r.width / 2, r.top); }
+
+  clearSelection();
+  await renderStaticDashboard();
+  showToast(`Closed ${urls.length} tab${urls.length !== 1 ? 's' : ''}`, async () => {
+    for (const u of urls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+  });
+}
+
+/**
+ * saveSelectedTabs(folderId)
+ *
+ * Saves every selected tab into a folder (or the inbox when folderId is
+ * null), then closes them — mirroring Save-for-later, but in bulk.
+ */
+async function saveSelectedTabs(folderId) {
+  const urls = [...selectedTabUrls];
+  if (!urls.length) return;
+
+  let folderName = null;
+  if (folderId) {
+    const f = (await getFolders()).find(x => x.id === folderId);
+    folderName = f ? f.name : null;
+  }
+
+  const titleFor = (u) => { const t = openTabs.find(x => x.url === u); return t ? (t.title || u) : u; };
+  const savedIds = [];
+  for (const u of urls) {
+    try { savedIds.push(await saveTabForLater({ url: u, title: titleFor(u) }, folderId || null)); } catch {}
+  }
+
+  const ids = await selectedTabIds();
+  if (ids.length) { try { await chrome.tabs.remove(ids); } catch {} }
+  await fetchOpenTabs();
+
+  clearSelection();
+  await renderStaticDashboard();
+
+  const dest = folderName ? `“${folderName}”` : 'inbox';
+  showToast(`Saved ${urls.length} tab${urls.length !== 1 ? 's' : ''} to ${dest}`, async () => {
+    for (const u of urls)      { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+    for (const id of savedIds) { try { await dismissSavedTab(id); } catch {} }
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+  });
+}
+
+/**
+ * openSelectionMoveMenu(x, y)
+ *
+ * Folder picker for the selected tabs (inbox, an existing folder, or a
+ * brand-new one).
+ */
+async function openSelectionMoveMenu(x, y) {
+  const folders = await getFolders();
+  const items = [];
+  items.push({ label: '↩  Inbox', onClick: () => saveSelectedTabs(null) });
+  if (folders.length) {
+    items.push({ separator: true }, { heading: true, label: 'Folders' });
+    for (const f of folders) {
+      items.push({ label: '🗂  ' + f.name, onClick: () => saveSelectedTabs(f.id) });
+    }
+  }
+  items.push({ separator: true });
+  items.push({ label: '＋  New folder…', onClick: async () => {
+    const name = (window.prompt('New folder name:') || '').trim();
+    if (!name) return;
+    const folder = await createFolder(name);
+    if (folder) await saveSelectedTabs(folder.id);
+  }});
+  showContextMenu(x, y, items);
+}
+
+
+/* ----------------------------------------------------------------
+   SPEED DIAL — an editable grid of site shortcuts (saved in localStorage)
+
+   Stored as JSON under "tabout-speeddial"; visibility under
+   "tabout-speeddial-enabled" (default on). Tiles open in the current tab,
+   or a new tab with Ctrl/⌘. The whole strip can be hidden and brought back.
+   ---------------------------------------------------------------- */
+
+const SPEEDDIAL_KEY         = 'tabout-speeddial';
+const SPEEDDIAL_ENABLED_KEY = 'tabout-speeddial-enabled';
+
+const ICON_EYE_OFF = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>`;
+
+function getSpeedDialItems() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SPEEDDIAL_KEY) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+function saveSpeedDialItems(items) {
+  try { localStorage.setItem(SPEEDDIAL_KEY, JSON.stringify(items)); } catch {}
+}
+function speedDialEnabled() {
+  try { return localStorage.getItem(SPEEDDIAL_ENABLED_KEY) !== '0'; } catch { return true; }
+}
+function setSpeedDialEnabled(on) {
+  try { localStorage.setItem(SPEEDDIAL_ENABLED_KEY, on ? '1' : '0'); } catch {}
+}
+
+/**
+ * renderSpeedDial()
+ *
+ * Paints the shortcut strip (or, when disabled, a slim "＋ Shortcuts"
+ * re-enable button).
+ */
+function renderSpeedDial() {
+  const el = document.getElementById('speedDial');
+  if (!el) return;
+
+  if (!speedDialEnabled()) {
+    el.classList.add('collapsed');
+    el.innerHTML = `<button class="speed-dial-show" data-action="speeddial-show" type="button">＋ Shortcuts</button>`;
+    el.style.display = 'flex';
+    return;
+  }
+
+  el.classList.remove('collapsed');
+  const tiles = getSpeedDialItems().map(it => {
+    const safeUrl   = escapeHtml(it.url || '');
+    const safeLabel = escapeHtml(it.label || it.url || '');
+    const fav       = favIcon(it.url, 32);
+    return `<button class="speed-tile" data-action="speeddial-open" data-id="${escapeHtml(it.id)}" data-url="${safeUrl}" title="${safeLabel}" type="button">
+      ${fav ? `<img class="speed-tile-fav" src="${fav}" alt="">` : ''}
+      <span class="speed-tile-label">${safeLabel}</span>
+    </button>`;
+  }).join('');
+
+  const addTile = `<button class="speed-tile speed-tile-add" data-action="speeddial-add" title="Add shortcut" type="button">
+    <span class="speed-tile-plus">＋</span><span class="speed-tile-label">Add</span>
+  </button>`;
+  const hideBtn = `<button class="speed-dial-hide" data-action="speeddial-hide" title="Hide shortcuts" type="button">${ICON_EYE_OFF}</button>`;
+
+  el.innerHTML = `<div class="speed-dial-tiles">${tiles}${addTile}</div>${hideBtn}`;
+  el.style.display = 'flex';
+}
+
+let pendingSpeedDialId = null;
+
+function openSpeedDialDialog(id) {
+  pendingSpeedDialId = id || null;
+  const item = id ? getSpeedDialItems().find(i => i.id === id) : null;
+  const title = document.getElementById('speedDialDialogTitle');
+  const li    = document.getElementById('speedDialLabelInput');
+  const ui    = document.getElementById('speedDialUrlInput');
+  if (title) title.textContent = item ? 'Edit shortcut' : 'Add shortcut';
+  if (li) li.value = item ? item.label : '';
+  if (ui) ui.value = item ? item.url   : '';
+  const d = document.getElementById('speedDialDialog');
+  if (d) d.style.display = 'flex';
+  if (li) { li.focus(); li.select(); }
+}
+
+function closeSpeedDialDialog() {
+  const d = document.getElementById('speedDialDialog');
+  if (d) d.style.display = 'none';
+  pendingSpeedDialId = null;
+}
+
+function saveSpeedDialFromDialog() {
+  let label = (document.getElementById('speedDialLabelInput')?.value || '').trim();
+  let url   = (document.getElementById('speedDialUrlInput')?.value   || '').trim();
+  if (!url) { closeSpeedDialDialog(); return; }              // URL is required
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;    // tolerate bare URLs
+  if (!label) { try { label = new URL(url).hostname.replace(/^www\./, ''); } catch { label = url; } }
+
+  const items = getSpeedDialItems();
+  if (pendingSpeedDialId) {
+    const it = items.find(i => i.id === pendingSpeedDialId);
+    if (it) { it.label = label; it.url = url; }
+  } else {
+    items.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), label, url });
+  }
+  saveSpeedDialItems(items);
+  closeSpeedDialDialog();
+  renderSpeedDial();
+  showToast('Shortcut saved');
+}
+
+function removeSpeedDial(id) {
+  saveSpeedDialItems(getSpeedDialItems().filter(i => i.id !== id));
+  renderSpeedDial();
+}
+
+
+/* ----------------------------------------------------------------
    AUTO-REFRESH — keep the dashboard in sync with real tab changes
    ---------------------------------------------------------------- */
 
@@ -2982,7 +3314,7 @@ function autoRefreshBlocked() {
   if (privacyOn) return true;
   const menu    = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') return true;
-  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'homepageDialog']) {
+  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'homepageDialog', 'speedDialDialog']) {
     const d = document.getElementById(id);
     if (d && d.style.display !== 'none') return true;
   }
@@ -3067,5 +3399,8 @@ try {
 
 // Apply the saved (editable) header-button label + URL
 applyHomepageButton();
+
+// Paint the speed-dial shortcut strip
+renderSpeedDial();
 
 renderDashboard();

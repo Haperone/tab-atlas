@@ -61,6 +61,13 @@
   </div>
 
   <!-- ================================================================
+       SPEED DIAL — a grid of editable site shortcuts.
+       Rendered by renderSpeedDial(); can be hidden (eye-off) and brought
+       back ("＋ Shortcuts"). Tiles open in the current tab (Ctrl/⌘ = new tab).
+       ================================================================ -->
+  <div class="speed-dial" id="speedDial" style="display:none"></div>
+
+  <!-- ================================================================
        MAIN CONTENT AREA — two-column layout
        Left: open tabs (domain/mission cards)
        Right: saved for later checklist
@@ -199,6 +206,27 @@
 </div>
 
 <!-- ================================================================
+     SPEED-DIAL SHORTCUT EDITOR — add or edit a shortcut tile.
+     ================================================================ -->
+<div class="dialog-overlay" id="speedDialDialog" style="display:none">
+  <div class="dialog">
+    <div class="dialog-title" id="speedDialDialogTitle">Add shortcut</div>
+    <div class="dialog-field">
+      <label for="speedDialLabelInput">Label</label>
+      <input type="text" id="speedDialLabelInput" class="dialog-input" maxlength="24" placeholder="GitHub">
+    </div>
+    <div class="dialog-field">
+      <label for="speedDialUrlInput">URL</label>
+      <input type="text" id="speedDialUrlInput" class="dialog-input" placeholder="https://github.com">
+    </div>
+    <div class="dialog-actions">
+      <button class="dialog-btn" data-action="speeddial-cancel" type="button">Cancel</button>
+      <button class="dialog-btn" data-action="speeddial-save" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
      FOLDER DELETE DIALOG — asks whether to keep tabs (move to inbox)
      or delete them along with the folder. Hidden by default.
      ================================================================ -->
@@ -247,6 +275,19 @@
   <div class="privacy-clock" id="privacyClock">--:--</div>
   <div class="privacy-date" id="privacyDate"></div>
   <div class="privacy-hint">Press Esc to return</div>
+</div>
+
+<!-- ================================================================
+     SELECTION BAR — appears when open tabs are multi-selected
+     (Ctrl/⌘-click to add, Shift-click for a range). Bulk actions for
+     the current selection. Shown/hidden by updateSelectionUI() in app.js.
+     ================================================================ -->
+<div class="selection-bar" id="selectionBar" style="display:none">
+  <span class="selection-count" id="selectionCount">0 selected</span>
+  <button class="selection-btn" data-action="select-save" type="button">Save for later</button>
+  <button class="selection-btn" data-action="select-move" type="button">Move to folder…</button>
+  <button class="selection-btn danger" data-action="select-close" type="button">Close</button>
+  <button class="selection-btn ghost" data-action="select-clear" type="button">Clear</button>
 </div>
 
 <!-- ================================================================
