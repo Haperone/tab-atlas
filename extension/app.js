@@ -1841,8 +1841,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (action === 'speeddial-add')    { openSpeedDialDialog(null);                  return; }
-  if (action === 'speeddial-hide')   { setSpeedDialEnabled(false); renderSpeedDial(); showToast('Shortcuts hidden'); return; }
-  if (action === 'speeddial-show')   { setSpeedDialEnabled(true);  renderSpeedDial(); return; }
+  if (action === 'speeddial-hide')   { setSpeedDialEnabled(false); renderSpeedDial(); showToast('Shortcuts hidden — bring them back from the palette menu'); return; }
   if (action === 'speeddial-save')   { saveSpeedDialFromDialog();                   return; }
   if (action === 'speeddial-cancel') { closeSpeedDialDialog();                      return; }
 
@@ -2964,6 +2963,12 @@ function openThemeMenu(x, y) {
   };
   addGroup('Dark', 'dark');
   addGroup('Light', 'light');
+  // Layout toggle: show/hide the speed-dial shortcut strip
+  items.push({ separator: true });
+  items.push({
+    label: speedDialEnabled() ? 'Hide shortcuts' : 'Show shortcuts',
+    onClick: () => { setSpeedDialEnabled(!speedDialEnabled()); renderSpeedDial(); },
+  });
   showContextMenu(x, y, items);
 }
 
@@ -3219,21 +3224,19 @@ function setSpeedDialEnabled(on) {
 /**
  * renderSpeedDial()
  *
- * Paints the shortcut strip (or, when disabled, a slim "＋ Shortcuts"
- * re-enable button).
+ * Paints the shortcut strip. When disabled the element is removed from the
+ * layout entirely (no placeholder); bring it back from the theme menu.
  */
 function renderSpeedDial() {
   const el = document.getElementById('speedDial');
   if (!el) return;
 
   if (!speedDialEnabled()) {
-    el.classList.add('collapsed');
-    el.innerHTML = `<button class="speed-dial-show" data-action="speeddial-show" type="button">＋ Shortcuts</button>`;
-    el.style.display = 'flex';
+    el.style.display = 'none';
+    el.innerHTML = '';
     return;
   }
 
-  el.classList.remove('collapsed');
   const tiles = getSpeedDialItems().map(it => {
     const safeUrl   = escapeHtml(it.url || '');
     const safeLabel = escapeHtml(it.label || it.url || '');

@@ -32,7 +32,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 
 **Make it yours**
 - **11 themes** (9 dark + 2 light) — Default, Graphite, Solarized, Dracula, Tokyo Night, Gruvbox, Catppuccin Mocha, Monokai, Obsidian, Paper, Catppuccin Latte — picked from the top‑right palette and remembered across sessions
-- **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); can be hidden and brought back
+- **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); remove it entirely with the eye icon, or bring it back from the palette menu
 - **Editable header button** — right‑click the shortcut button to change its label and link
 
 **Private by design**
