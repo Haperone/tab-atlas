@@ -2074,6 +2074,11 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* Restore privacy mode before first paint (set by theme-init.js on <html>),
+   so a new tab never flashes the dashboard. The opaque clock screen covers
+   everything; !important overrides the element's inline display:none. */
+html[data-privacy="on"] .privacy-screen { display: flex !important; }
+
 /* Full-screen clock that hides the dashboard during screen sharing */
 .privacy-screen {
   position: fixed;

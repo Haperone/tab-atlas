@@ -2908,6 +2908,9 @@ function paintPrivacyClock() {
 
 function setPrivacy(on) {
   privacyOn = on;
+  // Persist + mirror onto <html> so a new tab restores the same state pre-paint
+  try { localStorage.setItem('tabout-privacy', on ? '1' : '0'); } catch {}
+  document.documentElement.dataset.privacy = on ? 'on' : '';
   const screen = document.getElementById('privacyScreen');
   if (!screen) return;
   if (on) {
@@ -3415,5 +3418,9 @@ applyHomepageButton();
 // Paint the speed-dial shortcut strip + sync its corner toggle tooltip
 renderSpeedDial();
 updateShortcutsToggleTitle();
+
+// Restore persisted privacy mode (the clock screen is already up pre-paint;
+// this starts its ticking and syncs the privacyOn flag)
+try { if (localStorage.getItem('tabout-privacy') === '1') setPrivacy(true); } catch {}
 
 renderDashboard();
