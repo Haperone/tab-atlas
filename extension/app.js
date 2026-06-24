@@ -1214,9 +1214,11 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
   const hiddenChips = hiddenTabs.map(tab => {
     const label    = cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), '');
     const count    = urlCounts[tab.url] || 1;
-    const dupeTag  = count > 1 ? ` <span class="chip-dupe-badge">(${count}x)</span>` : '';
+    const safeUrl  = escapeHtml(tab.url || '');
+    const dupeTag  = count > 1
+      ? ` <button class="chip-dupe-badge" data-action="dedup-one-url" data-dupe-url="${safeUrl}" title="Close ${count - 1} duplicate${count - 1 !== 1 ? 's' : ''}, keep one">${count}×</button>`
+      : '';
     const chipClass = count > 1 ? ' chip-has-dupes' : '';
-    const safeUrl   = escapeHtml(tab.url || '');
     const safeTitle = escapeHtml(label);
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
@@ -1295,9 +1297,11 @@ function renderDomainCard(group) {
       if (parsed.hostname === 'localhost' && parsed.port) label = `${parsed.port} ${label}`;
     } catch {}
     const count    = urlCounts[tab.url];
-    const dupeTag  = count > 1 ? ` <span class="chip-dupe-badge">(${count}x)</span>` : '';
+    const safeUrl  = escapeHtml(tab.url || '');
+    const dupeTag  = count > 1
+      ? ` <button class="chip-dupe-badge" data-action="dedup-one-url" data-dupe-url="${safeUrl}" title="Close ${count - 1} duplicate${count - 1 !== 1 ? 's' : ''}, keep one">${count}×</button>`
+      : '';
     const chipClass = count > 1 ? ' chip-has-dupes' : '';
-    const safeUrl   = escapeHtml(tab.url || '');
     const safeTitle = escapeHtml(label);
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
@@ -2171,6 +2175,28 @@ document.addEventListener('click', async (e) => {
     }
 
     showToast('Closed duplicates, kept one copy each');
+    return;
+  }
+
+  // ---- Close duplicates of one URL (click the “2×” badge on a tab) ----
+  if (action === 'dedup-one-url') {
+    e.stopPropagation(); // don't also focus the tab
+    const url = actionEl.dataset.dupeUrl;
+    if (!url) return;
+
+    // Count how many copies there are, so Undo can reopen the closed ones
+    const copies = openTabs.filter(t => t.url === url).length;
+    const extras = Math.max(0, copies - 1);
+
+    await closeDuplicateTabs([url], true);
+    playCloseSound();
+    await renderStaticDashboard();
+
+    showToast(`Closed ${extras} duplicate${extras !== 1 ? 's' : ''}, kept one`, async () => {
+      for (let i = 0; i < extras; i++) { try { await chrome.tabs.create({ url, active: false }); } catch {} }
+      await fetchOpenTabs();
+      await renderStaticDashboard();
+    });
     return;
   }
 
