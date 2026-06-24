@@ -2629,8 +2629,17 @@ document.addEventListener('dragstart', (e) => {
     dragData = { kind: 'saved', id: item.dataset.deferredId };
     item.classList.add('dragging');
   } else if (chip) {
-    dragData = { kind: 'open', url: chip.dataset.tabUrl, title: chip.dataset.tabTitle || chip.dataset.tabUrl };
-    chip.classList.add('dragging');
+    const url = chip.dataset.tabUrl;
+    // Dragging a chip that's part of a 2+ selection drags the whole group
+    if (selectedTabUrls.size > 1 && selectedTabUrls.has(url)) {
+      dragData = { kind: 'open-multi', urls: [...selectedTabUrls] };
+      allSelectableChips().forEach(c => {
+        if (selectedTabUrls.has(c.dataset.tabUrl)) c.classList.add('dragging');
+      });
+    } else {
+      dragData = { kind: 'open', url, title: chip.dataset.tabTitle || url };
+      chip.classList.add('dragging');
+    }
   } else if (header) {
     dragData = { kind: 'folder', id: header.dataset.folderId };
     const fEl = header.closest('.folder');
@@ -2640,7 +2649,7 @@ document.addEventListener('dragstart', (e) => {
   }
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragData.id || dragData.url || '');
+    e.dataTransfer.setData('text/plain', dragData.id || dragData.url || (dragData.urls && dragData.urls[0]) || '');
   }
 });
 
@@ -2724,6 +2733,10 @@ document.addEventListener('drop', async (e) => {
     await renderStaticDashboard();
     flashItem(newId);
     showToast(targetFolderId ? `Saved to “${tname}”` : 'Saved to inbox');
+  } else if (data.kind === 'open-multi') {
+    // Drop a multi-selection: save every picked tab into the target, then close
+    // them. saveSelectedTabs reads the (still-intact) selection and toasts/undos.
+    await saveSelectedTabs(targetFolderId);
   }
 });
 
