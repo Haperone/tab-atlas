@@ -1161,6 +1161,10 @@ const ICONS = {
    ---------------------------------------------------------------- */
 let domainGroups = [];
 
+// Domain cards whose "+N more" overflow the user has expanded — remembered so
+// re-renders (dedup, auto-refresh) keep them open instead of snapping shut.
+const expandedOverflowCards = new Set();
+
 
 /* ----------------------------------------------------------------
    HELPER: filter out browser-internal pages
@@ -1210,7 +1214,7 @@ function checkTabOutDupes() {
    OVERFLOW CHIPS ("+N more" expand button in domain cards)
    ---------------------------------------------------------------- */
 
-function buildOverflowChips(hiddenTabs, urlCounts = {}) {
+function buildOverflowChips(hiddenTabs, urlCounts = {}, expanded = false) {
   const hiddenChips = hiddenTabs.map(tab => {
     const label    = cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), '');
     const count    = urlCounts[tab.url] || 1;
@@ -1238,10 +1242,10 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
   }).join('');
 
   return `
-    <div class="page-chips-overflow" style="display:none">${hiddenChips}</div>
-    <div class="page-chip page-chip-overflow clickable" data-action="expand-chips">
+    <div class="page-chips-overflow" style="display:${expanded ? 'contents' : 'none'}">${hiddenChips}</div>
+    ${expanded ? '' : `<div class="page-chip page-chip-overflow clickable" data-action="expand-chips">
       <span class="chip-text">+${hiddenTabs.length} more</span>
-    </div>`;
+    </div>`}`;
 }
 
 
@@ -1318,7 +1322,7 @@ function renderDomainCard(group) {
         </button>
       </div>
     </div>`;
-  }).join('') + (extraCount > 0 ? buildOverflowChips(uniqueTabs.slice(8), urlCounts) : '');
+  }).join('') + (extraCount > 0 ? buildOverflowChips(uniqueTabs.slice(8), urlCounts, expandedOverflowCards.has(stableId)) : '');
 
   let actionsHtml = `
     <button class="action-btn close-tabs" data-action="close-domain-tabs" data-domain-id="${stableId}">
@@ -1948,8 +1952,10 @@ document.addEventListener('click', async (e) => {
 
   const card = actionEl.closest('.mission-card');
 
-  // ---- Expand overflow chips ("+N more") ----
+  // ---- Expand overflow chips ("+N more") — remember it so re-renders keep it open ----
   if (action === 'expand-chips') {
+    const expandCard = actionEl.closest('.mission-card');
+    if (expandCard && expandCard.dataset.domainId) expandedOverflowCards.add(expandCard.dataset.domainId);
     const overflowContainer = actionEl.parentElement.querySelector('.page-chips-overflow');
     if (overflowContainer) {
       overflowContainer.style.display = 'contents';
