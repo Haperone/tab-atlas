@@ -34,6 +34,278 @@ function tabsSignature(list) {
   return (list || []).map(t => `${t.id}|${t.url || ''}|${t.pinned ? 1 : 0}`).join('§');
 }
 
+function isInternalBrowserUrl(url) {
+  const value = url || '';
+  return (
+    !value ||
+    value.startsWith('chrome://') ||
+    value.startsWith('chrome-extension://') ||
+    value.startsWith('about:') ||
+    value.startsWith('edge://') ||
+    value.startsWith('brave://')
+  );
+}
+
+function isSnapshotTab(tab) {
+  return tab && tab.url && !isInternalBrowserUrl(tab.url);
+}
+
+const WORKSPACE_SNAPSHOTS_KEY = 'workspaceSnapshots';
+
+async function getWorkspaceSnapshots() {
+  const data = await chrome.storage.local.get(WORKSPACE_SNAPSHOTS_KEY);
+  const snapshots = data[WORKSPACE_SNAPSHOTS_KEY];
+  return Array.isArray(snapshots) ? snapshots : [];
+}
+
+async function setWorkspaceSnapshots(snapshots) {
+  await chrome.storage.local.set({ [WORKSPACE_SNAPSHOTS_KEY]: snapshots });
+}
+
+function snapshotDefaultName() {
+  return `Workspace ${new Date().toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
+}
+
+async function captureWorkspaceSnapshot(name) {
+  const [windows, groups] = await Promise.all([
+    chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }),
+    chrome.tabGroups ? chrome.tabGroups.query({}) : Promise.resolve([]),
+  ]);
+
+  const groupById = {};
+  for (const group of groups || []) {
+    groupById[group.id] = {
+      title: group.title || '',
+      color: group.color || 'grey',
+      collapsed: !!group.collapsed,
+    };
+  }
+
+  const capturedWindows = windows
+    .map(win => {
+      const tabs = (win.tabs || [])
+        .filter(isSnapshotTab)
+        .sort((a, b) => (a.index || 0) - (b.index || 0))
+        .map(tab => ({
+          url: tab.url,
+          title: tab.title || tab.url,
+          pinned: !!tab.pinned,
+          active: !!tab.active,
+          index: tab.index || 0,
+          groupKey: tab.groupId != null && tab.groupId >= 0 ? String(tab.groupId) : null,
+        }));
+
+      return {
+        id: win.id,
+        state: win.state || 'normal',
+        left: win.left,
+        top: win.top,
+        width: win.width,
+        height: win.height,
+        focused: !!win.focused,
+        tabs,
+      };
+    })
+    .filter(win => win.tabs.length > 0);
+
+  const usedGroupKeys = new Set();
+  capturedWindows.forEach(win => {
+    win.tabs.forEach(tab => {
+      if (tab.groupKey) usedGroupKeys.add(tab.groupKey);
+    });
+  });
+
+  const capturedGroups = {};
+  for (const key of usedGroupKeys) {
+    capturedGroups[key] = groupById[key] || { title: '', color: 'grey', collapsed: false };
+  }
+
+  const tabCount = capturedWindows.reduce((sum, win) => sum + win.tabs.length, 0);
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    name: (name || snapshotDefaultName()).trim() || snapshotDefaultName(),
+    createdAt: new Date().toISOString(),
+    windowCount: capturedWindows.length,
+    tabCount,
+    windows: capturedWindows,
+    groups: capturedGroups,
+  };
+}
+
+async function saveCurrentWorkspaceSnapshot() {
+  const defaultName = snapshotDefaultName();
+  const name = (window.prompt('Snapshot name', defaultName) || '').trim();
+  if (!name) return;
+
+  const snapshot = await captureWorkspaceSnapshot(name);
+  if (!snapshot.tabCount) {
+    showToast('No restorable tabs to snapshot');
+    return;
+  }
+
+  const snapshots = await getWorkspaceSnapshots();
+  snapshots.unshift(snapshot);
+  await setWorkspaceSnapshots(snapshots.slice(0, 20));
+  await renderWorkspacePanel();
+  showToast(`Saved “${snapshot.name}”`);
+}
+
+async function deleteWorkspaceSnapshot(snapshotId) {
+  const snapshots = await getWorkspaceSnapshots();
+  const next = snapshots.filter(s => s.id !== snapshotId);
+  await setWorkspaceSnapshots(next);
+  await renderWorkspacePanel();
+  showToast('Snapshot deleted');
+}
+
+async function renameWorkspaceSnapshot(snapshotId) {
+  const snapshots = await getWorkspaceSnapshots();
+  const snapshot = snapshots.find(s => s.id === snapshotId);
+  if (!snapshot) return;
+  const name = (window.prompt('Snapshot name', snapshot.name || 'Workspace') || '').trim();
+  if (!name) return;
+  snapshot.name = name;
+  await setWorkspaceSnapshots(snapshots);
+  await renderWorkspacePanel();
+  showToast('Snapshot renamed');
+}
+
+async function restoreWorkspaceSnapshot(snapshotId) {
+  const snapshots = await getWorkspaceSnapshots();
+  const snapshot = snapshots.find(s => s.id === snapshotId);
+  if (!snapshot) return;
+  if (!window.confirm(`Open “${snapshot.name}” as ${snapshot.windowCount} saved window${snapshot.windowCount !== 1 ? 's' : ''}? Existing tabs stay open.`)) return;
+
+  let firstWindowId = null;
+  for (const savedWindow of snapshot.windows || []) {
+    const tabs = (savedWindow.tabs || []).filter(t => t.url);
+    if (!tabs.length) continue;
+
+    const first = tabs[0];
+    const createOptions = {
+      url: first.url,
+      focused: false,
+    };
+    if (savedWindow.state === 'normal') {
+      for (const key of ['left', 'top', 'width', 'height']) {
+        if (typeof savedWindow[key] === 'number') createOptions[key] = savedWindow[key];
+      }
+    }
+
+    const createdWindow = await chrome.windows.create(createOptions);
+    if (!firstWindowId) firstWindowId = createdWindow.id;
+    const createdTabs = [];
+    if (createdWindow.tabs && createdWindow.tabs[0]) {
+      createdTabs.push({ saved: first, tab: createdWindow.tabs[0] });
+      if (first.pinned) await chrome.tabs.update(createdWindow.tabs[0].id, { pinned: true });
+    }
+
+    for (const savedTab of tabs.slice(1)) {
+      const createdTab = await chrome.tabs.create({
+        windowId: createdWindow.id,
+        url: savedTab.url,
+        active: false,
+      });
+      if (savedTab.pinned && createdTab?.id != null) await chrome.tabs.update(createdTab.id, { pinned: true });
+      createdTabs.push({ saved: savedTab, tab: createdTab });
+    }
+
+    const groupsByKey = {};
+    for (const pair of createdTabs) {
+      if (!pair.saved.groupKey || !pair.tab || pair.tab.id == null) continue;
+      (groupsByKey[pair.saved.groupKey] ||= []).push(pair.tab.id);
+    }
+
+    for (const [groupKey, tabIds] of Object.entries(groupsByKey)) {
+      if (!tabIds.length || !chrome.tabGroups) continue;
+      try {
+        const newGroupId = await chrome.tabs.group({ tabIds });
+        const savedGroup = snapshot.groups?.[groupKey] || {};
+        await chrome.tabGroups.update(newGroupId, {
+          title: savedGroup.title || '',
+          color: savedGroup.color || 'grey',
+          collapsed: !!savedGroup.collapsed,
+        });
+      } catch (err) {
+        console.warn('[tab-atlas] Could not restore tab group:', err);
+      }
+    }
+
+    const activePair = createdTabs.find(pair => pair.saved.active) || createdTabs[0];
+    if (activePair?.tab?.id != null) {
+      await chrome.tabs.update(activePair.tab.id, { active: true });
+    }
+
+    if (savedWindow.state && savedWindow.state !== 'normal') {
+      try { await chrome.windows.update(createdWindow.id, { state: savedWindow.state }); } catch {}
+    }
+  }
+
+  if (firstWindowId != null) {
+    try { await chrome.windows.update(firstWindowId, { focused: true }); } catch {}
+  }
+  await fetchOpenTabs();
+  await renderStaticDashboard();
+  showToast(`Restored “${snapshot.name}”`);
+}
+
+async function renderWorkspacePanel() {
+  const panel = document.getElementById('workspacePanel');
+  const list = document.getElementById('workspaceList');
+  if (!panel || !list) return;
+
+  let snapshots = [];
+  try { snapshots = await getWorkspaceSnapshots(); } catch {}
+
+  if (!snapshots.length) {
+    list.innerHTML = '<div class="workspace-empty">No saved states yet.</div>';
+    return;
+  }
+
+  list.innerHTML = snapshots.map(snapshot => {
+    const safeName = escapeHtml(snapshot.name || 'Workspace');
+    const created = timeAgo(snapshot.createdAt);
+    return `
+      <div class="workspace-item">
+        <div class="workspace-item-main" title="${safeName}">
+          <div class="workspace-item-title">${safeName}</div>
+          <div class="workspace-item-meta">${snapshot.windowCount || 0} window${snapshot.windowCount !== 1 ? 's' : ''} · ${snapshot.tabCount || 0} tab${snapshot.tabCount !== 1 ? 's' : ''} · ${created}</div>
+        </div>
+        <div class="workspace-item-actions">
+          <button class="workspace-mini-btn workspace-icon-btn" data-action="restore-workspace-snapshot" data-snapshot-id="${snapshot.id}" type="button" aria-label="Open ${safeName}" title="Open">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25" /></svg>
+          </button>
+          <button class="workspace-mini-btn workspace-icon-btn" data-action="rename-workspace-snapshot" data-snapshot-id="${snapshot.id}" type="button" aria-label="Rename ${safeName}" title="Rename">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.1" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" /></svg>
+          </button>
+          <button class="workspace-mini-btn workspace-delete-btn danger" data-action="delete-workspace-snapshot" data-snapshot-id="${snapshot.id}" type="button" aria-label="Delete ${safeName}" title="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        </div>`;
+  }).join('');
+}
+
+function setWorkspaceDrawerOpen(open) {
+  const drawer = document.getElementById('workspaceDrawer');
+  const handles = document.querySelectorAll('[data-action="toggle-workspace-drawer"]');
+  if (!drawer) return;
+  drawer.style.display = open ? 'grid' : 'none';
+  document.body.classList.toggle('workspace-drawer-open', open);
+  handles.forEach(handle => handle.setAttribute('aria-expanded', open ? 'true' : 'false'));
+  if (open) positionWorkspaceDrawer();
+}
+
+function toggleWorkspaceDrawer() {
+  const drawer = document.getElementById('workspaceDrawer');
+  setWorkspaceDrawerOpen(!(drawer && drawer.style.display !== 'none'));
+}
+
 /**
  * fetchOpenTabs()
  *
@@ -629,12 +901,39 @@ async function groupToFolder(groupId) {
   showToast(`Saved “${group.title || 'group'}” to a folder`);
 }
 
+async function renameTabGroup(groupId) {
+  if (!chrome.tabGroups) return;
+  let group;
+  try { group = await chrome.tabGroups.get(groupId); } catch { return; }
+  const current = group.title || 'Tab group';
+  const title = (window.prompt('Group name', current) || '').trim();
+  if (!title) return;
+  await chrome.tabGroups.update(groupId, { title });
+  await renderTabGroupsBar();
+  showToast(`Renamed group to “${title}”`);
+}
+
+function openTabGroupColorMenu(x, y, groupId) {
+  const items = Object.keys(CHROME_GROUP_COLORS).map(name => ({
+    label: name[0].toUpperCase() + name.slice(1),
+    swatchColor: groupColorToHex(name) || '#9aa0a6',
+    onClick: async () => {
+      try {
+        await chrome.tabGroups.update(groupId, { color: name });
+        await renderTabGroupsBar();
+        showToast(`Group color: ${name}`);
+      } catch {}
+    },
+  }));
+  showContextMenu(x, y, items);
+}
+
 /**
  * renderTabGroupsBar()
  *
- * Shows a bar of the currently-open Chrome tab groups (only when any exist).
- * Each chip saves that group into a folder when clicked — a discoverable
- * entry point for the group → folder conversion.
+ * Shows the currently-open Chrome tab groups as a compact control center.
+ * It keeps the original group → folder conversion, and adds live native
+ * controls: focus, collapse/expand, rename and recolor.
  */
 async function renderTabGroupsBar() {
   const bar     = document.getElementById('tabGroupsBar');
@@ -644,18 +943,93 @@ async function renderTabGroupsBar() {
   let groups = [];
   try { if (typeof chrome !== 'undefined' && chrome.tabGroups) groups = await chrome.tabGroups.query({}); } catch {}
 
-  if (!groups.length) { bar.style.display = 'none'; return; }
+  if (!groups.length) {
+    bar.style.display = 'none';
+    updateLayoutWidth();
+    return;
+  }
 
-  chipsEl.innerHTML = groups.map(g => {
-    const hex  = groupColorToHex(g.color) || '#9aa0a6';
-    const name = escapeHtml(g.title || 'group');
-    return `<button class="group-chip" data-action="group-to-folder" data-group-id="${g.id}" title="Save “${name}” to a folder">
-      <span class="group-chip-dot" style="background:${hex}"></span>
-      <span class="group-chip-name">${name}</span>
-      <span class="group-chip-arrow">→ folder</span>
-    </button>`;
+  const withCounts = [];
+  for (const group of groups) {
+    let tabs = [];
+    try { tabs = await chrome.tabs.query({ groupId: group.id }); } catch {}
+    withCounts.push({ group, tabs });
+  }
+
+  chipsEl.innerHTML = withCounts.map(({ group, tabs }) => {
+    const hex  = groupColorToHex(group.color) || '#9aa0a6';
+    const name = escapeHtml(group.title || 'Untitled group');
+    const actionLabel = group.collapsed ? 'Expand group' : 'Collapse group';
+    const collapseText = group.collapsed ? '+' : '-';
+    return `<div class="group-control" data-group-id="${group.id}">
+      <div class="group-control-edge" style="background:${hex}"></div>
+      <div class="group-control-main" title="${name}">
+        <span class="group-chip-name">${name}</span>
+        <span class="group-chip-count">${tabs.length}</span>
+      </div>
+      <button class="group-control-btn" data-action="toggle-tab-group-collapse" data-group-id="${group.id}" title="${actionLabel}" aria-label="${actionLabel}" type="button">${collapseText}</button>
+      <button class="group-control-btn" data-action="rename-tab-group" data-group-id="${group.id}" title="Rename group" aria-label="Rename ${name}" type="button">R</button>
+      <button class="group-control-btn group-color-btn" data-action="group-color-menu" data-group-id="${group.id}" title="Group color" aria-label="Change color for ${name}" type="button"><span style="background:${hex}"></span></button>
+      <button class="group-control-btn" data-action="group-to-folder" data-group-id="${group.id}" title="Save group as folder" aria-label="Save ${name} as folder" type="button">S</button>
+    </div>`;
   }).join('');
-  bar.style.display = 'flex';
+  bar.style.display = 'block';
+  positionTabGroupsDock();
+  updateLayoutWidth();
+}
+
+function positionTabGroupsDock() {
+  const dock = document.getElementById('tabGroupsBar');
+  if (!dock || dock.style.display === 'none') return;
+
+  if (window.innerWidth <= 800) {
+    dock.style.left = '16px';
+    dock.style.right = '16px';
+    dock.style.top = 'auto';
+    dock.style.bottom = '18px';
+    return;
+  }
+
+  const folders = document.getElementById('foldersColumn');
+  const deferred = document.getElementById('deferredColumn');
+  const openTabs = document.getElementById('openTabsSection');
+  const anchor = folders && folders.style.display !== 'none'
+    ? folders
+    : (deferred && deferred.style.display !== 'none' ? deferred : openTabs);
+  const rect = anchor ? anchor.getBoundingClientRect() : null;
+  const dockWidth = Math.max(dock.offsetWidth || 0, 240);
+  const gap = 10;
+  const viewportPad = 14;
+  const left = rect
+    ? Math.min(rect.right + gap, window.innerWidth - dockWidth - viewportPad)
+    : window.innerWidth - dockWidth - viewportPad;
+  const top = rect ? Math.max(72, rect.top + 36) : 120;
+
+  dock.style.left = `${Math.max(viewportPad, left)}px`;
+  dock.style.right = 'auto';
+  dock.style.top = `${top}px`;
+  dock.style.bottom = 'auto';
+}
+
+function positionWorkspaceDrawer() {
+  const shell = document.getElementById('workspacePanel');
+  if (!shell) return;
+
+  if (window.innerWidth <= 700) {
+    shell.style.setProperty('--workspace-inline-right', '16px');
+    return;
+  }
+
+  const folders = document.getElementById('foldersColumn');
+  const container = document.querySelector('.container');
+  const anchor = folders && folders.style.display !== 'none'
+    ? folders
+    : container;
+  const rect = anchor ? anchor.getBoundingClientRect() : null;
+  const right = rect
+    ? Math.max(18, Math.round(window.innerWidth - rect.right))
+    : 18;
+  shell.style.setProperty('--workspace-inline-right', `${right}px`);
 }
 
 
@@ -1177,16 +1551,7 @@ const expandedOverflowCards = new Set();
  * pages, about:blank, etc.
  */
 function getRealTabs() {
-  return openTabs.filter(t => {
-    const url = t.url || '';
-    return (
-      !url.startsWith('chrome://') &&
-      !url.startsWith('chrome-extension://') &&
-      !url.startsWith('about:') &&
-      !url.startsWith('edge://') &&
-      !url.startsWith('brave://')
-    );
-  });
+  return openTabs.filter(t => !isInternalBrowserUrl(t.url));
 }
 
 /**
@@ -1214,32 +1579,38 @@ function checkTabOutDupes() {
    OVERFLOW CHIPS ("+N more" expand button in domain cards)
    ---------------------------------------------------------------- */
 
+function renderTabChip(tab, groupDomain, urlCounts = {}) {
+  let label = cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), groupDomain || '');
+  try {
+    const parsed = new URL(tab.url);
+    if (parsed.hostname === 'localhost' && parsed.port) label = `${parsed.port} ${label}`;
+  } catch {}
+
+  const count    = urlCounts[tab.url] || 1;
+  const safeUrl  = escapeHtml(tab.url || '');
+  const dupeTag  = count > 1
+    ? ` <button class="chip-dupe-badge" data-action="dedup-one-url" data-dupe-url="${safeUrl}" title="Close ${count - 1} duplicate${count - 1 !== 1 ? 's' : ''}, keep one">${count}×</button>`
+    : '';
+  const chipClass = count > 1 ? ' chip-has-dupes' : '';
+  const safeTitle = escapeHtml(label);
+  const faviconUrl = favIcon(tab.url, 16);
+
+  return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
+    ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
+    <span class="chip-text">${safeTitle}</span>${dupeTag}
+    <div class="chip-actions">
+      <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
+      </button>
+      <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
 function buildOverflowChips(hiddenTabs, urlCounts = {}, expanded = false) {
-  const hiddenChips = hiddenTabs.map(tab => {
-    const label    = cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), '');
-    const count    = urlCounts[tab.url] || 1;
-    const safeUrl  = escapeHtml(tab.url || '');
-    const dupeTag  = count > 1
-      ? ` <button class="chip-dupe-badge" data-action="dedup-one-url" data-dupe-url="${safeUrl}" title="Close ${count - 1} duplicate${count - 1 !== 1 ? 's' : ''}, keep one">${count}×</button>`
-      : '';
-    const chipClass = count > 1 ? ' chip-has-dupes' : '';
-    const safeTitle = escapeHtml(label);
-    let domain = '';
-    try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = favIcon(tab.url, 16);
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
-      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
-      <span class="chip-text">${safeTitle}</span>${dupeTag}
-      <div class="chip-actions">
-        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
-        </button>
-        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-        </button>
-      </div>
-    </div>`;
-  }).join('');
+  const hiddenChips = hiddenTabs.map(tab => renderTabChip(tab, '', urlCounts)).join('');
 
   return `
     <div class="page-chips-overflow" style="display:${expanded ? 'contents' : 'none'}">${hiddenChips}</div>
@@ -1293,36 +1664,8 @@ function renderDomainCard(group) {
   const visibleTabs = uniqueTabs.slice(0, 8);
   const extraCount  = uniqueTabs.length - visibleTabs.length;
 
-  const pageChips = visibleTabs.map(tab => {
-    let label = cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), group.domain);
-    // For localhost tabs, prepend port number so you can tell projects apart
-    try {
-      const parsed = new URL(tab.url);
-      if (parsed.hostname === 'localhost' && parsed.port) label = `${parsed.port} ${label}`;
-    } catch {}
-    const count    = urlCounts[tab.url];
-    const safeUrl  = escapeHtml(tab.url || '');
-    const dupeTag  = count > 1
-      ? ` <button class="chip-dupe-badge" data-action="dedup-one-url" data-dupe-url="${safeUrl}" title="Close ${count - 1} duplicate${count - 1 !== 1 ? 's' : ''}, keep one">${count}×</button>`
-      : '';
-    const chipClass = count > 1 ? ' chip-has-dupes' : '';
-    const safeTitle = escapeHtml(label);
-    let domain = '';
-    try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = favIcon(tab.url, 16);
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
-      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
-      <span class="chip-text">${safeTitle}</span>${dupeTag}
-      <div class="chip-actions">
-        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
-        </button>
-        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-        </button>
-      </div>
-    </div>`;
-  }).join('') + (extraCount > 0 ? buildOverflowChips(uniqueTabs.slice(8), urlCounts, expandedOverflowCards.has(stableId)) : '');
+  const pageChips = visibleTabs.map(tab => renderTabChip(tab, group.domain, urlCounts)).join('')
+    + (extraCount > 0 ? buildOverflowChips(uniqueTabs.slice(8), urlCounts, expandedOverflowCards.has(stableId)) : '');
 
   let actionsHtml = `
     <button class="action-btn close-tabs" data-action="close-domain-tabs" data-domain-id="${stableId}">
@@ -1435,6 +1778,7 @@ async function renderDeferredColumn() {
     // Keep the column visible whenever there's an inbox, an archive, OR any
     // folders exist — so the inbox stays available as a drag-back target.
     if (inboxAll.length === 0 && archived.length === 0 && folders.length === 0) {
+      clearSavedSelection();
       column.style.display = 'none';
       return;
     }
@@ -1501,7 +1845,7 @@ function renderDeferredItem(item) {
           <span>${ago}</span>
         </div>
       </div>
-      <button class="deferred-dismiss" data-action="dismiss-deferred" data-deferred-id="${item.id}" title="Dismiss">
+      <button class="deferred-dismiss" data-action="dismiss-deferred" data-deferred-id="${item.id}" title="Dismiss" aria-label="Dismiss ${safeTitle}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
       </button>
     </div>`;
@@ -1666,7 +2010,7 @@ async function renderStaticDashboard() {
     { hostname: 'www.linkedin.com',    pathExact: ['/'] },
     { hostname: 'github.com',          pathExact: ['/'] },
     { hostname: 'www.youtube.com',     pathExact: ['/'] },
-    // Merge personal patterns from config.local.js (if it exists)
+    // Merge personal patterns when a fork defines them before app.js.
     ...(typeof LOCAL_LANDING_PAGE_PATTERNS !== 'undefined' ? LOCAL_LANDING_PAGE_PATTERNS : []),
   ];
 
@@ -1693,7 +2037,7 @@ async function renderStaticDashboard() {
   const groupMap    = {};
   const landingTabs = [];
 
-  // Custom group rules from config.local.js (if any)
+  // Custom group rules when a fork defines them before app.js.
   const customGroups = typeof LOCAL_CUSTOM_GROUPS !== 'undefined' ? LOCAL_CUSTOM_GROUPS : [];
 
   // Check if a URL matches a custom group rule; returns the rule or null
@@ -1795,9 +2139,11 @@ async function renderStaticDashboard() {
 
   // --- Render "Folders" column ---
   await renderFoldersColumn();
+  updateSavedSelectionUI();
 
   // --- Open Chrome tab groups bar ---
   await renderTabGroupsBar();
+  positionWorkspaceDrawer();
 
   // --- Re-apply the open-tabs filter if one is active ---
   if (openQuery.trim()) applyOpenFilter();
@@ -1823,22 +2169,23 @@ async function renderDashboard() {
    ---------------------------------------------------------------- */
 
 document.addEventListener('click', async (e) => {
+  const savedSelectItem = getSelectableSavedItem(e.target);
+  if (savedSelectItem && (suppressNextSavedBrushClick || e.ctrlKey || e.metaKey || e.shiftKey)) {
+    e.preventDefault();
+    if (suppressNextSavedBrushClick) {
+      suppressNextSavedBrushClick = false;
+      return;
+    }
+    const id = savedSelectItem.dataset.deferredId;
+    if (e.ctrlKey || e.metaKey) { toggleSavedSelect(id); return; }
+    if (e.shiftKey)             { rangeSavedSelectTo(id); return; }
+  }
+
   // Walk up the DOM to find the nearest element with data-action
   const actionEl = e.target.closest('[data-action]');
   if (!actionEl) return;
 
   const action = actionEl.dataset.action;
-
-  // ---- Open the shortcut button's link ----
-  if (action === 'open-homepage') {
-    const url = actionEl.dataset.homepageUrl;
-    if (url) chrome.tabs.create({ url });
-    return;
-  }
-
-  // ---- Edit-button dialog ----
-  if (action === 'homepage-save')   { saveHomepageFromDialog(); return; }
-  if (action === 'homepage-cancel') { closeHomepageDialog();    return; }
 
   // ---- Speed-dial shortcuts ----
   if (action === 'speeddial-open') {
@@ -1851,6 +2198,30 @@ document.addEventListener('click', async (e) => {
   if (action === 'speeddial-add')    { openSpeedDialDialog(null);                  return; }
   if (action === 'speeddial-save')   { saveSpeedDialFromDialog();                   return; }
   if (action === 'speeddial-cancel') { closeSpeedDialDialog();                      return; }
+
+  // ---- Workspace snapshots ----
+  if (action === 'toggle-workspace-drawer') {
+    toggleWorkspaceDrawer();
+    return;
+  }
+  if (action === 'save-workspace-snapshot') {
+    await saveCurrentWorkspaceSnapshot();
+    setWorkspaceDrawerOpen(true);
+    return;
+  }
+  if (action === 'restore-workspace-snapshot') {
+    await restoreWorkspaceSnapshot(actionEl.dataset.snapshotId);
+    return;
+  }
+  if (action === 'rename-workspace-snapshot') {
+    await renameWorkspaceSnapshot(actionEl.dataset.snapshotId);
+    return;
+  }
+  if (action === 'delete-workspace-snapshot') {
+    const id = actionEl.dataset.snapshotId;
+    if (id && window.confirm('Delete this workspace snapshot?')) await deleteWorkspaceSnapshot(id);
+    return;
+  }
 
   // ---- Multi-select bulk actions ----
   if (action === 'select-clear') { clearSelection();        return; }
@@ -1878,6 +2249,30 @@ document.addEventListener('click', async (e) => {
   if (action === 'group-to-folder') {
     const gid = Number(actionEl.dataset.groupId);
     if (Number.isFinite(gid)) await groupToFolder(gid);
+    return;
+  }
+  if (action === 'toggle-tab-group-collapse') {
+    const gid = Number(actionEl.dataset.groupId);
+    if (Number.isFinite(gid) && chrome.tabGroups) {
+      try {
+        const group = await chrome.tabGroups.get(gid);
+        await chrome.tabGroups.update(gid, { collapsed: !group.collapsed });
+        await renderTabGroupsBar();
+      } catch {}
+    }
+    return;
+  }
+  if (action === 'rename-tab-group') {
+    const gid = Number(actionEl.dataset.groupId);
+    if (Number.isFinite(gid)) await renameTabGroup(gid);
+    return;
+  }
+  if (action === 'group-color-menu') {
+    const gid = Number(actionEl.dataset.groupId);
+    if (Number.isFinite(gid)) {
+      const rect = actionEl.getBoundingClientRect();
+      openTabGroupColorMenu(rect.left, rect.bottom + 4, gid);
+    }
     return;
   }
 
@@ -1967,6 +2362,11 @@ document.addEventListener('click', async (e) => {
   // ---- Focus a specific tab (modifier-clicks drive multi-select) ----
   if (action === 'focus-tab') {
     const tabUrl = actionEl.dataset.tabUrl;
+    if (suppressNextBrushClick) {
+      suppressNextBrushClick = false;
+      e.preventDefault();
+      return;
+    }
     if (e.ctrlKey || e.metaKey) { e.preventDefault(); toggleSelect(tabUrl);   return; }
     if (e.shiftKey)             { e.preventDefault(); rangeSelectTo(tabUrl);  return; }
     if (selectedTabUrls.size) clearSelection(); // a plain click drops the selection
@@ -2370,6 +2770,8 @@ document.addEventListener('input', async (e) => {
 async function refreshSavedAndFolders() {
   await renderDeferredColumn();
   await renderFoldersColumn();
+  updateSavedSelectionUI();
+  positionWorkspaceDrawer();
 }
 
 // ─── Custom context menu engine ───────────────────────────────────────────────
@@ -2463,37 +2865,70 @@ function closeContextMenu() {
 }
 
 /**
- * openTabContextMenu(x, y, deferredId)
+ * openTabContextMenu(x, y, deferredIds)
  *
- * Builds the right-click menu for a saved tab: open, move to inbox/folder,
- * create a new folder, or remove.
+ * Builds the right-click menu for saved tabs: open, move to inbox/folder,
+ * create a new folder, or remove. Accepts one id or a selected batch.
  */
-async function openTabContextMenu(x, y, deferredId) {
+async function openTabContextMenu(x, y, deferredIds) {
+  const ids = [...new Set((Array.isArray(deferredIds) ? deferredIds : [deferredIds]).filter(Boolean))];
+  if (!ids.length) return;
+
   const { deferred = [] } = await chrome.storage.local.get('deferred');
-  const tab = deferred.find(t => t.id === deferredId);
-  if (!tab) return;
+  const tabs = ids
+    .map(id => deferred.find(t => t.id === id))
+    .filter(tab => tab && !tab.dismissed);
+  if (!tabs.length) return;
+
   const folders = await getFolders();
+  const single = tabs.length === 1;
+  const first = tabs[0];
+  const tabIds = tabs.map(tab => tab.id);
+
+  async function moveSavedSelection(folderId, label) {
+    for (const id of tabIds) await moveTabToFolder(id, folderId);
+    await refreshSavedAndFolders();
+    clearSavedSelection();
+    if (single) flashItem(first.id);
+    showToast(label);
+  }
+
+  async function removeSavedSelection() {
+    for (const id of tabIds) await dismissSavedTab(id);
+    await refreshSavedAndFolders();
+    clearSavedSelection();
+    showToast(single ? 'Removed' : `Removed ${tabIds.length}`, async () => {
+      for (const id of tabIds) await undismissSavedTab(id);
+      await refreshSavedAndFolders();
+      flashItem(first.id);
+    });
+  }
 
   const items = [];
-  items.push({ label: 'Open in new tab', onClick: () => { if (tab.url) chrome.tabs.create({ url: tab.url }); } });
+  if (!single) items.push({ heading: true, label: `${tabs.length} selected` });
+  items.push({
+    label: single ? 'Open in new tab' : `Open ${tabs.length} in new tabs`,
+    onClick: async () => {
+      for (const tab of tabs) {
+        if (tab.url) {
+          try { await chrome.tabs.create({ url: tab.url, active: single }); } catch {}
+        }
+      }
+      showToast(single ? 'Opened saved tab' : `Opened ${tabs.length} saved tabs`);
+    },
+  });
   items.push({ separator: true });
   items.push({ heading: true, label: 'Move to' });
 
-  if (tab.folderId) {
+  if (tabs.some(tab => tab.folderId)) {
     items.push({ label: '↩  Inbox', onClick: async () => {
-      await moveTabToFolder(deferredId, null);
-      await refreshSavedAndFolders();
-      flashItem(deferredId);
-      showToast('Moved to inbox');
+      await moveSavedSelection(null, single ? 'Moved to inbox' : `Moved ${tabs.length} to inbox`);
     }});
   }
   for (const f of folders) {
-    if (f.id === tab.folderId) continue;
+    if (tabs.every(tab => tab.folderId === f.id)) continue;
     items.push({ label: '🗂  ' + f.name, onClick: async () => {
-      await moveTabToFolder(deferredId, f.id);
-      await refreshSavedAndFolders();
-      flashItem(deferredId);
-      showToast(`Moved to “${f.name}”`);
+      await moveSavedSelection(f.id, single ? `Moved to “${f.name}”` : `Moved ${tabs.length} to “${f.name}”`);
     }});
   }
   items.push({ label: '＋  New folder…', onClick: async () => {
@@ -2501,22 +2936,11 @@ async function openTabContextMenu(x, y, deferredId) {
     if (!name) return;
     const folder = await createFolder(name);
     if (folder) {
-      await moveTabToFolder(deferredId, folder.id);
-      await refreshSavedAndFolders();
-      flashItem(deferredId);
-      showToast(`Moved to “${folder.name}”`);
+      await moveSavedSelection(folder.id, single ? `Moved to “${folder.name}”` : `Moved ${tabs.length} to “${folder.name}”`);
     }
   }});
   items.push({ separator: true });
-  items.push({ label: 'Remove', danger: true, onClick: async () => {
-    await dismissSavedTab(deferredId);
-    await refreshSavedAndFolders();
-    showToast('Removed', async () => {
-      await undismissSavedTab(deferredId);
-      await refreshSavedAndFolders();
-      flashItem(deferredId);
-    });
-  }});
+  items.push({ label: single ? 'Remove' : `Remove ${tabs.length}`, danger: true, onClick: removeSavedSelection });
 
   showContextMenu(x, y, items);
 }
@@ -2777,12 +3201,8 @@ document.addEventListener('drop', async (e) => {
 document.addEventListener('contextmenu', async (e) => {
   const item      = e.target.closest('.deferred-item');
   const folder    = e.target.closest('.folder-header');
-  const homeBtn   = e.target.closest('#homepageBtn');
   const speedTile = e.target.closest('.speed-tile[data-action="speeddial-open"]');
-  if (homeBtn) {
-    e.preventDefault();
-    openHomepageDialog();
-  } else if (speedTile) {
+  if (speedTile) {
     e.preventDefault();
     const id = speedTile.dataset.id;
     showContextMenu(e.clientX, e.clientY, [
@@ -2791,7 +3211,14 @@ document.addEventListener('contextmenu', async (e) => {
     ]);
   } else if (item) {
     e.preventDefault();
-    await openTabContextMenu(e.clientX, e.clientY, item.dataset.deferredId);
+    const id = item.dataset.deferredId;
+    if (!selectedSavedIds.has(id)) {
+      clearSavedSelection();
+      selectedSavedIds.add(id);
+      lastSavedSelectAnchorId = id;
+      updateSavedSelectionUI();
+    }
+    await openTabContextMenu(e.clientX, e.clientY, [...selectedSavedIds]);
   } else if (folder) {
     e.preventDefault();
     await openFolderContextMenu(e.clientX, e.clientY, folder.dataset.folderId);
@@ -2808,23 +3235,17 @@ document.addEventListener('mousedown', (e) => {
   if (menu && menu.style.display !== 'none' && !e.target.closest('#contextMenu')) {
     closeContextMenu();
   }
+  const workspaceDrawer = document.getElementById('workspaceDrawer');
+  if (workspaceDrawer && workspaceDrawer.style.display !== 'none' && !e.target.closest('#workspacePanel')) {
+    setWorkspaceDrawerOpen(false);
+  }
   // Close dialogs when clicking their backdrop
   const fd = document.getElementById('folderDeleteDialog');
   if (fd && fd.style.display !== 'none' && e.target === fd) closeFolderDeleteDialog();
   const cd = document.getElementById('closeAllDialog');
   if (cd && cd.style.display !== 'none' && e.target === cd) closeCloseAllDialog();
-  const hp = document.getElementById('homepageDialog');
-  if (hp && hp.style.display !== 'none' && e.target === hp) closeHomepageDialog();
   const sd = document.getElementById('speedDialDialog');
   if (sd && sd.style.display !== 'none' && e.target === sd) closeSpeedDialDialog();
-});
-
-// Enter saves / Escape closes the edit-button dialog inputs
-document.addEventListener('keydown', (e) => {
-  const t = e.target;
-  if (!t || (t.id !== 'homepageLabelInput' && t.id !== 'homepageUrlInput')) return;
-  if (e.key === 'Enter')  { e.preventDefault(); saveHomepageFromDialog(); }
-  if (e.key === 'Escape') { e.preventDefault(); closeHomepageDialog(); }
 });
 
 // Enter saves / Escape closes the speed-dial editor inputs
@@ -2853,15 +3274,27 @@ document.addEventListener('keydown', (e) => {
   if (fd && fd.style.display !== 'none') { closeFolderDeleteDialog(); closed = true; }
   const cd = document.getElementById('closeAllDialog');
   if (cd && cd.style.display !== 'none') { closeCloseAllDialog(); closed = true; }
-  const hp = document.getElementById('homepageDialog');
-  if (hp && hp.style.display !== 'none') { closeHomepageDialog(); closed = true; }
   const sd = document.getElementById('speedDialDialog');
   if (sd && sd.style.display !== 'none') { closeSpeedDialDialog(); closed = true; }
-  if (!closed && selectedTabUrls.size) { clearSelection(); closed = true; }
+  const drawer = document.getElementById('workspaceDrawer');
+  if (drawer && drawer.style.display !== 'none') { setWorkspaceDrawerOpen(false); closed = true; }
+  if (!closed && (selectedTabUrls.size || selectedSavedIds.size)) {
+    clearSelection();
+    clearSavedSelection();
+    closed = true;
+  }
   if (!closed) setPrivacy(true);
 });
 
-window.addEventListener('scroll', () => closeContextMenu(), true);
+window.addEventListener('scroll', () => {
+  closeContextMenu();
+  positionTabGroupsDock();
+  positionWorkspaceDrawer();
+}, true);
+window.addEventListener('resize', () => {
+  positionTabGroupsDock();
+  positionWorkspaceDrawer();
+});
 
 
 /* ----------------------------------------------------------------
@@ -3024,60 +3457,6 @@ function openThemeMenu(x, y) {
 
 
 /* ----------------------------------------------------------------
-   HEADER SHORTCUT BUTTON — editable label + URL (saved in localStorage)
-   ---------------------------------------------------------------- */
-
-const HOMEPAGE_DEFAULTS = { label: 'Open Shir-Man', url: 'https://shir-man.com/homepage/' };
-
-function getHomepage() {
-  try {
-    return {
-      label: localStorage.getItem('tabout-homepage-label') || HOMEPAGE_DEFAULTS.label,
-      url:   localStorage.getItem('tabout-homepage-url')   || HOMEPAGE_DEFAULTS.url,
-    };
-  } catch { return { ...HOMEPAGE_DEFAULTS }; }
-}
-
-function applyHomepageButton() {
-  const btn = document.getElementById('homepageBtn');
-  if (!btn) return;
-  const { label, url } = getHomepage();
-  btn.textContent = label;
-  btn.dataset.homepageUrl = url;
-}
-
-function openHomepageDialog() {
-  const { label, url } = getHomepage();
-  const li = document.getElementById('homepageLabelInput');
-  const ui = document.getElementById('homepageUrlInput');
-  if (li) li.value = label;
-  if (ui) ui.value = url;
-  const d = document.getElementById('homepageDialog');
-  if (d) d.style.display = 'flex';
-  if (li) { li.focus(); li.select(); }
-}
-
-function closeHomepageDialog() {
-  const d = document.getElementById('homepageDialog');
-  if (d) d.style.display = 'none';
-}
-
-function saveHomepageFromDialog() {
-  let label = (document.getElementById('homepageLabelInput')?.value || '').trim();
-  let url   = (document.getElementById('homepageUrlInput')?.value || '').trim();
-  if (!label) label = HOMEPAGE_DEFAULTS.label;
-  if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
-  try {
-    localStorage.setItem('tabout-homepage-label', label);
-    localStorage.setItem('tabout-homepage-url', url);
-  } catch {}
-  applyHomepageButton();
-  closeHomepageDialog();
-  showToast('Button updated');
-}
-
-
-/* ----------------------------------------------------------------
    MULTI-SELECT — pick several open tabs, then act on them in bulk
 
    Ctrl/⌘-click toggles a tab into the selection; Shift-click selects a
@@ -3088,10 +3467,21 @@ function saveHomepageFromDialog() {
 
 const selectedTabUrls = new Set();
 let lastSelectAnchorUrl = null;
+const selectedSavedIds = new Set();
+let lastSavedSelectAnchorId = null;
 
 // Every open-tab chip that can be focused/selected (includes hidden overflow)
 function allSelectableChips() {
   return Array.from(document.querySelectorAll('#openTabsMissions .page-chip[data-action="focus-tab"]'));
+}
+
+function allSelectableSavedItems() {
+  return Array.from(document.querySelectorAll('.deferred-item[data-deferred-id]'));
+}
+
+function getSelectableSavedItem(target) {
+  if (!target || target.closest('.deferred-checkbox, .deferred-dismiss, button')) return null;
+  return target.closest('.deferred-item[data-deferred-id]');
 }
 
 /**
@@ -3119,10 +3509,28 @@ function updateSelectionUI() {
   }
 }
 
+function updateSavedSelectionUI() {
+  const items   = allSelectableSavedItems();
+  const present = new Set(items.map(item => item.dataset.deferredId));
+  for (const id of [...selectedSavedIds]) if (!present.has(id)) selectedSavedIds.delete(id);
+
+  items.forEach(item => {
+    item.classList.toggle('selected', selectedSavedIds.has(item.dataset.deferredId));
+  });
+
+  if (!selectedSavedIds.size) lastSavedSelectAnchorId = null;
+}
+
 function clearSelection() { selectedTabUrls.clear(); updateSelectionUI(); }
+
+function clearSavedSelection() {
+  selectedSavedIds.clear();
+  updateSavedSelectionUI();
+}
 
 function toggleSelect(url) {
   if (!url) return;
+  if (selectedSavedIds.size) clearSavedSelection();
   if (selectedTabUrls.has(url)) selectedTabUrls.delete(url);
   else                          selectedTabUrls.add(url);
   lastSelectAnchorUrl = url;
@@ -3132,6 +3540,7 @@ function toggleSelect(url) {
 // Shift-click: select every visible chip between the anchor and this one
 function rangeSelectTo(url) {
   if (!url) return;
+  if (selectedSavedIds.size) clearSavedSelection();
   const urls = allSelectableChips().filter(c => c.offsetParent !== null).map(c => c.dataset.tabUrl);
   const b = urls.indexOf(url);
   if (b === -1) { toggleSelect(url); return; }
@@ -3140,6 +3549,30 @@ function rangeSelectTo(url) {
   const [lo, hi] = a < b ? [a, b] : [b, a];
   for (let i = lo; i <= hi; i++) selectedTabUrls.add(urls[i]);
   updateSelectionUI();
+}
+
+function toggleSavedSelect(id) {
+  if (!id) return;
+  if (selectedTabUrls.size) clearSelection();
+  if (selectedSavedIds.has(id)) selectedSavedIds.delete(id);
+  else                          selectedSavedIds.add(id);
+  lastSavedSelectAnchorId = id;
+  updateSavedSelectionUI();
+}
+
+function rangeSavedSelectTo(id) {
+  if (!id) return;
+  if (selectedTabUrls.size) clearSelection();
+  const ids = allSelectableSavedItems()
+    .filter(item => item.offsetParent !== null)
+    .map(item => item.dataset.deferredId);
+  const b = ids.indexOf(id);
+  if (b === -1) { toggleSavedSelect(id); return; }
+  const a = lastSavedSelectAnchorId ? ids.indexOf(lastSavedSelectAnchorId) : -1;
+  if (a === -1) { toggleSavedSelect(id); return; }
+  const [lo, hi] = a < b ? [a, b] : [b, a];
+  for (let i = lo; i <= hi; i++) selectedSavedIds.add(ids[i]);
+  updateSavedSelectionUI();
 }
 
 // Chrome tab ids for the currently-selected URLs (a URL may match several tabs)
@@ -3240,6 +3673,98 @@ async function openSelectionMoveMenu(x, y) {
   }});
   showContextMenu(x, y, items);
 }
+
+let brushSelecting = false;
+let brushMode = 'add';
+let brushTargetKind = null;
+let suppressNextBrushClick = false;
+let suppressNextSavedBrushClick = false;
+const brushTouchedKeys = new Set();
+const selectionBrushChipSelector = '#openTabsSection .page-chip[data-action="focus-tab"]';
+
+function getSelectionBrushChip(target) {
+  if (!target || target.closest('.chip-action, .chip-dupe-badge')) return null;
+  return target.closest(selectionBrushChipSelector);
+}
+
+function getSelectionBrushTarget(target) {
+  const chip = getSelectionBrushChip(target);
+  if (chip && chip.dataset.tabUrl) return { kind: 'open', key: chip.dataset.tabUrl };
+
+  const savedItem = getSelectableSavedItem(target);
+  if (savedItem && savedItem.dataset.deferredId) return { kind: 'saved', key: savedItem.dataset.deferredId };
+
+  return null;
+}
+
+function isBrushTargetSelected(target) {
+  if (!target) return false;
+  return target.kind === 'saved'
+    ? selectedSavedIds.has(target.key)
+    : selectedTabUrls.has(target.key);
+}
+
+function applySelectionBrush(target) {
+  if (!target || target.kind !== brushTargetKind || !target.key) return;
+  if (brushTouchedKeys.has(target.key)) return;
+  brushTouchedKeys.add(target.key);
+
+  if (target.kind === 'saved') {
+    if (selectedTabUrls.size) clearSelection();
+    if (brushMode === 'remove') selectedSavedIds.delete(target.key);
+    else selectedSavedIds.add(target.key);
+    lastSavedSelectAnchorId = target.key;
+    updateSavedSelectionUI();
+    return;
+  }
+
+  if (selectedSavedIds.size) clearSavedSelection();
+  if (brushMode === 'remove') selectedTabUrls.delete(target.key);
+  else selectedTabUrls.add(target.key);
+  lastSelectAnchorUrl = target.key;
+  updateSelectionUI();
+}
+
+function stopSelectionBrush() {
+  if (!brushSelecting) return;
+  brushSelecting = false;
+  brushTargetKind = null;
+  brushTouchedKeys.clear();
+  document.body.classList.remove('selection-brush-active');
+}
+
+document.addEventListener('pointerdown', (e) => {
+  if (!e.ctrlKey || e.button !== 0) return;
+  const target = getSelectionBrushTarget(e.target);
+  if (!target) return;
+  e.preventDefault();
+  suppressNextBrushClick = target.kind === 'open';
+  suppressNextSavedBrushClick = target.kind === 'saved';
+  brushSelecting = true;
+  brushTargetKind = target.kind;
+  brushMode = isBrushTargetSelected(target) ? 'remove' : 'add';
+  brushTouchedKeys.clear();
+  document.body.classList.add('selection-brush-active');
+  applySelectionBrush(target);
+});
+
+document.addEventListener('pointerover', (e) => {
+  if (!brushSelecting) return;
+  if (!(e.buttons & 1)) {
+    stopSelectionBrush();
+    return;
+  }
+  const target = getSelectionBrushTarget(e.target);
+  if (target) applySelectionBrush(target);
+});
+
+document.addEventListener('pointerup', stopSelectionBrush);
+document.addEventListener('pointercancel', stopSelectionBrush);
+document.addEventListener('mouseleave', stopSelectionBrush);
+window.addEventListener('blur', stopSelectionBrush);
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Control') stopSelectionBrush();
+});
 
 
 /* ----------------------------------------------------------------
@@ -3374,7 +3899,7 @@ function autoRefreshBlocked() {
   if (privacyOn) return true;
   const menu    = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') return true;
-  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'homepageDialog', 'speedDialDialog']) {
+  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'speedDialDialog']) {
     const d = document.getElementById(id);
     if (d && d.style.display !== 'none') return true;
   }
@@ -3457,12 +3982,13 @@ try {
   localStorage.setItem('tabout-theme', t);
 } catch {}
 
-// Apply the saved (editable) header-button label + URL
-applyHomepageButton();
-
 // Paint the speed-dial shortcut strip + sync its corner toggle tooltip
 renderSpeedDial();
 updateShortcutsToggleTitle();
+
+// Paint saved workspace snapshots.
+renderWorkspacePanel();
+positionWorkspaceDrawer();
 
 // Restore persisted privacy mode (the clock screen is already up pre-paint;
 // this starts its ticking and syncs the privacyOn flag)

@@ -3,7 +3,7 @@
   "name": "Tab Atlas",
   "version": "1.0.0",
   "description": "A calm new-tab dashboard: your open tabs grouped by domain, searchable, themeable, and organised into folders.",
-  "permissions": ["tabs", "activeTab", "storage", "favicon", "tabGroups"],
+  "permissions": ["tabs", "storage", "favicon", "tabGroups"],
   "chrome_url_overrides": { "newtab": "index.html" },
   "background": { "service_worker": "background.js" },
   "action": {

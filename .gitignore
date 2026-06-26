@@ -5,7 +5,9 @@ node_modules/
 docs/superpowers/
 
 # Local agent / editor state
+.agents/
 .claude/
+skills-lock.json
 
 # Personal config (landing page patterns, etc.) — never push to GitHub
 extension/config.local.js
