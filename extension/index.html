@@ -285,22 +285,31 @@
 <div class="focus-sweep-overlay" id="focusSweepOverlay" role="dialog" aria-modal="true" aria-labelledby="focusSweepTitle" style="display:none">
   <div class="focus-sweep-panel">
     <div class="focus-sweep-top">
-      <div>
+      <div class="focus-sweep-heading">
         <div class="focus-sweep-eyebrow">Focus sweep</div>
+        <div class="focus-sweep-scope" id="focusSweepScope">All tabs sweep</div>
         <div class="focus-sweep-progress" id="focusSweepProgress">0 of 0</div>
       </div>
-      <button class="focus-sweep-icon-btn" data-action="focus-sweep-exit" type="button" aria-label="Exit focus sweep" title="Exit">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <div class="focus-sweep-top-actions">
+        <button class="focus-sweep-mode" id="focusSweepMode" data-action="focus-sweep-mode-toggle" type="button" aria-pressed="false" title="Toggle review or instant mode">Review</button>
+        <button class="focus-sweep-icon-btn" data-action="focus-sweep-exit" type="button" aria-label="Exit focus sweep" title="Exit">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="focus-sweep-meta">
+      <span id="focusSweepStaged">No pending actions</span>
+      <span id="focusSweepDestination">Saving to: Inbox</span>
     </div>
 
     <div class="focus-sweep-meter" aria-hidden="true">
       <div class="focus-sweep-meter-fill" id="focusSweepMeterFill"></div>
     </div>
 
-    <div class="focus-sweep-body" id="focusSweepBody">
+    <button class="focus-sweep-body" id="focusSweepBody" data-action="focus-sweep-jump" type="button" aria-label="Jump to current tab">
       <div class="focus-sweep-favicon-wrap">
         <img class="focus-sweep-favicon" id="focusSweepFavicon" alt="" src="">
       </div>
@@ -308,25 +317,40 @@
         <div class="focus-sweep-domain-row">
           <span class="focus-sweep-domain" id="focusSweepDomain"></span>
           <span class="focus-sweep-badge" id="focusSweepPinned" style="display:none">Pinned</span>
+          <span class="focus-sweep-badge" id="focusSweepAudible" style="display:none">Audible</span>
+          <span class="focus-sweep-badge muted" id="focusSweepDiscarded" style="display:none">Sleeping</span>
+          <span class="focus-sweep-badge muted" id="focusSweepGroup" style="display:none"></span>
           <span class="focus-sweep-badge muted" id="focusSweepGone" style="display:none">Gone</span>
         </div>
         <h3 class="focus-sweep-title" id="focusSweepTitle">No tab selected</h3>
         <div class="focus-sweep-url" id="focusSweepUrl"></div>
+        <div class="focus-sweep-action-state" id="focusSweepActionState" style="display:none"></div>
       </div>
+    </button>
+
+    <div class="focus-sweep-context-actions" id="focusSweepContextActions">
+      <button class="focus-sweep-link-btn" data-action="focus-sweep-save-rest-domain" type="button">Save rest from domain</button>
+      <button class="focus-sweep-link-btn danger" data-action="focus-sweep-close-rest-domain" type="button">Close rest from domain</button>
+      <button class="focus-sweep-link-btn" data-action="focus-sweep-keep-rest-domain" type="button">Skip rest from domain</button>
     </div>
 
     <div class="focus-sweep-done" id="focusSweepDone" style="display:none">
-      <div class="focus-sweep-done-title">Sweep complete</div>
+      <div class="focus-sweep-done-title" id="focusSweepDoneTitle">Sweep complete</div>
       <div class="focus-sweep-done-meta" id="focusSweepDoneMeta"></div>
+      <div class="focus-sweep-done-actions">
+        <button class="focus-sweep-btn primary" data-action="focus-sweep-apply" type="button">Apply</button>
+        <button class="focus-sweep-btn ghost" data-action="focus-sweep-discard" type="button">Discard</button>
+      </div>
     </div>
 
     <div class="focus-sweep-actions">
       <button class="focus-sweep-btn ghost" data-action="focus-sweep-prev" type="button">Prev</button>
-      <button class="focus-sweep-btn primary" data-action="focus-sweep-keep" type="button">Keep</button>
+      <button class="focus-sweep-btn ghost" data-action="focus-sweep-next" type="button">Next</button>
+      <button class="focus-sweep-btn primary" data-action="focus-sweep-keep" type="button">Skip</button>
       <button class="focus-sweep-btn" data-action="focus-sweep-save" type="button">Save</button>
+      <button class="focus-sweep-btn folder-picker" data-action="focus-sweep-save-menu" type="button" aria-label="Choose save folder" title="Choose save folder">Folder</button>
       <button class="focus-sweep-btn danger" data-action="focus-sweep-close" type="button">Close</button>
-      <button class="focus-sweep-btn" data-action="focus-sweep-jump" type="button">Jump</button>
-      <button class="focus-sweep-btn ghost" data-action="focus-sweep-exit" type="button">Exit</button>
+      <button class="focus-sweep-btn primary apply-inline" data-action="focus-sweep-apply" type="button">Apply</button>
     </div>
   </div>
 </div>

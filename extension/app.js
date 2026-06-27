@@ -320,12 +320,20 @@ async function fetchOpenTabs() {
 
     const tabs = await chrome.tabs.query({});
     openTabs = tabs.map(t => ({
-      id:       t.id,
-      url:      t.url,
-      title:    t.title,
-      windowId: t.windowId,
-      active:   t.active,
-      pinned:   !!t.pinned,
+      id:           t.id,
+      url:          t.url,
+      title:        t.title,
+      windowId:     t.windowId,
+      index:        t.index,
+      groupId:      Number.isFinite(t.groupId) ? t.groupId : -1,
+      active:       t.active,
+      pinned:       !!t.pinned,
+      audible:      !!t.audible,
+      mutedInfo:    t.mutedInfo || null,
+      discarded:    !!t.discarded,
+      incognito:    !!t.incognito,
+      lastAccessed: t.lastAccessed || null,
+      favIconUrl:   t.favIconUrl || '',
       // Flag Tab Atlas's own pages so we can detect duplicate new tabs
       isTabOut: t.url === newtabUrl || t.url === 'chrome://newtab/',
     }));
@@ -967,6 +975,7 @@ async function renderTabGroupsBar() {
         <span class="group-chip-name">${name}</span>
         <span class="group-chip-count">${tabs.length}</span>
       </div>
+      <button class="group-control-btn" data-action="start-focus-sweep-group" data-group-id="${group.id}" title="Sweep group" aria-label="Sweep ${name}" type="button">W</button>
       <button class="group-control-btn" data-action="toggle-tab-group-collapse" data-group-id="${group.id}" title="${actionLabel}" aria-label="${actionLabel}" type="button">${collapseText}</button>
       <button class="group-control-btn" data-action="rename-tab-group" data-group-id="${group.id}" title="Rename group" aria-label="Rename ${name}" type="button">R</button>
       <button class="group-control-btn group-color-btn" data-action="group-color-menu" data-group-id="${group.id}" title="Group color" aria-label="Change color for ${name}" type="button"><span style="background:${hex}"></span></button>
@@ -1533,6 +1542,36 @@ const ICONS = {
 /* ----------------------------------------------------------------
    IN-MEMORY STORE FOR OPEN-TAB GROUPS
    ---------------------------------------------------------------- */
+const LANDING_PAGE_PATTERNS = [
+  { hostname: 'mail.google.com', test: (p, h) =>
+      !h.includes('#inbox/') && !h.includes('#sent/') && !h.includes('#search/') },
+  { hostname: 'x.com',               pathExact: ['/home'] },
+  { hostname: 'www.linkedin.com',    pathExact: ['/'] },
+  { hostname: 'github.com',          pathExact: ['/'] },
+  { hostname: 'www.youtube.com',     pathExact: ['/'] },
+  // Merge personal patterns when a fork defines them before app.js.
+  ...(typeof LOCAL_LANDING_PAGE_PATTERNS !== 'undefined' ? LOCAL_LANDING_PAGE_PATTERNS : []),
+];
+
+function isLandingPageUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return LANDING_PAGE_PATTERNS.some(p => {
+      // Support both exact hostname and suffix matching (for wildcard subdomains)
+      const hostnameMatch = p.hostname
+        ? parsed.hostname === p.hostname
+        : p.hostnameEndsWith
+          ? parsed.hostname.endsWith(p.hostnameEndsWith)
+          : false;
+      if (!hostnameMatch) return false;
+      if (p.test)       return p.test(parsed.pathname, url);
+      if (p.pathPrefix) return parsed.pathname.startsWith(p.pathPrefix);
+      if (p.pathExact)  return p.pathExact.includes(parsed.pathname);
+      return parsed.pathname === '/';
+    });
+  } catch { return false; }
+}
+
 let domainGroups = [];
 
 // Domain cards whose "+N more" overflow the user has expanded — remembered so
@@ -1668,6 +1707,9 @@ function renderDomainCard(group) {
     + (extraCount > 0 ? buildOverflowChips(uniqueTabs.slice(8), urlCounts, expandedOverflowCards.has(stableId)) : '');
 
   let actionsHtml = `
+    <button class="action-btn" data-action="start-focus-sweep-domain" data-domain-source="${escapeHtml(group.domain)}">
+      Sweep
+    </button>
     <button class="action-btn close-tabs" data-action="close-domain-tabs" data-domain-id="${stableId}">
       ${ICONS.close}
       Close all ${tabCount} tab${tabCount !== 1 ? 's' : ''}
@@ -2003,36 +2045,6 @@ async function renderStaticDashboard() {
   // --- Group tabs by domain ---
   // Landing pages (Gmail inbox, Twitter home, etc.) get their own special group
   // so they can be closed together without affecting content tabs on the same domain.
-  const LANDING_PAGE_PATTERNS = [
-    { hostname: 'mail.google.com', test: (p, h) =>
-        !h.includes('#inbox/') && !h.includes('#sent/') && !h.includes('#search/') },
-    { hostname: 'x.com',               pathExact: ['/home'] },
-    { hostname: 'www.linkedin.com',    pathExact: ['/'] },
-    { hostname: 'github.com',          pathExact: ['/'] },
-    { hostname: 'www.youtube.com',     pathExact: ['/'] },
-    // Merge personal patterns when a fork defines them before app.js.
-    ...(typeof LOCAL_LANDING_PAGE_PATTERNS !== 'undefined' ? LOCAL_LANDING_PAGE_PATTERNS : []),
-  ];
-
-  function isLandingPage(url) {
-    try {
-      const parsed = new URL(url);
-      return LANDING_PAGE_PATTERNS.some(p => {
-        // Support both exact hostname and suffix matching (for wildcard subdomains)
-        const hostnameMatch = p.hostname
-          ? parsed.hostname === p.hostname
-          : p.hostnameEndsWith
-            ? parsed.hostname.endsWith(p.hostnameEndsWith)
-            : false;
-        if (!hostnameMatch) return false;
-        if (p.test)       return p.test(parsed.pathname, url);
-        if (p.pathPrefix) return parsed.pathname.startsWith(p.pathPrefix);
-        if (p.pathExact)  return p.pathExact.includes(parsed.pathname);
-        return parsed.pathname === '/';
-      });
-    } catch { return false; }
-  }
-
   domainGroups = [];
   const groupMap    = {};
   const landingTabs = [];
@@ -2059,7 +2071,7 @@ async function renderStaticDashboard() {
 
   for (const tab of realTabs) {
     try {
-      if (isLandingPage(tab.url)) {
+      if (isLandingPageUrl(tab.url)) {
         landingTabs.push(tab);
         continue;
       }
@@ -2234,11 +2246,21 @@ document.addEventListener('click', async (e) => {
   }
   if (action === 'start-focus-sweep-selection') { await startFocusSweep('selection'); return; }
   if (action === 'start-focus-sweep-all')       { await startFocusSweep('all');       return; }
+  if (action === 'start-focus-sweep-domain')    { await startFocusSweepV2({ scope: 'domain', sourceId: actionEl.dataset.domainSource || '' }); return; }
+  if (action === 'start-focus-sweep-group')     { await startFocusSweepV2({ scope: 'group', sourceId: actionEl.dataset.groupId || '' }); return; }
+  if (action === 'focus-sweep-mode-toggle')     { toggleFocusSweepMode();             return; }
   if (action === 'focus-sweep-keep')            { await keepFocusSweepTab();          return; }
   if (action === 'focus-sweep-prev')            { moveFocusSweepIndex(-1);            return; }
+  if (action === 'focus-sweep-next')            { moveFocusSweepIndex(1);             return; }
   if (action === 'focus-sweep-save')            { await saveFocusSweepTab();          return; }
+  if (action === 'focus-sweep-save-menu')       { await openFocusSweepSaveMenuFromButton(actionEl); return; }
   if (action === 'focus-sweep-close')           { await closeFocusSweepTab();         return; }
   if (action === 'focus-sweep-jump')            { await jumpToFocusSweepTab();        return; }
+  if (action === 'focus-sweep-save-rest-domain'){ await stageFocusSweepRestFromDomain('save'); return; }
+  if (action === 'focus-sweep-close-rest-domain'){ await stageFocusSweepRestFromDomain('close'); return; }
+  if (action === 'focus-sweep-keep-rest-domain'){ await stageFocusSweepRestFromDomain('keep'); return; }
+  if (action === 'focus-sweep-apply')           { await applyFocusSweepActions();     return; }
+  if (action === 'focus-sweep-discard')         { discardFocusSweepActions();         return; }
   if (action === 'focus-sweep-exit')            { exitFocusSweep();                   return; }
 
   // ---- Reveal the inline "new folder" name input ----
@@ -3267,12 +3289,23 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', async (e) => {
   if (!focusSweep.active) return;
 
+  const menu = document.getElementById('contextMenu');
+  if (menu && menu.style.display !== 'none') {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      closeContextMenu();
+    }
+    return;
+  }
+
   const key = e.key;
   let action = null;
 
   if (key === 'Escape') action = () => exitFocusSweep();
   else if (key === ' ' || key === 'j' || key === 'J' || key === 'ArrowRight') action = () => keepFocusSweepTab();
   else if (key === 'k' || key === 'K' || key === 'ArrowLeft') action = () => moveFocusSweepIndex(-1);
+  else if ((key === 's' || key === 'S') && e.shiftKey) action = () => openFocusSweepSaveMenuFromButton();
   else if (key === 's' || key === 'S') action = () => saveFocusSweepTab();
   else if (key === 'x' || key === 'X' || key === 'Delete') action = () => closeFocusSweepTab();
   else if (key === 'Enter') action = () => jumpToFocusSweepTab();
@@ -3705,16 +3738,28 @@ async function openSelectionMoveMenu(x, y) {
    FOCUS SWEEP — keyboard triage for open tabs
    ---------------------------------------------------------------- */
 
+const FOCUS_SWEEP_MODE_KEY = 'focusSweepActionMode';
+
 const focusSweep = {
   active: false,
   queue: [],
   index: 0,
+  scope: 'all',
+  scopeLabel: 'All tabs sweep',
+  actionMode: 'review',
+  saveFolderId: null,
+  saveFolderName: 'Inbox',
+  stagedActions: new Map(),
   reviewedIds: new Set(),
   selfActionIds: new Set(),
+  busyAction: false,
+  applied: false,
+  appliedSummary: null,
   kept: 0,
   closed: 0,
   saved: 0,
   skipped: 0,
+  batchSkipped: 0,
   lastFocusEl: null,
 };
 
@@ -3725,39 +3770,107 @@ function resetFocusSweepState() {
   focusSweep.active = false;
   focusSweep.queue = [];
   focusSweep.index = 0;
+  focusSweep.scope = 'all';
+  focusSweep.scopeLabel = 'All tabs sweep';
+  focusSweep.actionMode = getFocusSweepModePreference();
+  focusSweep.saveFolderId = null;
+  focusSweep.saveFolderName = 'Inbox';
+  focusSweep.stagedActions = new Map();
   focusSweep.reviewedIds = new Set();
   focusSweep.selfActionIds = new Set();
+  focusSweep.busyAction = false;
+  focusSweep.applied = false;
+  focusSweep.appliedSummary = null;
   focusSweep.kept = 0;
   focusSweep.closed = 0;
   focusSweep.saved = 0;
   focusSweep.skipped = 0;
+  focusSweep.batchSkipped = 0;
+  focusSweep.lastFocusEl = null;
   clearTimeout(focusSweepGoneTimer);
 }
 
-function focusSweepDomain(url) {
+function getFocusSweepModePreference() {
+  try {
+    const mode = localStorage.getItem(FOCUS_SWEEP_MODE_KEY);
+    return mode === 'instant' ? 'instant' : 'review';
+  } catch {
+    return 'review';
+  }
+}
+
+function setFocusSweepModePreference(mode) {
+  try { localStorage.setItem(FOCUS_SWEEP_MODE_KEY, mode === 'instant' ? 'instant' : 'review'); } catch {}
+}
+
+function focusSweepDomainLabel(url) {
   try { return friendlyDomain(new URL(url).hostname); }
   catch { return 'Unknown'; }
+}
+
+function focusSweepDomainKey(url) {
+  try {
+    if (url && url.startsWith('file://')) return 'local-files';
+    return new URL(url).hostname || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function normalizeFocusSweepUrl(url) {
+  return (url || '').trim();
 }
 
 function currentFocusSweepItem() {
   return focusSweep.queue[focusSweep.index] || null;
 }
 
-function toFocusSweepItem(tab) {
+async function getFocusSweepGroupMetaMap() {
+  const map = new Map();
+  try {
+    if (!chrome.tabGroups) return map;
+    const groups = await chrome.tabGroups.query({});
+    for (const group of groups) map.set(group.id, group);
+  } catch {}
+  return map;
+}
+
+function toFocusSweepItem(tab, groupMetaMap = new Map()) {
+  const normalizedUrl = normalizeFocusSweepUrl(tab.url);
+  const groupId = Number.isFinite(tab.groupId) ? tab.groupId : -1;
   return {
-    id: tab.id,
-    url: tab.url,
-    title: tab.title || tab.url || 'Untitled tab',
-    windowId: tab.windowId,
-    pinned: !!tab.pinned,
-    gone: false,
+    id:             tab.id,
+    url:            tab.url,
+    title:          tab.title || tab.url || 'Untitled tab',
+    windowId:       tab.windowId,
+    index:          Number.isFinite(tab.index) ? tab.index : 0,
+    groupId,
+    domain:         focusSweepDomainKey(tab.url),
+    normalizedUrl,
+    pinned:         !!tab.pinned,
+    audible:        !!tab.audible,
+    mutedInfo:      tab.mutedInfo || null,
+    discarded:      !!tab.discarded,
+    incognito:      !!tab.incognito,
+    active:         !!tab.active,
+    favIconUrl:     tab.favIconUrl || '',
+    groupMeta:      groupId >= 0 ? (groupMetaMap.get(groupId) || null) : null,
+    gone:           false,
   };
 }
 
-function buildFocusSweepQueue(mode) {
-  const tabs = getRealTabs().filter(tab => Number.isFinite(tab.id));
-  if (mode !== 'selection' || !selectedTabUrls.size) return tabs.map(toFocusSweepItem);
+function focusSweepItemsFromTabs(tabs, groupMetaMap) {
+  return tabs
+    .filter(tab => Number.isFinite(tab.id))
+    .map(tab => toFocusSweepItem(tab, groupMetaMap));
+}
 
+function focusSweepDomainGroup(sourceId) {
+  return domainGroups.find(group => group.domain === sourceId) || null;
+}
+
+function focusSweepSelectionQueue(tabs, groupMetaMap) {
+  if (!selectedTabUrls.size) return [];
   const selectedUrls = new Set(selectedTabUrls);
   const byUrl = new Map();
   for (const tab of tabs) {
@@ -3777,16 +3890,56 @@ function buildFocusSweepQueue(mode) {
     for (const tab of matches) {
       if (usedIds.has(tab.id)) continue;
       usedIds.add(tab.id);
-      queue.push(toFocusSweepItem(tab));
+      queue.push(toFocusSweepItem(tab, groupMetaMap));
     }
   }
 
   return queue;
 }
 
+async function buildFocusSweepQueueV2({ scope = 'all', sourceId = '' } = {}) {
+  const tabs = getRealTabs().filter(tab => Number.isFinite(tab.id));
+  const groupMetaMap = await getFocusSweepGroupMetaMap();
+  let queue = [];
+  let label = 'All tabs sweep';
+
+  if (scope === 'selection') {
+    queue = focusSweepSelectionQueue(tabs, groupMetaMap);
+    label = 'Selection sweep';
+  } else if (scope === 'domain') {
+    const group = focusSweepDomainGroup(sourceId);
+    let sourceTabs = tabs.filter(tab => focusSweepDomainKey(tab.url) === sourceId);
+    if (group?.domain === '__landing-pages__') {
+      sourceTabs = tabs.filter(tab => isLandingPageUrl(tab.url));
+    } else if (group?.label) {
+      const ids = new Set((group.tabs || []).map(tab => tab.id));
+      sourceTabs = tabs.filter(tab => ids.has(tab.id));
+    }
+    queue = focusSweepItemsFromTabs(sourceTabs, groupMetaMap);
+    label = group
+      ? `${group.domain === '__landing-pages__' ? 'Homepages' : (group.label || friendlyDomain(group.domain))} sweep`
+      : `${friendlyDomain(sourceId)} sweep`;
+  } else if (scope === 'group') {
+    const groupId = Number(sourceId);
+    const group = groupMetaMap.get(groupId);
+    queue = focusSweepItemsFromTabs(tabs.filter(tab => tab.groupId === groupId), groupMetaMap);
+    label = `${group?.title || 'Tab group'} group sweep`;
+  } else {
+    queue = focusSweepItemsFromTabs(tabs, groupMetaMap);
+    label = 'All tabs sweep';
+  }
+
+  return { queue, label };
+}
+
 async function startFocusSweep(mode) {
+  const scope = mode === 'selection' ? 'selection' : 'all';
+  await startFocusSweepV2({ scope });
+}
+
+async function startFocusSweepV2({ scope = 'all', sourceId = '', actionMode = null, options = {} } = {}) {
   await fetchOpenTabs();
-  const queue = buildFocusSweepQueue(mode);
+  const { queue, label } = await buildFocusSweepQueueV2({ scope, sourceId });
   if (!queue.length) {
     showToast('No tabs to sweep');
     return;
@@ -3795,12 +3948,24 @@ async function startFocusSweep(mode) {
   focusSweep.active = true;
   focusSweep.queue = queue;
   focusSweep.index = 0;
+  focusSweep.scope = scope;
+  focusSweep.scopeLabel = label;
+  focusSweep.actionMode = actionMode === 'instant' || actionMode === 'review'
+    ? actionMode
+    : getFocusSweepModePreference();
+  focusSweep.saveFolderId = options.folderId || null;
+  focusSweep.saveFolderName = options.folderName || 'Inbox';
+  focusSweep.stagedActions = new Map();
   focusSweep.reviewedIds = new Set();
   focusSweep.selfActionIds = new Set();
+  focusSweep.busyAction = false;
+  focusSweep.applied = false;
+  focusSweep.appliedSummary = null;
   focusSweep.kept = 0;
   focusSweep.closed = 0;
   focusSweep.saved = 0;
   focusSweep.skipped = 0;
+  focusSweep.batchSkipped = 0;
   focusSweep.lastFocusEl = document.activeElement;
 
   clearSelection();
@@ -3822,6 +3987,12 @@ function exitFocusSweep() {
   }
 }
 
+function discardFocusSweepActions() {
+  const hadActions = focusSweep.stagedActions.size > 0;
+  exitFocusSweep();
+  if (hadActions) showToast('Discarded staged actions');
+}
+
 function focusFocusSweepPrimary() {
   requestAnimationFrame(() => {
     const overlay = document.getElementById('focusSweepOverlay');
@@ -3829,6 +4000,58 @@ function focusFocusSweepPrimary() {
     const primary = overlay.querySelector('[data-action="focus-sweep-keep"]');
     if (primary && typeof primary.focus === 'function') primary.focus();
   });
+}
+
+function focusSweepCounts() {
+  if (focusSweep.appliedSummary) return focusSweep.appliedSummary;
+
+  const staged = { kept: 0, saved: 0, closed: 0 };
+  for (const action of focusSweep.stagedActions.values()) {
+    if (action.type === 'keep') staged.kept += 1;
+    if (action.type === 'save') staged.saved += 1;
+    if (action.type === 'close') staged.closed += 1;
+  }
+
+  return {
+    reviewed: focusSweep.reviewedIds.size,
+    kept: focusSweep.kept + staged.kept,
+    saved: focusSweep.saved + staged.saved,
+    closed: focusSweep.closed + staged.closed,
+    skipped: focusSweep.skipped + focusSweep.batchSkipped,
+  };
+}
+
+function focusSweepPendingText() {
+  if (focusSweep.applied) return 'Applied';
+  const counts = { keep: 0, save: 0, close: 0 };
+  for (const action of focusSweep.stagedActions.values()) {
+    if (action.type === 'keep') counts.keep += 1;
+    if (action.type === 'save') counts.save += 1;
+    if (action.type === 'close') counts.close += 1;
+  }
+  const parts = [];
+  if (counts.keep) parts.push(`${counts.keep} keep`);
+  if (counts.save) parts.push(`${counts.save} save`);
+  if (counts.close) parts.push(`${counts.close} close`);
+  return parts.length ? `${parts.join(' · ')} staged` : 'No pending actions';
+}
+
+function focusSweepActionLabel(action) {
+  if (!action) return '';
+  if (action.type === 'keep') return 'Skipped';
+  if (action.type === 'close') return 'Staged: Close';
+  if (action.type === 'save') return `Staged: Save to ${action.folderName || 'Inbox'}`;
+  return '';
+}
+
+function focusSweepRestFromCurrentDomain() {
+  const item = currentFocusSweepItem();
+  if (!item) return [];
+  return focusSweep.queue.filter(entry => (
+    entry.id !== item.id &&
+    !entry.gone &&
+    entry.domain === item.domain
+  ));
 }
 
 function renderFocusSweep() {
@@ -3839,56 +4062,158 @@ function renderFocusSweep() {
   const done = focusSweep.index >= total;
   const item = done ? null : currentFocusSweepItem();
 
+  const scope = document.getElementById('focusSweepScope');
   const progress = document.getElementById('focusSweepProgress');
   const meter = document.getElementById('focusSweepMeterFill');
+  const staged = document.getElementById('focusSweepStaged');
+  const destination = document.getElementById('focusSweepDestination');
+  const modeButton = document.getElementById('focusSweepMode');
   const body = document.getElementById('focusSweepBody');
+  const contextActions = document.getElementById('focusSweepContextActions');
   const doneEl = document.getElementById('focusSweepDone');
+  const doneTitle = document.getElementById('focusSweepDoneTitle');
   const doneMeta = document.getElementById('focusSweepDoneMeta');
   const favicon = document.getElementById('focusSweepFavicon');
   const domain = document.getElementById('focusSweepDomain');
   const pinned = document.getElementById('focusSweepPinned');
+  const audible = document.getElementById('focusSweepAudible');
+  const discarded = document.getElementById('focusSweepDiscarded');
+  const group = document.getElementById('focusSweepGroup');
   const gone = document.getElementById('focusSweepGone');
   const title = document.getElementById('focusSweepTitle');
   const url = document.getElementById('focusSweepUrl');
+  const actionState = document.getElementById('focusSweepActionState');
 
   overlay.classList.toggle('is-done', done);
+  overlay.classList.toggle('is-busy', focusSweep.busyAction);
 
+  if (scope) scope.textContent = focusSweep.scopeLabel;
   if (progress) progress.textContent = done ? `${total} of ${total}` : `${focusSweep.index + 1} of ${total}`;
   if (meter) meter.style.width = total ? `${Math.min(100, (Math.min(focusSweep.index + 1, total) / total) * 100)}%` : '0%';
+  if (staged) staged.textContent = focusSweepPendingText();
+  if (destination) destination.textContent = `Saving to: ${focusSweep.saveFolderName || 'Inbox'}`;
+  if (modeButton) {
+    modeButton.textContent = focusSweep.actionMode === 'instant' ? 'Instant' : 'Review';
+    modeButton.setAttribute('aria-pressed', focusSweep.actionMode === 'instant' ? 'true' : 'false');
+  }
 
   if (body) body.style.display = done ? 'none' : 'grid';
+  if (contextActions) contextActions.style.display = done ? 'none' : 'flex';
   if (doneEl) doneEl.style.display = done ? 'block' : 'none';
-  if (doneMeta) doneMeta.textContent = `${focusSweep.reviewedIds.size} reviewed · ${focusSweep.saved} saved · ${focusSweep.closed} closed`;
+  if (doneTitle) doneTitle.textContent = focusSweep.applied ? 'Applied' : 'Sweep complete';
+  if (doneMeta) {
+    const counts = focusSweepCounts();
+    doneMeta.textContent =
+      `${counts.reviewed} reviewed · ${counts.kept} left untouched · ${counts.saved} saved · ${counts.closed} closed · ${counts.skipped} skipped`;
+  }
 
   if (!item) {
     setFocusSweepActionDisabled(true);
+    renderFocusSweepDoneActions();
     return;
   }
 
   setFocusSweepActionDisabled(false);
   if (favicon) {
-    const src = favIcon(item.url, 32).replace(/&amp;/g, '&');
+    const src = (item.favIconUrl || favIcon(item.url, 32)).replace(/&amp;/g, '&');
     favicon.style.display = src ? '' : 'none';
     favicon.src = src;
   }
-  if (domain) domain.textContent = focusSweepDomain(item.url);
+  if (domain) domain.textContent = focusSweepDomainLabel(item.url);
   if (pinned) pinned.style.display = item.pinned ? '' : 'none';
+  if (audible) audible.style.display = item.audible ? '' : 'none';
+  if (discarded) discarded.style.display = item.discarded ? '' : 'none';
+  if (group) {
+    const label = item.groupMeta ? (item.groupMeta.title || 'Group') : '';
+    group.textContent = label ? `Group: ${label}` : '';
+    group.style.display = label ? '' : 'none';
+  }
   if (gone) gone.style.display = item.gone ? '' : 'none';
   if (title) title.textContent = item.title || item.url || 'Untitled tab';
   if (url) url.textContent = item.url || '';
+  if (actionState) {
+    const label = focusSweepActionLabel(focusSweep.stagedActions.get(item.id));
+    actionState.textContent = label;
+    actionState.style.display = label ? '' : 'none';
+  }
+
+  renderFocusSweepContextLabels();
+  renderFocusSweepDoneActions();
 
   if (!item.gone) verifyCurrentFocusSweepTab(item.id);
+}
+
+function renderFocusSweepContextLabels() {
+  const overlay = document.getElementById('focusSweepOverlay');
+  if (!overlay) return;
+  const rest = focusSweepRestFromCurrentDomain();
+  const actions = {
+    'focus-sweep-save-rest-domain': rest.length ? `Save rest from domain (${rest.length})` : 'Save rest from domain',
+    'focus-sweep-close-rest-domain': rest.length ? `Close rest from domain (${rest.length})` : 'Close rest from domain',
+    'focus-sweep-keep-rest-domain': rest.length ? `Skip rest from domain (${rest.length})` : 'Skip rest from domain',
+  };
+
+  for (const [action, label] of Object.entries(actions)) {
+    const button = overlay.querySelector(`[data-action="${action}"]`);
+    if (button) button.textContent = label;
+  }
+}
+
+function renderFocusSweepDoneActions() {
+  const overlay = document.getElementById('focusSweepOverlay');
+  if (!overlay) return;
+  const done = focusSweep.index >= focusSweep.queue.length;
+  const hasDestructive = [...focusSweep.stagedActions.values()].some(action => action.type === 'save' || action.type === 'close');
+  const applyButtons = overlay.querySelectorAll('[data-action="focus-sweep-apply"]');
+  applyButtons.forEach(button => {
+    const inline = button.classList.contains('apply-inline');
+    const shouldShow = !focusSweep.applied && focusSweep.actionMode === 'review' && hasDestructive;
+    button.style.display = shouldShow && (inline ? !done : done) ? '' : 'none';
+    button.disabled = focusSweep.busyAction;
+  });
+
+  const discard = overlay.querySelector('[data-action="focus-sweep-discard"]');
+  if (discard) {
+    discard.style.display = !focusSweep.applied && focusSweep.stagedActions.size ? '' : 'none';
+    discard.disabled = focusSweep.busyAction;
+  }
+
 }
 
 function setFocusSweepActionDisabled(done) {
   const overlay = document.getElementById('focusSweepOverlay');
   if (!overlay) return;
-  for (const action of ['focus-sweep-keep', 'focus-sweep-save', 'focus-sweep-close', 'focus-sweep-jump']) {
+  const item = currentFocusSweepItem();
+  const itemUnavailable = !item || item.gone;
+  const disabled = done || focusSweep.busyAction || itemUnavailable;
+  for (const action of [
+    'focus-sweep-keep',
+    'focus-sweep-save',
+    'focus-sweep-save-menu',
+    'focus-sweep-close',
+    'focus-sweep-jump',
+  ]) {
     const button = overlay.querySelector(`[data-action="${action}"]`);
-    if (button) button.disabled = done;
+    if (button) button.disabled = disabled;
   }
+
+  const rest = focusSweepRestFromCurrentDomain();
+  const contextual = {
+    'focus-sweep-save-rest-domain': disabled || !rest.length,
+    'focus-sweep-close-rest-domain': disabled || !rest.length,
+    'focus-sweep-keep-rest-domain': disabled || !rest.length,
+  };
+  for (const [action, isDisabled] of Object.entries(contextual)) {
+    const button = overlay.querySelector(`[data-action="${action}"]`);
+    if (button) button.disabled = isDisabled;
+  }
+
   const prev = overlay.querySelector('[data-action="focus-sweep-prev"]');
-  if (prev) prev.disabled = !focusSweep.active || focusSweep.index <= 0;
+  if (prev) prev.disabled = !focusSweep.active || focusSweep.busyAction || focusSweep.index <= 0;
+  const next = overlay.querySelector('[data-action="focus-sweep-next"]');
+  if (next) next.disabled = !focusSweep.active || focusSweep.busyAction || focusSweep.index >= focusSweep.queue.length;
+  const mode = overlay.querySelector('[data-action="focus-sweep-mode-toggle"]');
+  if (mode) mode.disabled = focusSweep.busyAction;
 }
 
 async function verifyCurrentFocusSweepTab(tabId) {
@@ -3921,15 +4246,28 @@ function markFocusSweepTabGone(tabId) {
   }
 }
 
-function completeFocusSweepItem(kind) {
+function completeFocusSweepItem(kind, { count = true } = {}) {
   const item = currentFocusSweepItem();
   if (item) focusSweep.reviewedIds.add(item.id);
-  if (kind === 'kept') focusSweep.kept += 1;
-  if (kind === 'closed') focusSweep.closed += 1;
-  if (kind === 'saved') focusSweep.saved += 1;
-  if (kind === 'skipped') focusSweep.skipped += 1;
+  if (count) {
+    if (kind === 'kept') focusSweep.kept += 1;
+    if (kind === 'closed') focusSweep.closed += 1;
+    if (kind === 'saved') focusSweep.saved += 1;
+    if (kind === 'skipped') focusSweep.skipped += 1;
+  }
   focusSweep.index = Math.min(focusSweep.index + 1, focusSweep.queue.length);
+  skipAlreadyReviewedFocusSweepItems();
   renderFocusSweep();
+}
+
+function skipAlreadyReviewedFocusSweepItems() {
+  while (
+    focusSweep.index < focusSweep.queue.length &&
+    focusSweep.reviewedIds.has(focusSweep.queue[focusSweep.index].id) &&
+    focusSweep.stagedActions.has(focusSweep.queue[focusSweep.index].id)
+  ) {
+    focusSweep.index += 1;
+  }
 }
 
 async function getCurrentFocusSweepLiveTab() {
@@ -3941,7 +4279,17 @@ async function getCurrentFocusSweepLiveTab() {
     item.url = tab.url || item.url;
     item.title = tab.title || item.title;
     item.windowId = tab.windowId;
+    item.index = Number.isFinite(tab.index) ? tab.index : item.index;
+    item.groupId = Number.isFinite(tab.groupId) ? tab.groupId : -1;
+    item.domain = focusSweepDomainKey(tab.url || item.url);
+    item.normalizedUrl = normalizeFocusSweepUrl(tab.url || item.url);
     item.pinned = !!tab.pinned;
+    item.audible = !!tab.audible;
+    item.mutedInfo = tab.mutedInfo || null;
+    item.discarded = !!tab.discarded;
+    item.incognito = !!tab.incognito;
+    item.active = !!tab.active;
+    item.favIconUrl = tab.favIconUrl || item.favIconUrl || '';
     return tab;
   } catch {
     markFocusSweepTabGone(item.id);
@@ -3949,34 +4297,177 @@ async function getCurrentFocusSweepLiveTab() {
   }
 }
 
+function stageFocusSweepAction(item, type, folderId = null, options = {}) {
+  if (!item || item.gone) return false;
+  focusSweep.stagedActions.set(item.id, {
+    type,
+    folderId: type === 'save' ? (folderId || null) : null,
+    folderName: type === 'save' ? (options.folderName || 'Inbox') : null,
+  });
+  focusSweep.reviewedIds.add(item.id);
+  return true;
+}
+
+function isUnsafeFocusSweepBatchItem(item) {
+  return !!(item && (item.pinned || item.audible || item.active));
+}
+
+async function runInstantFocusSweepBatch(items, type, options = {}) {
+  if (focusSweep.busyAction) return;
+  const usable = [];
+  let skipped = 0;
+  for (const item of items) {
+    if (!item || item.gone) { skipped += 1; continue; }
+    if (options.excludeUnsafe && isUnsafeFocusSweepBatchItem(item)) { skipped += 1; continue; }
+    usable.push(item);
+  }
+
+  if (!usable.length) {
+    if (skipped) focusSweep.batchSkipped += skipped;
+    showToast(skipped ? `Skipped ${skipped} protected tab${skipped !== 1 ? 's' : ''}` : 'Nothing to apply');
+    renderFocusSweep();
+    return;
+  }
+
+  if (type === 'keep') {
+    for (const item of usable) {
+      focusSweep.reviewedIds.add(item.id);
+      focusSweep.kept += 1;
+    }
+    if (skipped) focusSweep.batchSkipped += skipped;
+    skipAlreadyReviewedFocusSweepItems();
+    renderFocusSweep();
+    showToast(`Skipped ${usable.length} tab${usable.length !== 1 ? 's' : ''}${skipped ? ` · ${skipped} skipped` : ''}`);
+    return;
+  }
+
+  focusSweep.busyAction = true;
+  renderFocusSweep();
+
+  const liveTabs = await chrome.tabs.query({});
+  const liveById = new Map(liveTabs.map(tab => [tab.id, tab]));
+  const closeIds = [];
+  const undoUrls = [];
+  const savedIds = [];
+  let savedCount = 0;
+  let closedCount = 0;
+
+  for (const item of usable) {
+    const tab = liveById.get(item.id);
+    if (!tab || isInternalBrowserUrl(tab.url)) { skipped += 1; continue; }
+    if (type === 'save') {
+      try {
+        const id = await saveTabForLater({ url: tab.url, title: tab.title || item.title }, options.folderId || null);
+        savedIds.push(id);
+        undoUrls.push(tab.url);
+        closeIds.push(tab.id);
+        focusSweep.selfActionIds.add(tab.id);
+        focusSweep.reviewedIds.add(tab.id);
+        savedCount += 1;
+      } catch {
+        skipped += 1;
+      }
+    } else {
+      undoUrls.push(tab.url);
+      closeIds.push(tab.id);
+      focusSweep.selfActionIds.add(tab.id);
+      focusSweep.reviewedIds.add(tab.id);
+      closedCount += 1;
+    }
+  }
+
+  if (closeIds.length) {
+    try { await chrome.tabs.remove([...new Set(closeIds)]); } catch {}
+    playCloseSound();
+  }
+
+  if (type === 'save') focusSweep.saved += savedCount;
+  if (type === 'close') focusSweep.closed += closedCount;
+  if (skipped) focusSweep.batchSkipped += skipped;
+
+  await fetchOpenTabs();
+  await renderStaticDashboard();
+  focusSweep.busyAction = false;
+  skipAlreadyReviewedFocusSweepItems();
+  renderFocusSweep();
+
+  const appliedCount = type === 'save' ? savedCount : closedCount;
+  const actionLabel = type === 'save' ? 'Saved' : 'Closed';
+  showToast(`${actionLabel} ${appliedCount} tab${appliedCount !== 1 ? 's' : ''}${skipped ? ` · ${skipped} skipped` : ''}`, async () => {
+    for (const url of undoUrls) { try { await chrome.tabs.create({ url, active: false }); } catch {} }
+    for (const id of savedIds) { try { await dismissSavedTab(id); } catch {} }
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+  });
+}
+
+async function stageFocusSweepItems(items, type, options = {}) {
+  if (focusSweep.actionMode === 'instant') {
+    await runInstantFocusSweepBatch(items, type, options);
+    return;
+  }
+
+  let staged = 0;
+  let skipped = 0;
+  for (const item of items) {
+    if (!item || item.gone) { skipped += 1; continue; }
+    if (options.excludeUnsafe && isUnsafeFocusSweepBatchItem(item)) { skipped += 1; continue; }
+    if (stageFocusSweepAction(item, type, options.folderId || focusSweep.saveFolderId, {
+      folderName: options.folderName || focusSweep.saveFolderName,
+    })) staged += 1;
+  }
+
+  if (skipped) focusSweep.batchSkipped += skipped;
+  skipAlreadyReviewedFocusSweepItems();
+  renderFocusSweep();
+
+  const label = type === 'keep' ? 'Skipped' : type === 'save' ? 'Staged save for' : 'Staged close for';
+  showToast(`${label} ${staged} tab${staged !== 1 ? 's' : ''}${skipped ? ` · ${skipped} skipped` : ''}`);
+}
+
 async function keepFocusSweepTab() {
   if (!focusSweep.active) return;
   const tab = await getCurrentFocusSweepLiveTab();
   if (!tab) return;
-  completeFocusSweepItem('kept');
+  const item = currentFocusSweepItem();
+  if (focusSweep.actionMode === 'review' && item) {
+    stageFocusSweepAction(item, 'keep');
+    completeFocusSweepItem('kept', { count: false });
+    return;
+  }
+  completeFocusSweepItem('kept', { count: true });
 }
 
 function moveFocusSweepIndex(delta) {
-  if (!focusSweep.active || !focusSweep.queue.length) return;
+  if (!focusSweep.active || !focusSweep.queue.length || focusSweep.busyAction) return;
   focusSweep.index = Math.max(0, Math.min(focusSweep.queue.length, focusSweep.index + delta));
   renderFocusSweep();
 }
 
 async function saveFocusSweepTab() {
-  if (!focusSweep.active) return;
+  if (!focusSweep.active || focusSweep.busyAction) return;
   const item = currentFocusSweepItem();
   const tab = await getCurrentFocusSweepLiveTab();
   if (!item || !tab) return;
 
+  if (focusSweep.actionMode === 'review') {
+    stageFocusSweepAction(item, 'save', focusSweep.saveFolderId, { folderName: focusSweep.saveFolderName });
+    completeFocusSweepItem('saved', { count: false });
+    return;
+  }
+
+  focusSweep.busyAction = true;
+  renderFocusSweep();
+
   let savedId = null;
   try {
-    savedId = await saveTabForLater({ url: tab.url, title: tab.title || item.title });
+    savedId = await saveTabForLater({ url: tab.url, title: tab.title || item.title }, focusSweep.saveFolderId);
     focusSweep.selfActionIds.add(tab.id);
     await chrome.tabs.remove(tab.id);
     await fetchOpenTabs();
     await renderStaticDashboard();
     completeFocusSweepItem('saved');
-    showToast('Saved tab to inbox', async () => {
+    showToast(`Saved tab to ${focusSweep.saveFolderName || 'Inbox'}`, async () => {
       try { await chrome.tabs.create({ url: tab.url, active: false }); } catch {}
       if (savedId) { try { await dismissSavedTab(savedId); } catch {} }
       await fetchOpenTabs();
@@ -3984,14 +4475,26 @@ async function saveFocusSweepTab() {
     });
   } catch {
     showToast('Could not save tab');
+  } finally {
+    focusSweep.busyAction = false;
+    renderFocusSweep();
   }
 }
 
 async function closeFocusSweepTab() {
-  if (!focusSweep.active) return;
+  if (!focusSweep.active || focusSweep.busyAction) return;
   const item = currentFocusSweepItem();
   const tab = await getCurrentFocusSweepLiveTab();
   if (!item || !tab) return;
+
+  if (focusSweep.actionMode === 'review') {
+    stageFocusSweepAction(item, 'close');
+    completeFocusSweepItem('closed', { count: false });
+    return;
+  }
+
+  focusSweep.busyAction = true;
+  renderFocusSweep();
 
   try {
     focusSweep.selfActionIds.add(tab.id);
@@ -4007,11 +4510,14 @@ async function closeFocusSweepTab() {
     });
   } catch {
     showToast('Could not close tab');
+  } finally {
+    focusSweep.busyAction = false;
+    renderFocusSweep();
   }
 }
 
 async function jumpToFocusSweepTab() {
-  if (!focusSweep.active) return;
+  if (!focusSweep.active || focusSweep.busyAction) return;
   const tab = await getCurrentFocusSweepLiveTab();
   if (!tab) return;
   try {
@@ -4020,6 +4526,154 @@ async function jumpToFocusSweepTab() {
   } catch {
     showToast('Could not jump to tab');
   }
+}
+
+async function stageFocusSweepRestFromDomain(type) {
+  if (!focusSweep.active) return;
+  const rest = focusSweepRestFromCurrentDomain();
+  if (!rest.length) {
+    showToast('No more tabs from this domain');
+    return;
+  }
+  await stageFocusSweepItems(rest, type, {
+    excludeUnsafe: type === 'save' || type === 'close',
+    folderId: focusSweep.saveFolderId,
+    folderName: focusSweep.saveFolderName,
+  });
+}
+
+function toggleFocusSweepMode() {
+  if (!focusSweep.active || focusSweep.busyAction) return;
+  const next = focusSweep.actionMode === 'instant' ? 'review' : 'instant';
+  if (next === 'instant' && focusSweep.stagedActions.size) {
+    showToast('Apply or discard staged actions first');
+    return;
+  }
+  focusSweep.actionMode = next;
+  setFocusSweepModePreference(next);
+  renderFocusSweep();
+}
+
+async function openFocusSweepSaveMenuFromButton(button = null) {
+  if (!focusSweep.active) return;
+  const target = button || document.querySelector('[data-action="focus-sweep-save-menu"]');
+  const rect = target ? target.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
+  await openFocusSweepSaveMenu(rect.left, rect.bottom + 4);
+}
+
+async function openFocusSweepSaveMenu(x, y) {
+  const folders = await getFolders();
+  const items = [
+    { label: 'Save to Inbox', onClick: () => setFocusSweepSaveDestination(null, 'Inbox') },
+  ];
+  if (folders.length) {
+    items.push({ separator: true }, { heading: true, label: 'Folders' });
+    for (const folder of folders) {
+      items.push({ label: `Save to ${folder.name}`, onClick: () => setFocusSweepSaveDestination(folder.id, folder.name) });
+    }
+  }
+  items.push({ separator: true });
+  items.push({ label: 'New folder...', onClick: async () => {
+    const name = (window.prompt('New folder name:') || '').trim();
+    if (!name) return;
+    const folder = await createFolder(name);
+    if (folder) setFocusSweepSaveDestination(folder.id, folder.name);
+  }});
+  showContextMenu(x, y, items);
+}
+
+function setFocusSweepSaveDestination(folderId, folderName) {
+  focusSweep.saveFolderId = folderId || null;
+  focusSweep.saveFolderName = folderName || 'Inbox';
+  renderFocusSweep();
+  showToast(`Saving to: ${focusSweep.saveFolderName}`);
+}
+
+async function applyFocusSweepActions() {
+  if (!focusSweep.active || focusSweep.busyAction) return;
+
+  const stagedEntries = [...focusSweep.stagedActions.entries()]
+    .filter(([, action]) => action.type === 'save' || action.type === 'close');
+
+  if (!stagedEntries.length) {
+    exitFocusSweep();
+    return;
+  }
+
+  focusSweep.busyAction = true;
+  renderFocusSweep();
+
+  const liveTabs = await chrome.tabs.query({});
+  const liveById = new Map(liveTabs.map(tab => [tab.id, tab]));
+  const closeIds = [];
+  const undoUrls = [];
+  const savedIds = [];
+  let savedCount = 0;
+  let closedCount = 0;
+  let skippedCount = 0;
+
+  for (const [tabId, action] of stagedEntries) {
+    const item = focusSweep.queue.find(entry => entry.id === tabId);
+    const tab = liveById.get(tabId);
+    if (!item || !tab || isInternalBrowserUrl(tab.url)) {
+      skippedCount += 1;
+      continue;
+    }
+
+    if (action.type === 'save') {
+      try {
+        const savedId = await saveTabForLater(
+          { url: tab.url, title: tab.title || item.title },
+          action.folderId || null
+        );
+        savedIds.push(savedId);
+        undoUrls.push(tab.url);
+        closeIds.push(tabId);
+        focusSweep.selfActionIds.add(tabId);
+        savedCount += 1;
+      } catch {
+        skippedCount += 1;
+      }
+    } else if (action.type === 'close') {
+      undoUrls.push(tab.url);
+      closeIds.push(tabId);
+      focusSweep.selfActionIds.add(tabId);
+      closedCount += 1;
+    }
+  }
+
+  if (closeIds.length) {
+    try { await chrome.tabs.remove([...new Set(closeIds)]); } catch {}
+    playCloseSound();
+  }
+
+  await fetchOpenTabs();
+  await renderStaticDashboard();
+
+  const stagedCounts = focusSweepCounts();
+  focusSweep.applied = true;
+  focusSweep.appliedSummary = {
+    reviewed: stagedCounts.reviewed,
+    kept: stagedCounts.kept,
+    saved: savedCount,
+    closed: closedCount,
+    skipped: focusSweep.skipped + focusSweep.batchSkipped + skippedCount,
+  };
+  focusSweep.stagedActions = new Map();
+  focusSweep.busyAction = false;
+  focusSweep.index = focusSweep.queue.length;
+  renderFocusSweep();
+
+  const parts = [];
+  if (savedCount) parts.push(`${savedCount} saved`);
+  if (closedCount) parts.push(`${closedCount} closed`);
+  const label = parts.length ? `Applied: ${parts.join(' · ')}` : 'Applied sweep';
+  showToast(label, async () => {
+    for (const url of undoUrls) { try { await chrome.tabs.create({ url, active: false }); } catch {} }
+    for (const id of savedIds) { try { await dismissSavedTab(id); } catch {} }
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+  });
 }
 
 let brushSelecting = false;
