@@ -94,6 +94,7 @@
       <div class="section-header">
         <h2 id="openTabsSectionTitle">Right now</h2>
         <div class="section-line"></div>
+        <button class="section-mini-btn focus-sweep-launch" data-action="start-focus-sweep-all" type="button" title="Sweep open tabs">Sweep</button>
         <div class="section-count" id="openTabsSectionCount"></div>
       </div>
       <div class="missions" id="openTabsMissions"></div>
@@ -270,10 +271,64 @@
      ================================================================ -->
 <div class="selection-bar" id="selectionBar" style="display:none">
   <span class="selection-count" id="selectionCount">0 selected</span>
+  <button class="selection-btn" data-action="start-focus-sweep-selection" type="button">Sweep</button>
   <button class="selection-btn" data-action="select-save" type="button">Save for later</button>
   <button class="selection-btn" data-action="select-move" type="button">Move to folder…</button>
   <button class="selection-btn danger" data-action="select-close" type="button">Close</button>
   <button class="selection-btn ghost" data-action="select-clear" type="button">Clear</button>
+</div>
+
+<!-- ================================================================
+     FOCUS SWEEP — keyboard triage overlay for open tabs.
+     Queue and actions are managed by app.js.
+     ================================================================ -->
+<div class="focus-sweep-overlay" id="focusSweepOverlay" role="dialog" aria-modal="true" aria-labelledby="focusSweepTitle" style="display:none">
+  <div class="focus-sweep-panel">
+    <div class="focus-sweep-top">
+      <div>
+        <div class="focus-sweep-eyebrow">Focus sweep</div>
+        <div class="focus-sweep-progress" id="focusSweepProgress">0 of 0</div>
+      </div>
+      <button class="focus-sweep-icon-btn" data-action="focus-sweep-exit" type="button" aria-label="Exit focus sweep" title="Exit">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="focus-sweep-meter" aria-hidden="true">
+      <div class="focus-sweep-meter-fill" id="focusSweepMeterFill"></div>
+    </div>
+
+    <div class="focus-sweep-body" id="focusSweepBody">
+      <div class="focus-sweep-favicon-wrap">
+        <img class="focus-sweep-favicon" id="focusSweepFavicon" alt="" src="">
+      </div>
+      <div class="focus-sweep-copy">
+        <div class="focus-sweep-domain-row">
+          <span class="focus-sweep-domain" id="focusSweepDomain"></span>
+          <span class="focus-sweep-badge" id="focusSweepPinned" style="display:none">Pinned</span>
+          <span class="focus-sweep-badge muted" id="focusSweepGone" style="display:none">Gone</span>
+        </div>
+        <h3 class="focus-sweep-title" id="focusSweepTitle">No tab selected</h3>
+        <div class="focus-sweep-url" id="focusSweepUrl"></div>
+      </div>
+    </div>
+
+    <div class="focus-sweep-done" id="focusSweepDone" style="display:none">
+      <div class="focus-sweep-done-title">Sweep complete</div>
+      <div class="focus-sweep-done-meta" id="focusSweepDoneMeta"></div>
+    </div>
+
+    <div class="focus-sweep-actions">
+      <button class="focus-sweep-btn ghost" data-action="focus-sweep-prev" type="button">Prev</button>
+      <button class="focus-sweep-btn primary" data-action="focus-sweep-keep" type="button">Keep</button>
+      <button class="focus-sweep-btn" data-action="focus-sweep-save" type="button">Save</button>
+      <button class="focus-sweep-btn danger" data-action="focus-sweep-close" type="button">Close</button>
+      <button class="focus-sweep-btn" data-action="focus-sweep-jump" type="button">Jump</button>
+      <button class="focus-sweep-btn ghost" data-action="focus-sweep-exit" type="button">Exit</button>
+    </div>
+  </div>
 </div>
 
 <!-- ================================================================

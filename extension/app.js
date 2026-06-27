@@ -2232,6 +2232,14 @@ document.addEventListener('click', async (e) => {
     await openSelectionMoveMenu(rect.left, rect.top);
     return;
   }
+  if (action === 'start-focus-sweep-selection') { await startFocusSweep('selection'); return; }
+  if (action === 'start-focus-sweep-all')       { await startFocusSweep('all');       return; }
+  if (action === 'focus-sweep-keep')            { await keepFocusSweepTab();          return; }
+  if (action === 'focus-sweep-prev')            { moveFocusSweepIndex(-1);            return; }
+  if (action === 'focus-sweep-save')            { await saveFocusSweepTab();          return; }
+  if (action === 'focus-sweep-close')           { await closeFocusSweepTab();         return; }
+  if (action === 'focus-sweep-jump')            { await jumpToFocusSweepTab();        return; }
+  if (action === 'focus-sweep-exit')            { exitFocusSweep();                   return; }
 
   // ---- Reveal the inline "new folder" name input ----
   if (action === 'new-folder') {
@@ -3256,6 +3264,25 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { e.preventDefault(); closeSpeedDialDialog(); }
 });
 
+document.addEventListener('keydown', async (e) => {
+  if (!focusSweep.active) return;
+
+  const key = e.key;
+  let action = null;
+
+  if (key === 'Escape') action = () => exitFocusSweep();
+  else if (key === ' ' || key === 'j' || key === 'J' || key === 'ArrowRight') action = () => keepFocusSweepTab();
+  else if (key === 'k' || key === 'K' || key === 'ArrowLeft') action = () => moveFocusSweepIndex(-1);
+  else if (key === 's' || key === 'S') action = () => saveFocusSweepTab();
+  else if (key === 'x' || key === 'X' || key === 'Delete') action = () => closeFocusSweepTab();
+  else if (key === 'Enter') action = () => jumpToFocusSweepTab();
+
+  if (!action) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  await action();
+});
+
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
 
@@ -3674,6 +3701,327 @@ async function openSelectionMoveMenu(x, y) {
   showContextMenu(x, y, items);
 }
 
+/* ----------------------------------------------------------------
+   FOCUS SWEEP — keyboard triage for open tabs
+   ---------------------------------------------------------------- */
+
+const focusSweep = {
+  active: false,
+  queue: [],
+  index: 0,
+  reviewedIds: new Set(),
+  selfActionIds: new Set(),
+  kept: 0,
+  closed: 0,
+  saved: 0,
+  skipped: 0,
+  lastFocusEl: null,
+};
+
+let focusSweepGoneTimer = null;
+let focusSweepVerifyToken = 0;
+
+function resetFocusSweepState() {
+  focusSweep.active = false;
+  focusSweep.queue = [];
+  focusSweep.index = 0;
+  focusSweep.reviewedIds = new Set();
+  focusSweep.selfActionIds = new Set();
+  focusSweep.kept = 0;
+  focusSweep.closed = 0;
+  focusSweep.saved = 0;
+  focusSweep.skipped = 0;
+  clearTimeout(focusSweepGoneTimer);
+}
+
+function focusSweepDomain(url) {
+  try { return friendlyDomain(new URL(url).hostname); }
+  catch { return 'Unknown'; }
+}
+
+function currentFocusSweepItem() {
+  return focusSweep.queue[focusSweep.index] || null;
+}
+
+function toFocusSweepItem(tab) {
+  return {
+    id: tab.id,
+    url: tab.url,
+    title: tab.title || tab.url || 'Untitled tab',
+    windowId: tab.windowId,
+    pinned: !!tab.pinned,
+    gone: false,
+  };
+}
+
+function buildFocusSweepQueue(mode) {
+  const tabs = getRealTabs().filter(tab => Number.isFinite(tab.id));
+  if (mode !== 'selection' || !selectedTabUrls.size) return tabs.map(toFocusSweepItem);
+
+  const selectedUrls = new Set(selectedTabUrls);
+  const byUrl = new Map();
+  for (const tab of tabs) {
+    if (!selectedUrls.has(tab.url)) continue;
+    if (!byUrl.has(tab.url)) byUrl.set(tab.url, []);
+    byUrl.get(tab.url).push(tab);
+  }
+
+  const usedIds = new Set();
+  const queue = [];
+  const orderedUrls = allSelectableChips()
+    .map(chip => chip.dataset.tabUrl)
+    .filter(url => selectedUrls.has(url));
+
+  for (const url of orderedUrls) {
+    const matches = byUrl.get(url) || [];
+    for (const tab of matches) {
+      if (usedIds.has(tab.id)) continue;
+      usedIds.add(tab.id);
+      queue.push(toFocusSweepItem(tab));
+    }
+  }
+
+  return queue;
+}
+
+async function startFocusSweep(mode) {
+  await fetchOpenTabs();
+  const queue = buildFocusSweepQueue(mode);
+  if (!queue.length) {
+    showToast('No tabs to sweep');
+    return;
+  }
+
+  focusSweep.active = true;
+  focusSweep.queue = queue;
+  focusSweep.index = 0;
+  focusSweep.reviewedIds = new Set();
+  focusSweep.selfActionIds = new Set();
+  focusSweep.kept = 0;
+  focusSweep.closed = 0;
+  focusSweep.saved = 0;
+  focusSweep.skipped = 0;
+  focusSweep.lastFocusEl = document.activeElement;
+
+  clearSelection();
+  clearSavedSelection();
+
+  const overlay = document.getElementById('focusSweepOverlay');
+  if (overlay) overlay.style.display = 'flex';
+  renderFocusSweep();
+  focusFocusSweepPrimary();
+}
+
+function exitFocusSweep() {
+  const overlay = document.getElementById('focusSweepOverlay');
+  if (overlay) overlay.style.display = 'none';
+  const previousFocus = focusSweep.lastFocusEl;
+  resetFocusSweepState();
+  if (previousFocus && typeof previousFocus.focus === 'function') {
+    try { previousFocus.focus(); } catch {}
+  }
+}
+
+function focusFocusSweepPrimary() {
+  requestAnimationFrame(() => {
+    const overlay = document.getElementById('focusSweepOverlay');
+    if (!overlay || overlay.style.display === 'none') return;
+    const primary = overlay.querySelector('[data-action="focus-sweep-keep"]');
+    if (primary && typeof primary.focus === 'function') primary.focus();
+  });
+}
+
+function renderFocusSweep() {
+  const overlay = document.getElementById('focusSweepOverlay');
+  if (!overlay) return;
+
+  const total = focusSweep.queue.length;
+  const done = focusSweep.index >= total;
+  const item = done ? null : currentFocusSweepItem();
+
+  const progress = document.getElementById('focusSweepProgress');
+  const meter = document.getElementById('focusSweepMeterFill');
+  const body = document.getElementById('focusSweepBody');
+  const doneEl = document.getElementById('focusSweepDone');
+  const doneMeta = document.getElementById('focusSweepDoneMeta');
+  const favicon = document.getElementById('focusSweepFavicon');
+  const domain = document.getElementById('focusSweepDomain');
+  const pinned = document.getElementById('focusSweepPinned');
+  const gone = document.getElementById('focusSweepGone');
+  const title = document.getElementById('focusSweepTitle');
+  const url = document.getElementById('focusSweepUrl');
+
+  overlay.classList.toggle('is-done', done);
+
+  if (progress) progress.textContent = done ? `${total} of ${total}` : `${focusSweep.index + 1} of ${total}`;
+  if (meter) meter.style.width = total ? `${Math.min(100, (Math.min(focusSweep.index + 1, total) / total) * 100)}%` : '0%';
+
+  if (body) body.style.display = done ? 'none' : 'grid';
+  if (doneEl) doneEl.style.display = done ? 'block' : 'none';
+  if (doneMeta) doneMeta.textContent = `${focusSweep.reviewedIds.size} reviewed · ${focusSweep.saved} saved · ${focusSweep.closed} closed`;
+
+  if (!item) {
+    setFocusSweepActionDisabled(true);
+    return;
+  }
+
+  setFocusSweepActionDisabled(false);
+  if (favicon) {
+    const src = favIcon(item.url, 32).replace(/&amp;/g, '&');
+    favicon.style.display = src ? '' : 'none';
+    favicon.src = src;
+  }
+  if (domain) domain.textContent = focusSweepDomain(item.url);
+  if (pinned) pinned.style.display = item.pinned ? '' : 'none';
+  if (gone) gone.style.display = item.gone ? '' : 'none';
+  if (title) title.textContent = item.title || item.url || 'Untitled tab';
+  if (url) url.textContent = item.url || '';
+
+  if (!item.gone) verifyCurrentFocusSweepTab(item.id);
+}
+
+function setFocusSweepActionDisabled(done) {
+  const overlay = document.getElementById('focusSweepOverlay');
+  if (!overlay) return;
+  for (const action of ['focus-sweep-keep', 'focus-sweep-save', 'focus-sweep-close', 'focus-sweep-jump']) {
+    const button = overlay.querySelector(`[data-action="${action}"]`);
+    if (button) button.disabled = done;
+  }
+  const prev = overlay.querySelector('[data-action="focus-sweep-prev"]');
+  if (prev) prev.disabled = !focusSweep.active || focusSweep.index <= 0;
+}
+
+async function verifyCurrentFocusSweepTab(tabId) {
+  const token = ++focusSweepVerifyToken;
+  let live = null;
+  try { live = await chrome.tabs.get(tabId); } catch {}
+  if (token !== focusSweepVerifyToken || !focusSweep.active) return;
+  const current = currentFocusSweepItem();
+  if (!current || current.id !== tabId || live) return;
+  markFocusSweepTabGone(tabId);
+}
+
+function markFocusSweepTabGone(tabId) {
+  if (focusSweep.selfActionIds.has(tabId)) {
+    focusSweep.selfActionIds.delete(tabId);
+    return;
+  }
+
+  const item = focusSweep.queue.find(entry => entry.id === tabId);
+  if (!item || item.gone) return;
+  item.gone = true;
+
+  if (focusSweep.active && currentFocusSweepItem()?.id === tabId) {
+    renderFocusSweep();
+    clearTimeout(focusSweepGoneTimer);
+    focusSweepGoneTimer = setTimeout(() => {
+      if (!focusSweep.active || currentFocusSweepItem()?.id !== tabId) return;
+      completeFocusSweepItem('skipped');
+    }, 700);
+  }
+}
+
+function completeFocusSweepItem(kind) {
+  const item = currentFocusSweepItem();
+  if (item) focusSweep.reviewedIds.add(item.id);
+  if (kind === 'kept') focusSweep.kept += 1;
+  if (kind === 'closed') focusSweep.closed += 1;
+  if (kind === 'saved') focusSweep.saved += 1;
+  if (kind === 'skipped') focusSweep.skipped += 1;
+  focusSweep.index = Math.min(focusSweep.index + 1, focusSweep.queue.length);
+  renderFocusSweep();
+}
+
+async function getCurrentFocusSweepLiveTab() {
+  const item = currentFocusSweepItem();
+  if (!item) return null;
+  try {
+    const tab = await chrome.tabs.get(item.id);
+    if (!tab || isInternalBrowserUrl(tab.url)) throw new Error('Tab is unavailable');
+    item.url = tab.url || item.url;
+    item.title = tab.title || item.title;
+    item.windowId = tab.windowId;
+    item.pinned = !!tab.pinned;
+    return tab;
+  } catch {
+    markFocusSweepTabGone(item.id);
+    return null;
+  }
+}
+
+async function keepFocusSweepTab() {
+  if (!focusSweep.active) return;
+  const tab = await getCurrentFocusSweepLiveTab();
+  if (!tab) return;
+  completeFocusSweepItem('kept');
+}
+
+function moveFocusSweepIndex(delta) {
+  if (!focusSweep.active || !focusSweep.queue.length) return;
+  focusSweep.index = Math.max(0, Math.min(focusSweep.queue.length, focusSweep.index + delta));
+  renderFocusSweep();
+}
+
+async function saveFocusSweepTab() {
+  if (!focusSweep.active) return;
+  const item = currentFocusSweepItem();
+  const tab = await getCurrentFocusSweepLiveTab();
+  if (!item || !tab) return;
+
+  let savedId = null;
+  try {
+    savedId = await saveTabForLater({ url: tab.url, title: tab.title || item.title });
+    focusSweep.selfActionIds.add(tab.id);
+    await chrome.tabs.remove(tab.id);
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+    completeFocusSweepItem('saved');
+    showToast('Saved tab to inbox', async () => {
+      try { await chrome.tabs.create({ url: tab.url, active: false }); } catch {}
+      if (savedId) { try { await dismissSavedTab(savedId); } catch {} }
+      await fetchOpenTabs();
+      await renderStaticDashboard();
+    });
+  } catch {
+    showToast('Could not save tab');
+  }
+}
+
+async function closeFocusSweepTab() {
+  if (!focusSweep.active) return;
+  const item = currentFocusSweepItem();
+  const tab = await getCurrentFocusSweepLiveTab();
+  if (!item || !tab) return;
+
+  try {
+    focusSweep.selfActionIds.add(tab.id);
+    await chrome.tabs.remove(tab.id);
+    await fetchOpenTabs();
+    await renderStaticDashboard();
+    playCloseSound();
+    completeFocusSweepItem('closed');
+    showToast('Closed tab', async () => {
+      try { await chrome.tabs.create({ url: tab.url, active: false }); } catch {}
+      await fetchOpenTabs();
+      await renderStaticDashboard();
+    });
+  } catch {
+    showToast('Could not close tab');
+  }
+}
+
+async function jumpToFocusSweepTab() {
+  if (!focusSweep.active) return;
+  const tab = await getCurrentFocusSweepLiveTab();
+  if (!tab) return;
+  try {
+    await chrome.tabs.update(tab.id, { active: true });
+    await chrome.windows.update(tab.windowId, { focused: true });
+  } catch {
+    showToast('Could not jump to tab');
+  }
+}
+
 let brushSelecting = false;
 let brushMode = 'add';
 let brushTargetKind = null;
@@ -3897,6 +4245,7 @@ const pageOpenedAt = Date.now();
 function autoRefreshBlocked() {
   if (dragData) return true;
   if (privacyOn) return true;
+  if (focusSweep.active) return true;
   const menu    = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') return true;
   for (const id of ['folderDeleteDialog', 'closeAllDialog', 'speedDialDialog']) {
@@ -3933,6 +4282,7 @@ try {
   if (typeof chrome !== 'undefined' && chrome.tabs) {
     chrome.tabs.onCreated.addListener(scheduleAutoRefresh);
     chrome.tabs.onRemoved.addListener(scheduleAutoRefresh);
+    chrome.tabs.onRemoved.addListener((tabId) => markFocusSweepTabGone(tabId));
     chrome.tabs.onUpdated.addListener(scheduleAutoRefresh);
     if (chrome.tabs.onMoved)    chrome.tabs.onMoved.addListener(scheduleAutoRefresh);
     if (chrome.tabs.onAttached) chrome.tabs.onAttached.addListener(scheduleAutoRefresh);
