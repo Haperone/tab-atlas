@@ -431,6 +431,32 @@ async function focusTab(url) {
   await chrome.windows.update(match.windowId, { focused: true });
 }
 
+function tabUndoSnapshot(tabOrUrl) {
+  if (!tabOrUrl) return null;
+  if (typeof tabOrUrl === 'string') return tabOrUrl ? { url: tabOrUrl, pinned: false } : null;
+  if (!tabOrUrl.url) return null;
+  return {
+    url: tabOrUrl.url,
+    pinned: !!tabOrUrl.pinned,
+  };
+}
+
+async function restoreUndoTab(snapshot) {
+  const tab = tabUndoSnapshot(snapshot);
+  if (!tab) return null;
+  const created = await chrome.tabs.create({ url: tab.url, active: false });
+  if (tab.pinned && created?.id != null) {
+    try { await chrome.tabs.update(created.id, { pinned: true }); } catch {}
+  }
+  return created;
+}
+
+async function restoreUndoTabs(snapshots) {
+  for (const snapshot of snapshots || []) {
+    try { await restoreUndoTab(snapshot); } catch {}
+  }
+}
+
 /**
  * closeDuplicateTabs(urls, keepOne)
  *
@@ -441,21 +467,29 @@ async function focusTab(url) {
 async function closeDuplicateTabs(urls, keepOne = true) {
   const allTabs = await chrome.tabs.query({});
   const toClose = [];
+  const undoTabs = [];
 
   for (const url of urls) {
     const matching = allTabs.filter(t => t.url === url);
     if (keepOne) {
       const keep = matching.find(t => t.active) || matching[0];
       for (const tab of matching) {
-        if (tab.id !== keep.id) toClose.push(tab.id);
+        if (tab.id !== keep.id) {
+          toClose.push(tab.id);
+          undoTabs.push(tabUndoSnapshot(tab));
+        }
       }
     } else {
-      for (const tab of matching) toClose.push(tab.id);
+      for (const tab of matching) {
+        toClose.push(tab.id);
+        undoTabs.push(tabUndoSnapshot(tab));
+      }
     }
   }
 
   if (toClose.length > 0) await chrome.tabs.remove(toClose);
   await fetchOpenTabs();
+  return undoTabs.filter(Boolean);
 }
 
 /**
@@ -2413,6 +2447,7 @@ document.addEventListener('click', async (e) => {
     // Close the tab in Chrome directly
     const allTabs = await chrome.tabs.query({});
     const match   = allTabs.find(t => t.url === tabUrl);
+    const undoTabs = [tabUndoSnapshot(match || tabUrl)].filter(Boolean);
     if (match) await chrome.tabs.remove(match.id);
     await fetchOpenTabs();
 
@@ -2444,7 +2479,7 @@ document.addEventListener('click', async (e) => {
     if (statTabs) statTabs.textContent = openTabs.length;
 
     showToast('Tab closed', async () => {
-      try { await chrome.tabs.create({ url: tabUrl, active: false }); } catch {}
+      await restoreUndoTabs(undoTabs);
       await fetchOpenTabs();
       await renderStaticDashboard();
     });
@@ -2471,6 +2506,7 @@ document.addEventListener('click', async (e) => {
     // Close the tab in Chrome
     const allTabs = await chrome.tabs.query({});
     const match   = allTabs.find(t => t.url === tabUrl);
+    const undoTabs = [tabUndoSnapshot(match || tabUrl)].filter(Boolean);
     if (match) await chrome.tabs.remove(match.id);
     await fetchOpenTabs();
 
@@ -2484,7 +2520,7 @@ document.addEventListener('click', async (e) => {
     }
 
     showToast('Saved for later', async () => {
-      try { await chrome.tabs.create({ url: tabUrl, active: false }); } catch {}
+      await restoreUndoTabs(undoTabs);
       if (savedId) await dismissSavedTab(savedId);
       await fetchOpenTabs();
       await renderStaticDashboard();
@@ -2547,6 +2583,7 @@ document.addEventListener('click', async (e) => {
     if (!group) return;
 
     const urls      = group.tabs.map(t => t.url);
+    const undoTabs  = group.tabs.map(tabUndoSnapshot).filter(Boolean);
     // Landing pages and custom groups (whose domain key isn't a real hostname)
     // must use exact URL matching to avoid closing unrelated tabs
     const useExact  = group.domain === '__landing-pages__' || !!group.label;
@@ -2568,7 +2605,7 @@ document.addEventListener('click', async (e) => {
 
     const groupLabel = group.domain === '__landing-pages__' ? 'Homepages' : (group.label || friendlyDomain(group.domain));
     showToast(`Closed ${urls.length} tab${urls.length !== 1 ? 's' : ''} from ${groupLabel}`, async () => {
-      for (const u of urls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+      await restoreUndoTabs(undoTabs);
       await fetchOpenTabs();
       await renderStaticDashboard();
     });
@@ -2624,12 +2661,12 @@ document.addEventListener('click', async (e) => {
     const copies = openTabs.filter(t => t.url === url).length;
     const extras = Math.max(0, copies - 1);
 
-    await closeDuplicateTabs([url], true);
+    const undoTabs = await closeDuplicateTabs([url], true);
     playCloseSound();
     await renderStaticDashboard();
 
     showToast(`Closed ${extras} duplicate${extras !== 1 ? 's' : ''}, kept one`, async () => {
-      for (let i = 0; i < extras; i++) { try { await chrome.tabs.create({ url, active: false }); } catch {} }
+      await restoreUndoTabs(undoTabs);
       await fetchOpenTabs();
       await renderStaticDashboard();
     });
@@ -2702,7 +2739,7 @@ function closableTabs(includePinned) {
  */
 async function doCloseAll(includePinned) {
   const targets = closableTabs(includePinned);
-  const urls = targets.map(t => t.url);
+  const undoTabs = targets.map(tabUndoSnapshot).filter(Boolean);
   const ids  = targets.map(t => t.id);
   if (ids.length === 0) { showToast('Nothing to close'); return; }
 
@@ -2726,7 +2763,7 @@ async function doCloseAll(includePinned) {
     ? `Closed ${ids.length} tab${ids.length !== 1 ? 's' : ''} — kept ${kept} pinned`
     : 'All tabs closed. Fresh start.';
   showToast(msg, async () => {
-    for (const u of urls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+    await restoreUndoTabs(undoTabs);
     await fetchOpenTabs();
     await renderStaticDashboard();
   });
@@ -3636,12 +3673,6 @@ function rangeSavedSelectTo(id) {
 }
 
 // Chrome tab ids for the currently-selected URLs (a URL may match several tabs)
-async function selectedTabIds() {
-  const urlSet = new Set(selectedTabUrls);
-  const all = await chrome.tabs.query({});
-  return all.filter(t => urlSet.has(t.url)).map(t => t.id);
-}
-
 /**
  * closeSelectedTabs()
  *
@@ -3651,7 +3682,11 @@ async function selectedTabIds() {
 async function closeSelectedTabs() {
   const urls = [...selectedTabUrls];
   if (!urls.length) return;
-  const ids = await selectedTabIds();
+  const urlSet = new Set(selectedTabUrls);
+  const allTabs = await chrome.tabs.query({});
+  const targets = allTabs.filter(t => urlSet.has(t.url));
+  const ids = targets.map(t => t.id);
+  const undoTabs = targets.map(tabUndoSnapshot).filter(Boolean);
   if (!ids.length) { clearSelection(); return; }
 
   try { await chrome.tabs.remove(ids); } catch {}
@@ -3664,7 +3699,7 @@ async function closeSelectedTabs() {
   clearSelection();
   await renderStaticDashboard();
   showToast(`Closed ${urls.length} tab${urls.length !== 1 ? 's' : ''}`, async () => {
-    for (const u of urls) { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+    await restoreUndoTabs(undoTabs);
     await fetchOpenTabs();
     await renderStaticDashboard();
   });
@@ -3686,13 +3721,20 @@ async function saveSelectedTabs(folderId) {
     folderName = f ? f.name : null;
   }
 
-  const titleFor = (u) => { const t = openTabs.find(x => x.url === u); return t ? (t.title || u) : u; };
+  const urlSet = new Set(urls);
+  const allTabs = await chrome.tabs.query({});
+  const targets = allTabs.filter(t => urlSet.has(t.url));
+  const undoTabs = targets.map(tabUndoSnapshot).filter(Boolean);
+  const titleFor = (u) => {
+    const t = targets.find(x => x.url === u) || openTabs.find(x => x.url === u);
+    return t ? (t.title || u) : u;
+  };
   const savedIds = [];
   for (const u of urls) {
     try { savedIds.push(await saveTabForLater({ url: u, title: titleFor(u) }, folderId || null)); } catch {}
   }
 
-  const ids = await selectedTabIds();
+  const ids = targets.map(t => t.id);
   if (ids.length) { try { await chrome.tabs.remove(ids); } catch {} }
   await fetchOpenTabs();
 
@@ -3701,7 +3743,7 @@ async function saveSelectedTabs(folderId) {
 
   const dest = folderName ? `“${folderName}”` : 'inbox';
   showToast(`Saved ${urls.length} tab${urls.length !== 1 ? 's' : ''} to ${dest}`, async () => {
-    for (const u of urls)      { try { await chrome.tabs.create({ url: u, active: false }); } catch {} }
+    await restoreUndoTabs(undoTabs);
     for (const id of savedIds) { try { await dismissSavedTab(id); } catch {} }
     await fetchOpenTabs();
     await renderStaticDashboard();
@@ -4168,7 +4210,7 @@ function renderFocusSweepDoneActions() {
   applyButtons.forEach(button => {
     const inline = button.classList.contains('apply-inline');
     const shouldShow = !focusSweep.applied && focusSweep.actionMode === 'review' && hasDestructive;
-    button.style.display = shouldShow && (inline ? !done : done) ? '' : 'none';
+    button.style.display = shouldShow && (inline ? !done : done) ? 'inline-flex' : 'none';
     button.disabled = focusSweep.busyAction;
   });
 
@@ -4347,7 +4389,7 @@ async function runInstantFocusSweepBatch(items, type, options = {}) {
   const liveTabs = await chrome.tabs.query({});
   const liveById = new Map(liveTabs.map(tab => [tab.id, tab]));
   const closeIds = [];
-  const undoUrls = [];
+  const undoTabs = [];
   const savedIds = [];
   let savedCount = 0;
   let closedCount = 0;
@@ -4359,7 +4401,7 @@ async function runInstantFocusSweepBatch(items, type, options = {}) {
       try {
         const id = await saveTabForLater({ url: tab.url, title: tab.title || item.title }, options.folderId || null);
         savedIds.push(id);
-        undoUrls.push(tab.url);
+        undoTabs.push(tabUndoSnapshot(tab));
         closeIds.push(tab.id);
         focusSweep.selfActionIds.add(tab.id);
         focusSweep.reviewedIds.add(tab.id);
@@ -4368,7 +4410,7 @@ async function runInstantFocusSweepBatch(items, type, options = {}) {
         skipped += 1;
       }
     } else {
-      undoUrls.push(tab.url);
+      undoTabs.push(tabUndoSnapshot(tab));
       closeIds.push(tab.id);
       focusSweep.selfActionIds.add(tab.id);
       focusSweep.reviewedIds.add(tab.id);
@@ -4394,7 +4436,7 @@ async function runInstantFocusSweepBatch(items, type, options = {}) {
   const appliedCount = type === 'save' ? savedCount : closedCount;
   const actionLabel = type === 'save' ? 'Saved' : 'Closed';
   showToast(`${actionLabel} ${appliedCount} tab${appliedCount !== 1 ? 's' : ''}${skipped ? ` · ${skipped} skipped` : ''}`, async () => {
-    for (const url of undoUrls) { try { await chrome.tabs.create({ url, active: false }); } catch {} }
+    await restoreUndoTabs(undoTabs);
     for (const id of savedIds) { try { await dismissSavedTab(id); } catch {} }
     await fetchOpenTabs();
     await renderStaticDashboard();
@@ -4460,6 +4502,7 @@ async function saveFocusSweepTab() {
   renderFocusSweep();
 
   let savedId = null;
+  const undoTabs = [tabUndoSnapshot(tab)].filter(Boolean);
   try {
     savedId = await saveTabForLater({ url: tab.url, title: tab.title || item.title }, focusSweep.saveFolderId);
     focusSweep.selfActionIds.add(tab.id);
@@ -4468,7 +4511,7 @@ async function saveFocusSweepTab() {
     await renderStaticDashboard();
     completeFocusSweepItem('saved');
     showToast(`Saved tab to ${focusSweep.saveFolderName || 'Inbox'}`, async () => {
-      try { await chrome.tabs.create({ url: tab.url, active: false }); } catch {}
+      await restoreUndoTabs(undoTabs);
       if (savedId) { try { await dismissSavedTab(savedId); } catch {} }
       await fetchOpenTabs();
       await renderStaticDashboard();
@@ -4496,6 +4539,7 @@ async function closeFocusSweepTab() {
   focusSweep.busyAction = true;
   renderFocusSweep();
 
+  const undoTabs = [tabUndoSnapshot(tab)].filter(Boolean);
   try {
     focusSweep.selfActionIds.add(tab.id);
     await chrome.tabs.remove(tab.id);
@@ -4504,7 +4548,7 @@ async function closeFocusSweepTab() {
     playCloseSound();
     completeFocusSweepItem('closed');
     showToast('Closed tab', async () => {
-      try { await chrome.tabs.create({ url: tab.url, active: false }); } catch {}
+      await restoreUndoTabs(undoTabs);
       await fetchOpenTabs();
       await renderStaticDashboard();
     });
@@ -4606,7 +4650,7 @@ async function applyFocusSweepActions() {
   const liveTabs = await chrome.tabs.query({});
   const liveById = new Map(liveTabs.map(tab => [tab.id, tab]));
   const closeIds = [];
-  const undoUrls = [];
+  const undoTabs = [];
   const savedIds = [];
   let savedCount = 0;
   let closedCount = 0;
@@ -4627,7 +4671,7 @@ async function applyFocusSweepActions() {
           action.folderId || null
         );
         savedIds.push(savedId);
-        undoUrls.push(tab.url);
+        undoTabs.push(tabUndoSnapshot(tab));
         closeIds.push(tabId);
         focusSweep.selfActionIds.add(tabId);
         savedCount += 1;
@@ -4635,7 +4679,7 @@ async function applyFocusSweepActions() {
         skippedCount += 1;
       }
     } else if (action.type === 'close') {
-      undoUrls.push(tab.url);
+      undoTabs.push(tabUndoSnapshot(tab));
       closeIds.push(tabId);
       focusSweep.selfActionIds.add(tabId);
       closedCount += 1;
@@ -4669,7 +4713,7 @@ async function applyFocusSweepActions() {
   if (closedCount) parts.push(`${closedCount} closed`);
   const label = parts.length ? `Applied: ${parts.join(' · ')}` : 'Applied sweep';
   showToast(label, async () => {
-    for (const url of undoUrls) { try { await chrome.tabs.create({ url, active: false }); } catch {} }
+    await restoreUndoTabs(undoTabs);
     for (const id of savedIds) { try { await dismissSavedTab(id); } catch {} }
     await fetchOpenTabs();
     await renderStaticDashboard();

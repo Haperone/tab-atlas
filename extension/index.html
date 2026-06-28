@@ -344,13 +344,25 @@
     </div>
 
     <div class="focus-sweep-actions">
-      <button class="focus-sweep-btn ghost" data-action="focus-sweep-prev" type="button">Prev</button>
-      <button class="focus-sweep-btn ghost" data-action="focus-sweep-next" type="button">Next</button>
-      <button class="focus-sweep-btn primary" data-action="focus-sweep-keep" type="button">Skip</button>
-      <button class="focus-sweep-btn" data-action="focus-sweep-save" type="button">Save</button>
-      <button class="focus-sweep-btn folder-picker" data-action="focus-sweep-save-menu" type="button" aria-label="Choose save folder" title="Choose save folder">Folder</button>
-      <button class="focus-sweep-btn danger" data-action="focus-sweep-close" type="button">Close</button>
-      <button class="focus-sweep-btn primary apply-inline" data-action="focus-sweep-apply" type="button">Apply</button>
+      <div class="focus-sweep-nav-actions">
+        <button class="focus-sweep-btn focus-sweep-step" data-action="focus-sweep-prev" type="button" aria-label="Previous tab" title="Previous">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <button class="focus-sweep-btn focus-sweep-step" data-action="focus-sweep-next" type="button" aria-label="Next tab" title="Next">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      </div>
+      <div class="focus-sweep-decision-actions">
+        <button class="focus-sweep-btn" data-action="focus-sweep-keep" type="button">Skip</button>
+        <button class="focus-sweep-btn primary" data-action="focus-sweep-save" type="button">Save</button>
+        <button class="focus-sweep-btn folder-picker" data-action="focus-sweep-save-menu" type="button" aria-label="Choose save folder" title="Choose save folder">Folder</button>
+        <button class="focus-sweep-btn danger" data-action="focus-sweep-close" type="button">Close</button>
+        <button class="focus-sweep-btn primary apply-inline" data-action="focus-sweep-apply" type="button">Apply</button>
+      </div>
     </div>
   </div>
 </div>
