@@ -2233,6 +2233,12 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
+  // ---- Guided onboarding ----
+  if (action === 'start-onboarding')  { startOnboarding({ manual: true });       return; }
+  if (action === 'onboarding-skip')   { finishOnboarding({ skipped: true });     return; }
+  if (action === 'onboarding-prev')   { moveOnboarding(-1);                      return; }
+  if (action === 'onboarding-next')   { moveOnboarding(1);                       return; }
+
   // ---- Speed-dial shortcuts ----
   if (action === 'speeddial-open') {
     const url = actionEl.dataset.url;
@@ -3323,6 +3329,11 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { e.preventDefault(); closeSpeedDialDialog(); }
 });
 
+document.addEventListener('keydown', (e) => {
+  if (!handleOnboardingKeydown(e)) return;
+  e.stopImmediatePropagation();
+}, true);
+
 document.addEventListener('keydown', async (e) => {
   if (!focusSweep.active) return;
 
@@ -3387,10 +3398,12 @@ window.addEventListener('scroll', () => {
   closeContextMenu();
   positionTabGroupsDock();
   positionWorkspaceDrawer();
+  scheduleOnboardingPosition();
 }, true);
 window.addEventListener('resize', () => {
   positionTabGroupsDock();
   positionWorkspaceDrawer();
+  scheduleOnboardingPosition();
 });
 
 
@@ -4014,6 +4027,8 @@ async function startFocusSweepV2({ scope = 'all', sourceId = '', actionMode = nu
   clearSavedSelection();
 
   const overlay = document.getElementById('focusSweepOverlay');
+  document.documentElement.classList.add('focus-sweep-open');
+  document.body.classList.add('focus-sweep-open');
   if (overlay) overlay.style.display = 'flex';
   renderFocusSweep();
   focusFocusSweepPrimary();
@@ -4022,6 +4037,8 @@ async function startFocusSweepV2({ scope = 'all', sourceId = '', actionMode = nu
 function exitFocusSweep() {
   const overlay = document.getElementById('focusSweepOverlay');
   if (overlay) overlay.style.display = 'none';
+  document.documentElement.classList.remove('focus-sweep-open');
+  document.body.classList.remove('focus-sweep-open');
   const previousFocus = focusSweep.lastFocusEl;
   resetFocusSweepState();
   if (previousFocus && typeof previousFocus.focus === 'function') {
@@ -4931,6 +4948,382 @@ function removeSpeedDial(id) {
   renderSpeedDial();
 }
 
+/* ----------------------------------------------------------------
+   GUIDED ONBOARDING — first-run tour over the real dashboard UI
+   ---------------------------------------------------------------- */
+
+const ONBOARDING_COMPLETE_KEY = 'tabout-onboarding-v1-complete';
+
+const ONBOARDING_STEPS = [
+  {
+    title: 'Open tabs',
+    copy: 'Domain cards show what is open right now. Click a title to jump, bookmark to save, or close tabs when you are done.',
+    targets: ['#openTabsSection'],
+    fallback: '#dashboardColumns',
+  },
+  {
+    title: 'Saved for later',
+    copy: 'Saved for later is your inbox for tabs you want to keep without leaving them open.',
+    targets: ['#deferredColumn'],
+    fallback: '#dashboardColumns',
+  },
+  {
+    title: 'Folders',
+    copy: 'Folders organize saved tabs into compact groups for projects, research, videos, and tasks.',
+    targets: ['#foldersColumn'],
+    fallback: '#dashboardColumns',
+  },
+  {
+    title: 'Search',
+    copy: 'Search open and saved tabs with free text. Press / to focus search, or narrow with domain:github and url:docs.',
+    targets: ['.global-search-row'],
+    fallback: '#dashboardColumns',
+  },
+  {
+    title: 'Sweep',
+    copy: 'Sweep opens a fast triage mode for open tabs, so you can skip, save, or close decisions without digging through cards.',
+    targets: ['[data-action="start-focus-sweep-all"]'],
+    fallback: '#openTabsSection',
+  },
+  {
+    title: 'Save workspace',
+    copy: 'Use Save workspace when the whole browser setup is worth keeping as one restorable state.',
+    targets: ['.workspace-edge-save', '[data-action="toggle-workspace-drawer"]'],
+    fallback: '#workspacePanel',
+    spotlightPadding: { top: 18, right: 8, bottom: 8, left: 8 },
+  },
+  {
+    title: 'Workspaces',
+    copy: 'Saved states let you restore windows and tabs later, then rename or remove old snapshots as needed.',
+    targets: ['#workspacePanel'],
+    fallback: '#dashboardColumns',
+  },
+  {
+    title: 'Ready to go',
+    copy: 'Tab Atlas is ready. Start with search, sweep, or a card action whenever the tab count gets heavy.',
+    centered: true,
+  },
+];
+
+const onboardingState = {
+  active: false,
+  manual: false,
+  index: 0,
+  lastFocusEl: null,
+};
+
+let onboardingAutoAttempted = false;
+let onboardingPositionTimer = null;
+
+function hasCompletedOnboarding() {
+  try { return localStorage.getItem(ONBOARDING_COMPLETE_KEY) === '1'; }
+  catch { return true; }
+}
+
+function markOnboardingComplete() {
+  try { localStorage.setItem(ONBOARDING_COMPLETE_KEY, '1'); } catch {}
+}
+
+function maybeStartOnboarding() {
+  if (onboardingAutoAttempted) return;
+  if (privacyOn || hasCompletedOnboarding()) return;
+  onboardingAutoAttempted = true;
+  window.setTimeout(() => {
+    if (!privacyOn && !hasCompletedOnboarding() && !onboardingState.active) {
+      startOnboarding({ manual: false });
+    }
+  }, 450);
+}
+
+function startOnboarding({ manual = false } = {}) {
+  if (privacyOn) return;
+
+  if (typeof closeContextMenu === 'function') closeContextMenu();
+  if (focusSweep.active) exitFocusSweep();
+  if (typeof closeFolderDeleteDialog === 'function') closeFolderDeleteDialog();
+  if (typeof closeCloseAllDialog === 'function') closeCloseAllDialog();
+  if (typeof closeSpeedDialDialog === 'function') closeSpeedDialDialog();
+  setWorkspaceDrawerOpen(false);
+
+  onboardingState.active = true;
+  onboardingState.manual = !!manual;
+  onboardingState.index = 0;
+  onboardingState.lastFocusEl = document.activeElement;
+
+  const overlay = document.getElementById('onboardingOverlay');
+  document.documentElement.classList.add('onboarding-open');
+  document.body.classList.add('onboarding-open');
+  if (overlay) overlay.style.display = 'block';
+
+  renderOnboardingStep({ focus: true });
+}
+
+function finishOnboarding({ skipped = false, viaEscape = false } = {}) {
+  if (!onboardingState.active) return;
+
+  if (skipped || !viaEscape || !onboardingState.manual) markOnboardingComplete();
+
+  const overlay = document.getElementById('onboardingOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.classList.remove('is-centered');
+  }
+  document.documentElement.classList.remove('onboarding-open');
+  document.body.classList.remove('onboarding-open');
+  clearTimeout(onboardingPositionTimer);
+  positionWorkspaceDrawer();
+  requestAnimationFrame(positionWorkspaceDrawer);
+
+  const previousFocus = onboardingState.lastFocusEl;
+  onboardingState.active = false;
+  onboardingState.manual = false;
+  onboardingState.index = 0;
+  onboardingState.lastFocusEl = null;
+
+  if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === 'function') {
+    try { previousFocus.focus(); } catch {}
+  }
+}
+
+function moveOnboarding(delta) {
+  if (!onboardingState.active) return;
+  const next = onboardingState.index + delta;
+  if (next >= ONBOARDING_STEPS.length) {
+    finishOnboarding();
+    return;
+  }
+  onboardingState.index = Math.max(0, next);
+  renderOnboardingStep();
+}
+
+function renderOnboardingStep({ focus = false } = {}) {
+  const overlay = document.getElementById('onboardingOverlay');
+  const title = document.getElementById('onboardingTitle');
+  const copy = document.getElementById('onboardingCopy');
+  const label = document.getElementById('onboardingStepLabel');
+  const skip = overlay?.querySelector('[data-action="onboarding-skip"]');
+  const prev = overlay?.querySelector('[data-action="onboarding-prev"]');
+  const next = overlay?.querySelector('[data-action="onboarding-next"]');
+  const step = ONBOARDING_STEPS[onboardingState.index];
+  if (!overlay || !title || !copy || !label || !step) return;
+
+  const isLast = onboardingState.index === ONBOARDING_STEPS.length - 1;
+  title.textContent = step.title;
+  copy.textContent = step.copy;
+  label.textContent = `${onboardingState.index + 1} of ${ONBOARDING_STEPS.length}`;
+  if (skip) skip.style.display = isLast ? 'none' : '';
+  if (prev) prev.disabled = onboardingState.index === 0;
+  if (next) next.textContent = isLast ? 'Start using Tab Atlas' : 'Next';
+
+  requestAnimationFrame(() => {
+    positionOnboarding();
+    if (focus) focusOnboardingPrimary();
+  });
+}
+
+function focusOnboardingPrimary() {
+  const overlay = document.getElementById('onboardingOverlay');
+  const next = overlay?.querySelector('[data-action="onboarding-next"]');
+  if (next && typeof next.focus === 'function') {
+    try { next.focus(); } catch {}
+  }
+}
+
+function isOnboardingElementVisible(el) {
+  if (!el) return false;
+  const style = window.getComputedStyle(el);
+  if (style.display === 'none' || style.visibility === 'hidden') return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 1 && rect.height > 1;
+}
+
+function firstVisibleOnboardingTarget(selectors) {
+  for (const selector of selectors || []) {
+    const el = document.querySelector(selector);
+    if (isOnboardingElementVisible(el)) return el;
+  }
+  return null;
+}
+
+function resolveOnboardingTarget(step) {
+  if (!step || step.centered) return null;
+  const target = firstVisibleOnboardingTarget(step.targets);
+  if (target) return target;
+  return firstVisibleOnboardingTarget([step.fallback]);
+}
+
+function clampOnboardingValue(value, min, max) {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
+}
+
+function onboardingSpotlightPadding(step) {
+  const pad = step?.spotlightPadding ?? 8;
+  if (typeof pad === 'number') {
+    return { top: pad, right: pad, bottom: pad, left: pad };
+  }
+  return {
+    top: Number.isFinite(pad.top) ? pad.top : 8,
+    right: Number.isFinite(pad.right) ? pad.right : 8,
+    bottom: Number.isFinite(pad.bottom) ? pad.bottom : 8,
+    left: Number.isFinite(pad.left) ? pad.left : 8,
+  };
+}
+
+function positionOnboarding() {
+  if (!onboardingState.active) return;
+
+  const overlay = document.getElementById('onboardingOverlay');
+  const card = document.getElementById('onboardingCard');
+  const highlight = document.getElementById('onboardingHighlight');
+  const step = ONBOARDING_STEPS[onboardingState.index];
+  if (!overlay || !card || !highlight || !step) return;
+
+  const target = resolveOnboardingTarget(step);
+  if (step.centered || !target) {
+    overlay.classList.add('is-centered');
+    highlight.style.opacity = '0';
+    card.style.left = '50%';
+    card.style.top = '50%';
+    card.style.transform = 'translate(-50%, -50%)';
+    return;
+  }
+
+  overlay.classList.remove('is-centered');
+  try {
+    target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+  } catch {}
+
+  const viewportW = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;
+  const pad = onboardingSpotlightPadding(step);
+  const gap = 14;
+  const margin = 16;
+  const rect = target.getBoundingClientRect();
+  const ring = {
+    left: clampOnboardingValue(rect.left - pad.left, margin / 2, viewportW - margin),
+    top: clampOnboardingValue(rect.top - pad.top, 0, viewportH - margin),
+    right: clampOnboardingValue(rect.right + pad.right, margin / 2, viewportW - margin / 2),
+    bottom: clampOnboardingValue(rect.bottom + pad.bottom, margin / 2, viewportH - margin / 2),
+  };
+  ring.width = Math.max(1, ring.right - ring.left);
+  ring.height = Math.max(1, ring.bottom - ring.top);
+
+  highlight.style.opacity = '1';
+  highlight.style.left = `${ring.left}px`;
+  highlight.style.top = `${ring.top}px`;
+  highlight.style.width = `${ring.width}px`;
+  highlight.style.height = `${ring.height}px`;
+
+  card.style.transform = 'none';
+  const cardW = card.offsetWidth || 340;
+  const cardH = card.offsetHeight || 190;
+  const spaces = {
+    right: viewportW - ring.right - gap,
+    left: ring.left - gap,
+    bottom: viewportH - ring.bottom - gap,
+    top: ring.top - gap,
+  };
+
+  let x;
+  let y;
+  if (spaces.right >= cardW + margin) {
+    x = ring.right + gap;
+    y = ring.top + (ring.height - cardH) / 2;
+  } else if (spaces.left >= cardW + margin) {
+    x = ring.left - cardW - gap;
+    y = ring.top + (ring.height - cardH) / 2;
+  } else if (spaces.bottom >= cardH + margin) {
+    x = ring.left + (ring.width - cardW) / 2;
+    y = ring.bottom + gap;
+  } else if (spaces.top >= cardH + margin) {
+    x = ring.left + (ring.width - cardW) / 2;
+    y = ring.top - cardH - gap;
+  } else {
+    x = (viewportW - cardW) / 2;
+    y = (viewportH - cardH) / 2;
+  }
+
+  card.style.left = `${clampOnboardingValue(x, margin, viewportW - cardW - margin)}px`;
+  card.style.top = `${clampOnboardingValue(y, margin, viewportH - cardH - margin)}px`;
+}
+
+function scheduleOnboardingPosition() {
+  if (!onboardingState.active) return;
+  clearTimeout(onboardingPositionTimer);
+  onboardingPositionTimer = setTimeout(positionOnboarding, 60);
+}
+
+function onboardingFocusableControls() {
+  const overlay = document.getElementById('onboardingOverlay');
+  if (!overlay) return [];
+  return Array.from(overlay.querySelectorAll(
+    'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  )).filter(isOnboardingElementVisible);
+}
+
+function trapOnboardingTab(e) {
+  const focusable = onboardingFocusableControls();
+  if (!focusable.length) {
+    e.preventDefault();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+  if (!active || !document.getElementById('onboardingOverlay')?.contains(active)) {
+    first.focus();
+    e.preventDefault();
+    return;
+  }
+  if (e.shiftKey && active === first) {
+    last.focus();
+    e.preventDefault();
+  } else if (!e.shiftKey && active === last) {
+    first.focus();
+    e.preventDefault();
+  }
+}
+
+function handleOnboardingKeydown(e) {
+  if (!onboardingState.active) return false;
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    finishOnboarding({ viaEscape: true });
+    return true;
+  }
+
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    moveOnboarding(1);
+    return true;
+  }
+
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    moveOnboarding(-1);
+    return true;
+  }
+
+  if (e.key === 'Enter') {
+    const action = e.target?.closest?.('[data-action]')?.dataset?.action;
+    e.preventDefault();
+    if (action === 'onboarding-prev') moveOnboarding(-1);
+    else if (action === 'onboarding-skip') finishOnboarding({ skipped: true });
+    else moveOnboarding(1);
+    return true;
+  }
+
+  if (e.key === 'Tab') {
+    trapOnboardingTab(e);
+    return true;
+  }
+
+  return true;
+}
+
 
 /* ----------------------------------------------------------------
    AUTO-REFRESH — keep the dashboard in sync with real tab changes
@@ -4944,6 +5337,7 @@ function autoRefreshBlocked() {
   if (dragData) return true;
   if (privacyOn) return true;
   if (focusSweep.active) return true;
+  if (onboardingState.active) return true;
   const menu    = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') return true;
   for (const id of ['folderDeleteDialog', 'closeAllDialog', 'speedDialDialog']) {
@@ -5030,16 +5424,24 @@ try {
   localStorage.setItem('tabout-theme', t);
 } catch {}
 
-// Paint the speed-dial shortcut strip + sync its corner toggle tooltip
-renderSpeedDial();
-updateShortcutsToggleTitle();
+// Paint initial UI after all helpers are registered.
+(async function initializeTabAtlas() {
+  try {
+    // Paint the speed-dial shortcut strip + sync its corner toggle tooltip
+    renderSpeedDial();
+    updateShortcutsToggleTitle();
 
-// Paint saved workspace snapshots.
-renderWorkspacePanel();
-positionWorkspaceDrawer();
+    // Paint saved workspace snapshots.
+    await renderWorkspacePanel();
+    positionWorkspaceDrawer();
 
-// Restore persisted privacy mode (the clock screen is already up pre-paint;
-// this starts its ticking and syncs the privacyOn flag)
-try { if (localStorage.getItem('tabout-privacy') === '1') setPrivacy(true); } catch {}
+    // Restore persisted privacy mode (the clock screen is already up pre-paint;
+    // this starts its ticking and syncs the privacyOn flag)
+    try { if (localStorage.getItem('tabout-privacy') === '1') setPrivacy(true); } catch {}
 
-renderDashboard();
+    await renderDashboard();
+    maybeStartOnboarding();
+  } catch (err) {
+    console.error('[tab-atlas] Failed to initialize:', err);
+  }
+})();

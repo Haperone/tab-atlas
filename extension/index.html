@@ -239,6 +239,14 @@
   </div>
 </div>
 
+<!-- Onboarding tour -->
+<button class="corner-btn onboarding-toggle" id="onboardingToggle" data-action="start-onboarding" aria-label="Show onboarding tour" title="Tour" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.178-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17.25h.008v.008H12v-.008Z" />
+    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  </svg>
+</button>
+
 <!-- Speed-dial toggle (show/hide the shortcut strip) -->
 <button class="corner-btn shortcuts-toggle" id="shortcutsToggle" data-action="toggle-shortcuts" aria-label="Toggle shortcuts" title="Shortcuts" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
@@ -362,6 +370,26 @@
         <button class="focus-sweep-btn folder-picker" data-action="focus-sweep-save-menu" type="button" aria-label="Choose save folder" title="Choose save folder">Folder</button>
         <button class="focus-sweep-btn danger" data-action="focus-sweep-close" type="button">Close</button>
         <button class="focus-sweep-btn primary apply-inline" data-action="focus-sweep-apply" type="button">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     ONBOARDING TOUR — first-run guided tour over the real dashboard UI.
+     Hidden by default; app.js positions the target ring and copy panel.
+     ================================================================ -->
+<div class="onboarding-overlay" id="onboardingOverlay" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" style="display:none">
+  <div class="onboarding-highlight" id="onboardingHighlight" aria-hidden="true"></div>
+  <div class="onboarding-card" id="onboardingCard">
+    <div class="onboarding-step-label" id="onboardingStepLabel">1 of 6</div>
+    <h2 class="onboarding-title" id="onboardingTitle">Welcome to Tab Atlas</h2>
+    <p class="onboarding-copy" id="onboardingCopy"></p>
+    <div class="onboarding-actions">
+      <button class="onboarding-btn ghost" data-action="onboarding-skip" type="button">Skip</button>
+      <div class="onboarding-nav">
+        <button class="onboarding-btn" data-action="onboarding-prev" type="button">Back</button>
+        <button class="onboarding-btn primary" data-action="onboarding-next" type="button">Next</button>
       </div>
     </div>
   </div>
