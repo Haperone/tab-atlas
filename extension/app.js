@@ -1054,12 +1054,30 @@ function positionTabGroupsDock() {
   dock.style.bottom = 'auto';
 }
 
+function workspaceCornerReserve() {
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const buttons = Array.from(document.querySelectorAll('.corner-btn'))
+    .filter(button => {
+      const style = window.getComputedStyle(button);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+  const leftEdges = buttons
+    .map(button => button.getBoundingClientRect().left)
+    .filter(value => Number.isFinite(value));
+  if (!leftEdges.length) return 18;
+
+  const workspaceWidth = viewportWidth <= 700 ? 112 : 138;
+  const reserve = Math.ceil(viewportWidth - Math.min(...leftEdges) + 12);
+  const maxReserve = Math.max(16, viewportWidth - workspaceWidth - 12);
+  return Math.min(Math.max(18, reserve), maxReserve);
+}
+
 function positionWorkspaceDrawer() {
   const shell = document.getElementById('workspacePanel');
   if (!shell) return;
 
   if (window.innerWidth <= 700) {
-    shell.style.setProperty('--workspace-inline-right', '16px');
+    shell.style.setProperty('--workspace-inline-right', `${workspaceCornerReserve()}px`);
     return;
   }
 
@@ -1069,9 +1087,10 @@ function positionWorkspaceDrawer() {
     ? folders
     : container;
   const rect = anchor ? anchor.getBoundingClientRect() : null;
-  const right = rect
+  const baseRight = rect
     ? Math.max(18, Math.round(window.innerWidth - rect.right))
     : 18;
+  const right = Math.max(baseRight, workspaceCornerReserve());
   shell.style.setProperty('--workspace-inline-right', `${right}px`);
 }
 

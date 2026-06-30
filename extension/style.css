@@ -1021,15 +1021,18 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 /* ---- Two-column layout ---- */
 .dashboard-columns {
   display: flex;
-  gap: 32px;
+  flex-wrap: wrap;
+  --dashboard-gap: clamp(18px, 2.4vw, 32px);
+  --side-column-width: clamp(280px, 26vw, 330px);
+  gap: var(--dashboard-gap);
   align-items: flex-start;
 }
 
 /* Open tabs column takes most of the space — and scrolls on its own, the
    same way the other two columns do (consistent + keeps the header in view) */
 .dashboard-columns .active-section {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 420px;
+  min-width: min(100%, 360px);
   position: sticky;
   top: 32px;
   max-height: calc(100vh - 64px);
@@ -1041,8 +1044,9 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
    overscroll-behavior: contain stops the page from scrolling once this
    column reaches the end of its own content. */
 .deferred-column {
-  width: 330px;
-  flex-shrink: 0;
+  width: var(--side-column-width);
+  min-width: min(100%, 280px);
+  flex: 0 1 var(--side-column-width);
   position: sticky;
   top: 32px;
   max-height: calc(100vh - 64px);
@@ -1067,6 +1071,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
   .dashboard-columns {
     flex-direction: column;
+    flex-wrap: nowrap;
   }
   .dashboard-columns .active-section,
   .deferred-column,
@@ -1344,8 +1349,9 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* Third column — mirrors the saved-for-later column */
 .folders-column {
-  width: 330px;
-  flex-shrink: 0;
+  width: var(--side-column-width);
+  min-width: min(100%, 280px);
+  flex: 0 1 var(--side-column-width);
   position: sticky;
   top: 32px;
   max-height: calc(100vh - 64px);
@@ -1353,6 +1359,17 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   overscroll-behavior: contain;
 }
 .folders-column .section-header { animation: fadeUp 0.5s ease 0.14s both; }
+
+@media (max-width: 800px) {
+  .folders-column {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
 
 .tab-groups-column {
   position: fixed;
@@ -1827,6 +1844,12 @@ body.workspace-drawer-open .workspace-edge-save {
   pointer-events: auto;
 }
 
+@media (max-width: 1180px) and (min-width: 701px) {
+  .workspace-drawer-shell {
+    --workspace-inline-right: min(204px, calc(100vw - 150px));
+  }
+}
+
 .workspace-drawer-head {
   display: flex;
   align-items: center;
@@ -1970,7 +1993,7 @@ body.workspace-drawer-open .workspace-edge-save {
 
 @media (max-width: 700px) {
   .workspace-drawer-shell {
-    --workspace-inline-right: 16px;
+    --workspace-inline-right: min(204px, calc(100vw - 124px));
   }
 
   .workspace-edge-save {
