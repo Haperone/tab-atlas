@@ -1846,7 +1846,7 @@ body.workspace-drawer-open .workspace-edge-save {
 
 @media (max-width: 1180px) and (min-width: 701px) {
   .workspace-drawer-shell {
-    --workspace-inline-right: min(204px, calc(100vw - 150px));
+    --workspace-inline-right: min(248px, calc(100vw - 150px));
   }
 }
 
@@ -1993,7 +1993,7 @@ body.workspace-drawer-open .workspace-edge-save {
 
 @media (max-width: 700px) {
   .workspace-drawer-shell {
-    --workspace-inline-right: min(204px, calc(100vw - 124px));
+    --workspace-inline-right: min(224px, calc(100vw - 124px));
   }
 
   .workspace-edge-save {
@@ -2073,25 +2073,32 @@ body.workspace-drawer-open .workspace-edge-save {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--muted);
-  background: var(--surface-strong);
-  border: 1px solid rgba(var(--neutral-rgb), 0.2);
+  color: rgba(var(--neutral-rgb), 0.66);
+  background: rgba(var(--neutral-rgb), 0.055);
+  border: 1px solid rgba(var(--neutral-rgb), 0.11);
   border-radius: 50%;
   cursor: pointer;
-  opacity: 0.55;
-  transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+  opacity: 0.36;
+  box-shadow: none;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 .corner-btn svg { width: 18px; height: 18px; }
-.corner-btn:hover {
-  opacity: 1;
+.corner-btn:hover,
+.corner-btn:focus-visible {
+  opacity: 0.92;
   color: var(--text);
-  border-color: rgba(var(--accent-rgb), 0.4);
-  background: var(--surface-strong-hover);
+  border-color: rgba(var(--accent-rgb), 0.38);
+  background: rgba(var(--neutral-rgb), 0.12);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+}
+.corner-btn:focus-visible {
+  outline: none;
 }
 .privacy-toggle   { right: 18px; }
 .theme-toggle     { right: 62px; }
 .shortcuts-toggle { right: 106px; }
 .onboarding-toggle { right: 150px; }
+.backup-toggle { right: 194px; }
 
 /* Theme menu swatch (uses the context-menu engine) */
 .context-menu-theme-sw {
@@ -2287,7 +2294,11 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
 }
 
 @media (max-width: 520px) {
-  .onboarding-toggle { right: 150px; }
+  .privacy-toggle   { right: 10px; }
+  .theme-toggle     { right: 50px; }
+  .shortcuts-toggle { right: 90px; }
+  .onboarding-toggle { right: 130px; }
+  .backup-toggle { right: 170px; }
   .onboarding-card {
     width: calc(100vw - 28px);
     padding: 14px;

@@ -821,6 +821,239 @@ async function moveTabToFolder(deferredId, folderId) {
 
 
 /* ----------------------------------------------------------------
+   BACKUP / IMPORT — local JSON for chrome.storage.local data
+   ---------------------------------------------------------------- */
+
+const BACKUP_APP_NAME = 'Tab Atlas';
+const BACKUP_SCHEMA_VERSION = 1;
+
+function makeStorageId(existingIds = new Set()) {
+  let id = '';
+  do {
+    id = Date.now().toString() + Math.random().toString(36).slice(2, 8);
+  } while (existingIds.has(id));
+  existingIds.add(id);
+  return id;
+}
+
+function cloneStorageArray(value) {
+  return Array.isArray(value) ? JSON.parse(JSON.stringify(value)) : [];
+}
+
+async function buildTabAtlasBackup() {
+  const data = await chrome.storage.local.get(['deferred', 'folders', WORKSPACE_SNAPSHOTS_KEY]);
+  return {
+    app: BACKUP_APP_NAME,
+    schemaVersion: BACKUP_SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
+    data: {
+      deferred: cloneStorageArray(data.deferred),
+      folders: cloneStorageArray(data.folders),
+      workspaceSnapshots: cloneStorageArray(data[WORKSPACE_SNAPSHOTS_KEY]),
+    },
+  };
+}
+
+function backupFileTimestamp(date = new Date()) {
+  const pad = n => String(n).padStart(2, '0');
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join('-') + '-' + [pad(date.getHours()), pad(date.getMinutes())].join('-');
+}
+
+function downloadBackupFile(backup) {
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `tab-atlas-backup-${backupFileTimestamp()}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function parseBackupFile(file) {
+  if (!file) throw new Error('No backup file selected');
+  let parsed;
+  try {
+    parsed = JSON.parse(await file.text());
+  } catch {
+    throw new Error('Backup file is not valid JSON');
+  }
+
+  if (
+    !parsed ||
+    parsed.app !== BACKUP_APP_NAME ||
+    parsed.schemaVersion !== BACKUP_SCHEMA_VERSION ||
+    !parsed.data ||
+    !Array.isArray(parsed.data.deferred) ||
+    !Array.isArray(parsed.data.folders) ||
+    !Array.isArray(parsed.data.workspaceSnapshots)
+  ) {
+    throw new Error('This is not a Tab Atlas backup file');
+  }
+
+  return parsed;
+}
+
+function normalizeBackupFolderName(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function backupItemSignature(item, folderId = item?.folderId || null) {
+  return JSON.stringify([
+    String(item?.url || ''),
+    String(item?.title || item?.url || ''),
+    !!item?.completed,
+    !!item?.dismissed,
+    folderId || null,
+  ]);
+}
+
+function workspaceSnapshotSignature(snapshot) {
+  const copy = JSON.parse(JSON.stringify(snapshot || {}));
+  delete copy.id;
+  return JSON.stringify(copy);
+}
+
+async function mergeBackupData(backup) {
+  const storage = await chrome.storage.local.get(['deferred', 'folders', WORKSPACE_SNAPSHOTS_KEY]);
+  const deferred = cloneStorageArray(storage.deferred);
+  const folders = cloneStorageArray(storage.folders);
+  const workspaceSnapshots = cloneStorageArray(storage[WORKSPACE_SNAPSHOTS_KEY]);
+  const imported = { savedTabs: 0, folders: 0, workspaces: 0, skipped: 0 };
+
+  const folderIds = new Set(folders.map(folder => String(folder.id || '')).filter(Boolean));
+  const folderNameToId = new Map();
+  for (const folder of folders) {
+    const key = normalizeBackupFolderName(folder.name);
+    if (key && !folderNameToId.has(key)) folderNameToId.set(key, folder.id);
+  }
+
+  const folderIdMap = new Map();
+  for (const folder of backup.data.folders) {
+    const name = String(folder?.name || '').trim();
+    if (!name) continue;
+
+    const nameKey = normalizeBackupFolderName(name);
+    const existingId = folderNameToId.get(nameKey);
+    if (existingId) {
+      if (folder.id) folderIdMap.set(folder.id, existingId);
+      imported.skipped += 1;
+      continue;
+    }
+
+    const id = makeStorageId(folderIds);
+    const nextFolder = {
+      id,
+      name,
+      collapsed: !!folder.collapsed,
+      color: typeof folder.color === 'string' && folder.color ? folder.color : null,
+      createdAt: typeof folder.createdAt === 'string' ? folder.createdAt : new Date().toISOString(),
+    };
+    folders.push(nextFolder);
+    folderNameToId.set(nameKey, id);
+    if (folder.id) folderIdMap.set(folder.id, id);
+    imported.folders += 1;
+  }
+
+  const deferredIds = new Set(deferred.map(item => String(item.id || '')).filter(Boolean));
+  const savedSignatures = new Set(deferred.map(item => backupItemSignature(item)));
+  for (const item of backup.data.deferred) {
+    if (!item || typeof item.url !== 'string' || !item.url.trim()) continue;
+    const targetFolderId = item.folderId ? (folderIdMap.get(item.folderId) || null) : null;
+    const candidate = {
+      id: makeStorageId(deferredIds),
+      url: item.url,
+      title: typeof item.title === 'string' && item.title ? item.title : item.url,
+      savedAt: typeof item.savedAt === 'string' ? item.savedAt : new Date().toISOString(),
+      completed: !!item.completed,
+      dismissed: !!item.dismissed,
+      folderId: targetFolderId,
+    };
+    if (item.completedAt) candidate.completedAt = item.completedAt;
+    const signature = backupItemSignature(candidate, targetFolderId);
+    if (savedSignatures.has(signature)) {
+      imported.skipped += 1;
+      deferredIds.delete(candidate.id);
+      continue;
+    }
+    savedSignatures.add(signature);
+    deferred.push(candidate);
+    imported.savedTabs += 1;
+  }
+
+  const workspaceIds = new Set(workspaceSnapshots.map(snapshot => String(snapshot.id || '')).filter(Boolean));
+  const workspaceSignatures = new Set(workspaceSnapshots.map(workspaceSnapshotSignature));
+  for (const snapshot of backup.data.workspaceSnapshots) {
+    if (!snapshot || typeof snapshot !== 'object') continue;
+    const signature = workspaceSnapshotSignature(snapshot);
+    if (workspaceSignatures.has(signature)) {
+      imported.skipped += 1;
+      continue;
+    }
+    const nextSnapshot = JSON.parse(JSON.stringify(snapshot));
+    if (!nextSnapshot.id || workspaceIds.has(nextSnapshot.id)) {
+      nextSnapshot.id = makeStorageId(workspaceIds);
+    } else {
+      workspaceIds.add(nextSnapshot.id);
+    }
+    workspaceSnapshots.unshift(nextSnapshot);
+    workspaceSignatures.add(signature);
+    imported.workspaces += 1;
+  }
+
+  await chrome.storage.local.set({
+    deferred,
+    folders,
+    [WORKSPACE_SNAPSHOTS_KEY]: workspaceSnapshots,
+  });
+  return imported;
+}
+
+async function exportTabAtlasBackup() {
+  const backup = await buildTabAtlasBackup();
+  downloadBackupFile(backup);
+  const savedCount = backup.data.deferred.length;
+  const folderCount = backup.data.folders.length;
+  const workspaceCount = backup.data.workspaceSnapshots.length;
+  showToast(`Exported ${savedCount} saved tabs, ${folderCount} folders, ${workspaceCount} workspaces`);
+}
+
+function openBackupMenu(x, y) {
+  showContextMenu(x, y, [
+    { heading: true, label: 'Backup' },
+    { label: 'Export backup', onClick: exportTabAtlasBackup },
+    {
+      label: 'Import backup',
+      onClick: () => {
+        const input = document.getElementById('backupImportInput');
+        if (input) input.click();
+      },
+    },
+  ]);
+}
+
+async function importTabAtlasBackupFile(file) {
+  try {
+    const backup = await parseBackupFile(file);
+    const summary = await mergeBackupData(backup);
+    await refreshSavedAndFolders();
+    await renderWorkspacePanel();
+    updateLayoutWidth();
+    positionWorkspaceDrawer();
+    showToast(`Imported ${summary.savedTabs} saved tabs, ${summary.folders} folders, ${summary.workspaces} workspaces · skipped ${summary.skipped} duplicates`);
+  } catch (err) {
+    console.warn('[tab-atlas] Backup import failed:', err);
+    showToast(err?.message || 'Could not import backup');
+  }
+}
+
+
+/* ----------------------------------------------------------------
    FOLDERS ⇄ CHROME TAB GROUPS
 
    A folder (saved/parked tabs) can be opened as a native Chrome tab group
@@ -2258,6 +2491,14 @@ document.addEventListener('click', async (e) => {
   if (action === 'onboarding-prev')   { moveOnboarding(-1);                      return; }
   if (action === 'onboarding-next')   { moveOnboarding(1);                       return; }
 
+  // ---- Backup / import ----
+  if (action === 'backup-menu') {
+    e.stopPropagation();
+    const rect = actionEl.getBoundingClientRect();
+    openBackupMenu(rect.right, rect.bottom + 6);
+    return;
+  }
+
   // ---- Speed-dial shortcuts ----
   if (action === 'speeddial-open') {
     const url = actionEl.dataset.url;
@@ -3486,6 +3727,13 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('input', (e) => {
   if (e.target.id !== 'globalSearch') return;
   runGlobalSearch(e.target.value);
+});
+
+document.addEventListener('change', (e) => {
+  if (e.target.id !== 'backupImportInput') return;
+  const [file] = e.target.files || [];
+  e.target.value = '';
+  if (file) importTabAtlasBackupFile(file);
 });
 
 document.addEventListener('keydown', (e) => {
@@ -5018,6 +5266,12 @@ const ONBOARDING_STEPS = [
     fallback: '#dashboardColumns',
   },
   {
+    title: 'Top-right controls',
+    copy: 'Use Backup to export or import local data, Tour to reopen this guide, Shortcuts for keys, Theme for appearance, and Privacy when the screen should be hidden.',
+    virtualTarget: 'cornerControls',
+    spotlightPadding: { top: 8, right: 8, bottom: 8, left: 8 },
+  },
+  {
     title: 'Ready to go',
     copy: 'Tab Atlas is ready. Start with search, sweep, or a card action whenever the tab count gets heavy.',
     centered: true,
@@ -5164,8 +5418,42 @@ function firstVisibleOnboardingTarget(selectors) {
   return null;
 }
 
+function getOnboardingCornerControlsTarget() {
+  const buttons = Array.from(document.querySelectorAll('.corner-btn'))
+    .filter(isOnboardingElementVisible)
+    .map(button => button.getBoundingClientRect());
+  if (!buttons.length) return null;
+
+  const left = Math.min(...buttons.map(rect => rect.left));
+  const top = Math.min(...buttons.map(rect => rect.top));
+  const right = Math.max(...buttons.map(rect => rect.right));
+  const bottom = Math.max(...buttons.map(rect => rect.bottom));
+  return {
+    scrollIntoView() {},
+    getBoundingClientRect() {
+      return {
+        left,
+        top,
+        right,
+        bottom,
+        width: right - left,
+        height: bottom - top,
+      };
+    },
+  };
+}
+
+function resolveOnboardingVirtualTarget(step) {
+  if (step?.virtualTarget === 'cornerControls') {
+    return getOnboardingCornerControlsTarget();
+  }
+  return null;
+}
+
 function resolveOnboardingTarget(step) {
   if (!step || step.centered) return null;
+  const virtualTarget = resolveOnboardingVirtualTarget(step);
+  if (virtualTarget) return virtualTarget;
   const target = firstVisibleOnboardingTarget(step.targets);
   if (target) return target;
   return firstVisibleOnboardingTarget([step.fallback]);
@@ -5209,9 +5497,11 @@ function positionOnboarding() {
   }
 
   overlay.classList.remove('is-centered');
-  try {
-    target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
-  } catch {}
+  if (typeof target.scrollIntoView === 'function') {
+    try {
+      target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+    } catch {}
+  }
 
   const viewportW = window.innerWidth || document.documentElement.clientWidth || 0;
   const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;

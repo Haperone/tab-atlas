@@ -239,6 +239,14 @@
   </div>
 </div>
 
+<!-- Backup / restore -->
+<button class="corner-btn backup-toggle" id="backupToggle" data-action="backup-menu" aria-label="Backup and restore" title="Backup" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v10.5m0 0 3.75-3.75M12 13.5 8.25 9.75M4.5 15.75v2.25A2.25 2.25 0 0 0 6.75 20.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-2.25" />
+  </svg>
+</button>
+<input type="file" id="backupImportInput" accept="application/json,.json" hidden>
+
 <!-- Onboarding tour -->
 <button class="corner-btn onboarding-toggle" id="onboardingToggle" data-action="start-onboarding" aria-label="Show onboarding tour" title="Tour" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
@@ -382,7 +390,7 @@
 <div class="onboarding-overlay" id="onboardingOverlay" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" style="display:none">
   <div class="onboarding-highlight" id="onboardingHighlight" aria-hidden="true"></div>
   <div class="onboarding-card" id="onboardingCard">
-    <div class="onboarding-step-label" id="onboardingStepLabel">1 of 6</div>
+    <div class="onboarding-step-label" id="onboardingStepLabel">1 of 9</div>
     <h2 class="onboarding-title" id="onboardingTitle">Welcome to Tab Atlas</h2>
     <p class="onboarding-copy" id="onboardingCopy"></p>
     <div class="onboarding-actions">
