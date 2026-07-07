@@ -2288,17 +2288,26 @@ async function renderFoldersColumn() {
 /**
  * updateLayoutWidth()
  *
- * Widens the container when any side column (Saved for later / Folders)
- * is visible, so three columns have room to breathe. Falls back to the
- * narrow single-column width when only Open tabs is showing.
+ * Marks which dashboard zones are visible so CSS Grid can choose a stable
+ * responsive layout instead of relying on flex wrapping.
  */
 function updateLayoutWidth() {
   const container = document.querySelector('.container');
+  const dashboard  = document.getElementById('dashboardColumns');
+  const sideRail   = document.getElementById('dashboardSideRail');
   const deferred  = document.getElementById('deferredColumn');
   const folders   = document.getElementById('foldersColumn');
-  const wide = (deferred && deferred.style.display !== 'none') ||
-               (folders  && folders.style.display  !== 'none');
-  if (container) container.classList.toggle('dashboard-wide', wide);
+  const hasDeferred = !!(deferred && deferred.style.display !== 'none');
+  const hasFolders = !!(folders && folders.style.display !== 'none');
+  const hasSideRail = hasDeferred || hasFolders;
+
+  if (container) container.classList.toggle('dashboard-wide', hasSideRail);
+  if (dashboard) {
+    dashboard.classList.toggle('has-deferred', hasDeferred);
+    dashboard.classList.toggle('has-folders', hasFolders);
+    dashboard.classList.toggle('has-side-rail', hasSideRail);
+  }
+  if (sideRail) sideRail.style.display = hasSideRail ? '' : 'none';
 }
 
 

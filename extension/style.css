@@ -1018,40 +1018,63 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
    SAVED FOR LATER — Checklist Column + Archive
    ================================================================ */
 
-/* ---- Two-column layout ---- */
+/* ---- Responsive dashboard grid ---- */
 .dashboard-columns {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   --dashboard-gap: clamp(18px, 2.4vw, 32px);
   --side-column-width: clamp(280px, 26vw, 330px);
+  --side-rail-width: clamp(292px, 31vw, 360px);
   gap: var(--dashboard-gap);
   align-items: flex-start;
+  grid-template-columns: minmax(360px, 1fr);
+  grid-template-areas: "open";
+}
+
+.dashboard-columns.has-side-rail.has-deferred.has-folders {
+  grid-template-columns: minmax(360px, 1fr) var(--side-column-width) var(--side-column-width);
+  grid-template-areas: "open saved folders";
+}
+
+.dashboard-columns.has-side-rail.has-deferred:not(.has-folders) {
+  grid-template-columns: minmax(360px, 1fr) var(--side-column-width);
+  grid-template-areas: "open saved";
+}
+
+.dashboard-columns.has-side-rail.has-folders:not(.has-deferred) {
+  grid-template-columns: minmax(360px, 1fr) var(--side-column-width);
+  grid-template-areas: "open folders";
+}
+
+.dashboard-side-rail {
+  display: contents;
 }
 
 /* Open tabs column takes most of the space — and scrolls on its own, the
    same way the other two columns do (consistent + keeps the header in view) */
 .dashboard-columns .active-section {
-  flex: 1 1 420px;
-  min-width: min(100%, 360px);
+  grid-area: open;
+  min-width: 0;
   position: sticky;
   top: 32px;
   max-height: calc(100vh - 64px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  container: dashboard-column / inline-size;
 }
 
 /* Saved for later column — fixed width on the right, scrolls independently.
    overscroll-behavior: contain stops the page from scrolling once this
    column reaches the end of its own content. */
 .deferred-column {
-  width: var(--side-column-width);
-  min-width: min(100%, 280px);
-  flex: 0 1 var(--side-column-width);
+  grid-area: saved;
+  width: 100%;
+  min-width: 0;
   position: sticky;
   top: 32px;
   max-height: calc(100vh - 64px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  container: dashboard-column / inline-size;
 }
 
 /* Breathing room on the right so the scrollbar doesn't hug the content */
@@ -1061,18 +1084,145 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   padding-right: 10px;
 }
 
-/* On narrow screens, stack vertically */
+@container dashboard-column (max-width: 320px) {
+  .section-header {
+    gap: 7px;
+  }
+
+  .section-header h2 {
+    font-size: 18px;
+  }
+
+  .section-count {
+    font-size: 11px;
+  }
+
+  .page-chip,
+  .deferred-item,
+  .folder-header {
+    gap: 7px;
+  }
+
+  .new-folder-btn {
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 1239px) and (min-width: 960px) {
+  .dashboard-columns.has-side-rail.has-deferred.has-folders,
+  .dashboard-columns.has-side-rail.has-deferred:not(.has-folders),
+  .dashboard-columns.has-side-rail.has-folders:not(.has-deferred) {
+    grid-template-columns: minmax(0, 1fr) var(--side-rail-width);
+    grid-template-areas: "open side";
+  }
+
+  .dashboard-side-rail {
+    grid-area: side;
+    display: flex;
+    flex-direction: column;
+    gap: var(--dashboard-gap);
+    min-width: 0;
+    position: sticky;
+    top: 32px;
+    max-height: calc(100vh - 64px);
+    overflow: hidden;
+  }
+
+  .dashboard-side-rail .deferred-column,
+  .dashboard-side-rail .folders-column {
+    width: 100%;
+    min-width: 0;
+    position: static;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  .dashboard-columns.has-deferred.has-folders .dashboard-side-rail .deferred-column,
+  .dashboard-columns.has-deferred.has-folders .dashboard-side-rail .folders-column {
+    max-height: calc((100vh - 64px - var(--dashboard-gap)) / 2);
+  }
+}
+
+@media (max-width: 959px) and (min-width: 720px) {
+  .dashboard-columns.has-side-rail.has-deferred.has-folders {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "open open"
+      "saved folders";
+  }
+
+  .dashboard-columns:not(.has-side-rail) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "open";
+  }
+
+  .dashboard-columns.has-side-rail.has-deferred:not(.has-folders) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "open"
+      "saved";
+  }
+
+  .dashboard-columns.has-side-rail.has-folders:not(.has-deferred) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "open"
+      "folders";
+  }
+
+  .dashboard-side-rail {
+    display: contents;
+  }
+
+  .dashboard-columns .active-section,
+  .deferred-column,
+  .folders-column {
+    width: 100%;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 @media (max-width: 800px) {
   header {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
   }
+}
 
-  .dashboard-columns {
-    flex-direction: column;
-    flex-wrap: nowrap;
+@media (max-width: 719px) {
+  .dashboard-columns.has-side-rail.has-deferred.has-folders {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "open"
+      "saved"
+      "folders";
   }
+
+  .dashboard-columns:not(.has-side-rail) {
+    grid-template-areas: "open";
+  }
+
+  .dashboard-columns.has-side-rail.has-deferred:not(.has-folders) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "open"
+      "saved";
+  }
+
+  .dashboard-columns.has-side-rail.has-folders:not(.has-deferred) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "open"
+      "folders";
+  }
+
+  .dashboard-side-rail {
+    display: contents;
+  }
+
   .dashboard-columns .active-section,
   .deferred-column,
   .folders-column {
@@ -1349,22 +1499,22 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* Third column — mirrors the saved-for-later column */
 .folders-column {
-  width: var(--side-column-width);
-  min-width: min(100%, 280px);
-  flex: 0 1 var(--side-column-width);
+  grid-area: folders;
+  width: 100%;
+  min-width: 0;
   position: sticky;
   top: 32px;
   max-height: calc(100vh - 64px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  container: dashboard-column / inline-size;
 }
 .folders-column .section-header { animation: fadeUp 0.5s ease 0.14s both; }
 
-@media (max-width: 800px) {
+@media (max-width: 959px) {
   .folders-column {
     width: 100%;
     min-width: 0;
-    flex: 1 1 auto;
     position: static;
     max-height: none;
     overflow: visible;

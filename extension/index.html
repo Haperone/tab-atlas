@@ -100,62 +100,66 @@
       <div class="missions" id="openTabsMissions"></div>
     </div>
 
-    <!-- RIGHT COLUMN: Saved for Later checklist -->
-    <div class="deferred-column" id="deferredColumn" style="display:none" data-droppable="inbox">
-      <div class="section-header">
-        <h2>Saved for later</h2>
-        <div class="section-line"></div>
-        <div class="section-count" id="deferredCount"></div>
-      </div>
+    <div class="dashboard-side-rail" id="dashboardSideRail" style="display:none">
 
-      <!-- Active checklist items — injected by renderDeferredList() in app.js -->
-      <div class="deferred-list" id="deferredList"></div>
+      <!-- RIGHT COLUMN: Saved for Later checklist -->
+      <div class="deferred-column" id="deferredColumn" style="display:none" data-droppable="inbox">
+        <div class="section-header">
+          <h2>Saved for later</h2>
+          <div class="section-line"></div>
+          <div class="section-count" id="deferredCount"></div>
+        </div>
 
-      <!-- Empty state — shown when no active deferred tabs -->
-      <div class="deferred-empty" id="deferredEmpty" style="display:none">
-        Nothing saved. Living in the moment.
-      </div>
+        <!-- Active checklist items — injected by renderDeferredList() in app.js -->
+        <div class="deferred-list" id="deferredList"></div>
 
-      <!-- Archive section — collapsed by default -->
-      <div class="deferred-archive" id="deferredArchive" style="display:none">
-        <button class="archive-toggle" id="archiveToggle">
-          <svg class="archive-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-          Archive
-          <span class="archive-count" id="archiveCount"></span>
-        </button>
-        <div class="archive-body" id="archiveBody" style="display:none">
-          <input type="text" class="archive-search" id="archiveSearch" aria-label="Search archived tabs" placeholder="Search archived tabs...">
-          <div class="archive-list" id="archiveList"></div>
+        <!-- Empty state — shown when no active deferred tabs -->
+        <div class="deferred-empty" id="deferredEmpty" style="display:none">
+          Nothing saved. Living in the moment.
+        </div>
+
+        <!-- Archive section — collapsed by default -->
+        <div class="deferred-archive" id="deferredArchive" style="display:none">
+          <button class="archive-toggle" id="archiveToggle">
+            <svg class="archive-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+            Archive
+            <span class="archive-count" id="archiveCount"></span>
+          </button>
+          <div class="archive-body" id="archiveBody" style="display:none">
+            <input type="text" class="archive-search" id="archiveSearch" aria-label="Search archived tabs" placeholder="Search archived tabs...">
+            <div class="archive-list" id="archiveList"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- THIRD COLUMN: Folders — organize saved tabs into collapsible folders -->
-    <div class="folders-column" id="foldersColumn" style="display:none">
-      <div class="section-header">
-        <h2>Folders</h2>
-        <div class="section-line"></div>
-        <button class="folders-collapse-all" data-action="toggle-all-folders" aria-label="Collapse or expand all folders" title="Collapse / expand all" type="button">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg>
-        </button>
-        <button class="new-folder-btn" data-action="new-folder" title="New folder" type="button">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-          New folder
-        </button>
+      <!-- THIRD COLUMN: Folders — organize saved tabs into collapsible folders -->
+      <div class="folders-column" id="foldersColumn" style="display:none">
+        <div class="section-header">
+          <h2>Folders</h2>
+          <div class="section-line"></div>
+          <button class="folders-collapse-all" data-action="toggle-all-folders" aria-label="Collapse or expand all folders" title="Collapse / expand all" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg>
+          </button>
+          <button class="new-folder-btn" data-action="new-folder" title="New folder" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            New folder
+          </button>
+        </div>
+
+        <!-- Inline "new folder" name input — toggled by JS -->
+        <div class="new-folder-input-row" id="newFolderInputRow" style="display:none">
+          <input type="text" class="new-folder-input" id="newFolderInput" placeholder="Folder name…" maxlength="60">
+        </div>
+
+        <!-- Folder list — injected by renderFoldersColumn() in app.js -->
+        <div class="folders-list" id="foldersList"></div>
+
+        <!-- Empty state — shown when there are no folders yet -->
+        <div class="folders-empty" id="foldersEmpty" style="display:none">
+          No folders yet. Create one, then drag saved tabs in — or right-click a saved tab to move it.
+        </div>
       </div>
 
-      <!-- Inline "new folder" name input — toggled by JS -->
-      <div class="new-folder-input-row" id="newFolderInputRow" style="display:none">
-        <input type="text" class="new-folder-input" id="newFolderInput" placeholder="Folder name…" maxlength="60">
-      </div>
-
-      <!-- Folder list — injected by renderFoldersColumn() in app.js -->
-      <div class="folders-list" id="foldersList"></div>
-
-      <!-- Empty state — shown when there are no folders yet -->
-      <div class="folders-empty" id="foldersEmpty" style="display:none">
-        No folders yet. Create one, then drag saved tabs in — or right-click a saved tab to move it.
-      </div>
     </div>
 
     <div class="tab-groups-column" id="tabGroupsBar" style="display:none">
