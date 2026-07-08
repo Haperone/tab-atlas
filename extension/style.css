@@ -82,30 +82,6 @@
   --success-rgb: 147, 163, 0;
 }
 
-/* Dracula — vivid purple/pink on a slate base */
-[data-theme="dracula"] {
-  color-scheme: dark;
-  --text: #f8f8f2;
-  --bg: #21222c;
-  --neutral: #383a4d;
-  --muted: #8b8fa3;
-  --accent-primary: #bd93f9;
-  --accent-success: #50fa7b;
-  --accent-info: #8be9fd;
-  --accent-danger: #ff5555;
-  --status-active: #50fa7b;
-  --status-cooling: #f1fa8c;
-  --status-abandoned: #ff5555;
-  --card-bg: #282a36;
-  --surface-strong: #343746;
-  --surface-strong-hover: #3d4153;
-  --shadow: rgba(0, 0, 0, 0.42);
-  --accent-rgb: 189, 147, 249;
-  --neutral-rgb: 98, 114, 164;
-  --danger-rgb: 255, 85, 85;
-  --success-rgb: 80, 250, 123;
-}
-
 /* Tokyo Night — deep indigo with electric blue */
 [data-theme="tokyonight"] {
   color-scheme: dark;
@@ -128,30 +104,6 @@
   --neutral-rgb: 86, 95, 137;
   --danger-rgb: 247, 118, 142;
   --success-rgb: 158, 206, 106;
-}
-
-/* Gruvbox — warm retro earth tones */
-[data-theme="gruvbox"] {
-  color-scheme: dark;
-  --text: #ebdbb2;
-  --bg: #1d2021;
-  --neutral: #3c3836;
-  --muted: #a89984;
-  --accent-primary: #fabd2f;
-  --accent-success: #b8bb26;
-  --accent-info: #83a598;
-  --accent-danger: #fb4934;
-  --status-active: #b8bb26;
-  --status-cooling: #fabd2f;
-  --status-abandoned: #fb4934;
-  --card-bg: #282828;
-  --surface-strong: #3c3836;
-  --surface-strong-hover: #454340;
-  --shadow: rgba(0, 0, 0, 0.42);
-  --accent-rgb: 250, 189, 47;
-  --neutral-rgb: 124, 111, 100;
-  --danger-rgb: 251, 73, 52;
-  --success-rgb: 184, 187, 38;
 }
 
 /* Catppuccin Mocha — soft pastel dark */
@@ -291,6 +243,206 @@
 /* Soften the heavy inset white highlight that's meant for dark cards */
 [data-theme="paper"] .mission-card::after,
 [data-theme="latte"] .mission-card::after { box-shadow: none; }
+
+
+/* ============================================================
+   NEUMORPHIC (SOFT UI) LIGHT THEMES
+   Two soft-UI variants of the light themes. The trick of soft UI:
+   the surface is the SAME colour as the page, and depth comes only
+   from a pair of shadows — a light highlight (top-left) and a darker
+   shadow (bottom-right) — so elements look gently extruded. The
+   component overrides below are scoped to just these two themes.
+   ============================================================ */
+
+/* Paper Soft — warm cream soft UI (based on Paper) */
+[data-theme="papersoft"] {
+  color-scheme: light;
+  --text: #4a4034;
+  --bg: #e6dfd0;
+  --neutral: #d3cab6;
+  --muted: #8a7f6d;
+  --accent-primary: #b85c33;
+  --accent-success: #6f8a5c;
+  --accent-info: #5a6b7a;
+  --accent-danger: #b5524a;
+  --status-active: #6f8a5c;
+  --status-cooling: #b98a3a;
+  --status-abandoned: #b5524a;
+  --card-bg: #e6dfd0;
+  --surface-strong: #ebe5d8;
+  --surface-strong-hover: #f0ebe0;
+  --shadow: rgba(120, 100, 70, 0.14);
+  --accent-rgb: 184, 92, 51;
+  --neutral-rgb: 138, 127, 109;
+  --danger-rgb: 181, 82, 74;
+  --success-rgb: 111, 138, 92;
+  /* Soft-UI highlight + shadow, derived from --bg */
+  --neu-light: #f4eedd;
+  --neu-dark: #c9c1ac;
+}
+
+/* Latte Soft — cool pastel soft UI (based on Catppuccin Latte) */
+[data-theme="lattesoft"] {
+  color-scheme: light;
+  --text: #4c4f69;
+  --bg: #e0e3ea;
+  --neutral: #c6cbd6;
+  --muted: #7c7f93;
+  --accent-primary: #8839ef;
+  --accent-success: #40a02b;
+  --accent-info: #209fb5;
+  --accent-danger: #d20f39;
+  --status-active: #40a02b;
+  --status-cooling: #df8e1d;
+  --status-abandoned: #d20f39;
+  --card-bg: #e0e3ea;
+  --surface-strong: #e6e9f0;
+  --surface-strong-hover: #eceef4;
+  --shadow: rgba(76, 79, 105, 0.14);
+  --accent-rgb: 136, 57, 239;
+  --neutral-rgb: 124, 127, 147;
+  --danger-rgb: 210, 15, 57;
+  --success-rgb: 64, 160, 43;
+  --neu-light: #f1f3fb;
+  --neu-dark: #c6cad6;
+}
+
+/* Kill the dark-oriented decorations on the soft themes */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) body::before { display: none; }
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .mission-card::after { box-shadow: none; }
+/* Soft UI needs a perfectly flat canvas — drop the page's radial colour glows
+   (the accent one at top-left was the coloured blur breaking the look). */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) body { background: var(--bg); }
+
+/* Raised soft surfaces: same colour as the page, no border, dual shadow */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .dialog, .context-menu, .workspace-drawer,
+  .speed-tile, .selection-bar, .toast, .group-control, .tab-cleanup-banner,
+  .tab-groups-bar
+) {
+  background: var(--bg);
+  border: none;
+  box-shadow: -5px -5px 11px var(--neu-light), 5px 5px 13px var(--neu-dark);
+}
+
+/* Open-tabs cards + folders: these stack densely, so they get a TIGHTER
+   shadow (won't bleed into neighbours), the dark-theme colour bar hidden,
+   a rounder radius, and a soft hover that stays soft (no border/drop-shadow). */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .missions { gap: 18px; }
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .mission-card::before { display: none; }
+/* The columns are scroll containers (overflow-y:auto also clips horizontally),
+   so without side padding a card's soft shadow gets sliced at the column edge.
+   Give them room on all open sides so the shadows sit fully inside. */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .dashboard-columns .active-section, .deferred-column, .folders-column
+) {
+  padding-left: 13px;
+  padding-right: 13px;
+  padding-bottom: 14px;
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .folder { margin-bottom: 16px; }
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.mission-card, .folder) {
+  background: var(--bg);
+  border: none;
+  border-radius: 14px;
+  box-shadow: -4px -4px 9px var(--neu-light), 4px 4px 10px var(--neu-dark);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.mission-card, .folder):hover {
+  background: var(--bg);
+  border: none;
+  transform: none;
+  box-shadow: -3px -3px 8px var(--neu-light), 3px 3px 9px var(--neu-dark);
+}
+
+/* Raised soft controls (buttons + the pill) */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .corner-btn, .action-btn, .new-folder-btn, .folders-collapse-all,
+  .header-homepage-btn, .dialog-btn, .workspace-edge-save, .workspace-mini-btn,
+  .tab-cleanup-btn, .group-control-btn, .speed-tile-add,
+  .selection-btn:not(.ghost), .onboarding-btn,
+  .focus-sweep-icon-btn, .focus-sweep-link-btn, .focus-sweep-mode
+) {
+  background: var(--bg);
+  border: none;
+  box-shadow: -3px -3px 6px var(--neu-light), 3px 3px 6px var(--neu-dark);
+}
+
+/* Hover lifts a touch (softer, closer shadow); press pushes in */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .corner-btn, .action-btn, .new-folder-btn, .folders-collapse-all,
+  .header-homepage-btn, .dialog-btn, .workspace-edge-save, .workspace-mini-btn,
+  .tab-cleanup-btn, .group-control-btn, .speed-tile,
+  .selection-btn:not(.ghost), .onboarding-btn,
+  .focus-sweep-icon-btn, .focus-sweep-link-btn, .focus-sweep-mode
+):hover {
+  background: var(--bg);
+  box-shadow: -2px -2px 5px var(--neu-light), 2px 2px 5px var(--neu-dark);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .corner-btn, .action-btn, .new-folder-btn, .folders-collapse-all,
+  .header-homepage-btn, .dialog-btn, .workspace-mini-btn, .group-control-btn,
+  .selection-btn:not(.ghost), .onboarding-btn, .focus-sweep-icon-btn, .focus-sweep-link-btn
+):active {
+  box-shadow: inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light);
+}
+
+/* Filled/active buttons: their text is var(--bg), so keep the accent fill
+   (flattening it to the page colour would make the label invisible). They
+   stay soft-raised, just accent-coloured. */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .onboarding-btn.primary,
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .focus-sweep-mode[aria-pressed="true"] {
+  background: var(--accent-primary);
+  color: var(--bg);
+  box-shadow: -3px -3px 6px var(--neu-light), 3px 3px 6px var(--neu-dark);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .onboarding-btn.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-primary) 88%, var(--text));
+}
+
+/* Inputs look pressed-in */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .global-search, .archive-search, .new-folder-input, .folder-rename-input, .dialog-input
+) {
+  background: var(--bg);
+  border: none;
+  box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .global-search, .archive-search, .new-folder-input, .folder-rename-input, .dialog-input
+):focus {
+  box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light),
+              0 0 0 2px rgba(var(--accent-rgb), 0.28);
+}
+
+/* Custom checkbox: pressed-in when empty, filled accent when checked */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .deferred-checkbox {
+  border: none;
+  background: var(--bg);
+  box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .deferred-checkbox:checked {
+  background: var(--accent-success);
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+/* The drawer's top-glow gradient would fight the soft look — plain surface */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .workspace-drawer {
+  background: var(--bg);
+}
+
+/* Onboarding + Focus Sweep modals: opaque soft-UI panels (no blur/border) */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.onboarding-card, .focus-sweep-panel) {
+  background: var(--bg);
+  border: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: -6px -6px 14px var(--neu-light), 6px 6px 16px var(--neu-dark);
+}
+/* Keep a faint accent ring on the Focus Sweep spotlight so it still stands out */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .focus-sweep-panel {
+  box-shadow: -6px -6px 14px var(--neu-light), 6px 6px 16px var(--neu-dark),
+              0 0 0 1px rgba(var(--accent-rgb), 0.14);
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 

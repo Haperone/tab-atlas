@@ -36,7 +36,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 - **Auto‑refresh** — the dashboard stays in sync as tabs open/close/navigate
 
 **Make it yours**
-- **11 themes** (9 dark + 2 light) — Default, Graphite, Solarized, Dracula, Tokyo Night, Gruvbox, Catppuccin Mocha, Monokai, Obsidian, Paper, Catppuccin Latte — picked from the top‑right palette and remembered across sessions
+- **11 themes** (7 dark + 4 light) — Default, Graphite, Solarized, Tokyo Night, Catppuccin Mocha, Monokai, Obsidian, Paper, Catppuccin Latte, plus two **neumorphic / soft‑UI** variants (Paper Soft, Latte Soft) — picked from the top‑right palette and remembered across sessions
 - **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); show or hide the whole strip with the grid button in the top‑right corner
 
 **Private by design**

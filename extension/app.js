@@ -3800,14 +3800,14 @@ const THEME_OPTIONS = [
   { id: 'default',    label: 'Default',          color: '#78a8c8', group: 'dark' },
   { id: 'graphite',   label: 'Graphite',         color: '#d4af37', group: 'dark' },
   { id: 'solarized',  label: 'Solarized',        color: '#2f9bd8', group: 'dark' },
-  { id: 'dracula',    label: 'Dracula',          color: '#bd93f9', group: 'dark' },
   { id: 'tokyonight', label: 'Tokyo Night',      color: '#7aa2f7', group: 'dark' },
-  { id: 'gruvbox',    label: 'Gruvbox',          color: '#fabd2f', group: 'dark' },
   { id: 'mocha',      label: 'Catppuccin Mocha', color: '#cba6f7', group: 'dark' },
   { id: 'monokai',    label: 'Monokai',          color: '#a6e22e', group: 'dark' },
   { id: 'obsidian',   label: 'Obsidian',         color: '#818cf8', group: 'dark' },
   { id: 'paper',      label: 'Paper (light)',    color: '#c0623a', group: 'light' },
   { id: 'latte',      label: 'Catppuccin Latte', color: '#8839ef', group: 'light' },
+  { id: 'papersoft',  label: 'Paper Soft',       color: '#b85c33', group: 'light' },
+  { id: 'lattesoft',  label: 'Latte Soft',       color: '#8839ef', group: 'light' },
 ];
 
 function currentTheme() {
