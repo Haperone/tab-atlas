@@ -1603,11 +1603,13 @@ function checkTabOutDupes() {
  * renderDeferredColumn()
  *
  * Reads saved tabs from chrome.storage.local and renders the right-side
- * "Saved for Later" checklist column. Shows active items as a checklist
- * and completed items in a collapsible archive.
+ * "Saved for Later" checklist column. Completed items are rendered in the
+ * separate archive drawer opened beside the global search field.
  */
 // Live search query shared by all columns (lowercased; '' = no filter)
 let savedQuery = '';
+let archiveQuery = '';
+let archiveLastFocusEl = null;
 
 /**
  * parseSearch(q)
@@ -1624,14 +1626,33 @@ function savedMatches(item) {
   return recordMatches(item.url, item.title, parseSearch(savedQuery));
 }
 
+function renderArchiveResults(archived) {
+  const list = document.getElementById('archiveList');
+  const empty = document.getElementById('archiveEmpty');
+  if (!list || !empty) return;
+
+  const query = archiveQuery.trim().toLowerCase();
+  const results = query.length < 2
+    ? archived
+    : archived.filter(item =>
+        (item.title || '').toLowerCase().includes(query) ||
+        (item.url || '').toLowerCase().includes(query)
+      );
+
+  list.innerHTML = results.map(item => renderArchiveItem(item, timeAgo)).join('');
+  list.style.display = results.length ? 'block' : 'none';
+  empty.textContent = archived.length ? 'No archived links found.' : 'The archive is empty.';
+  empty.style.display = results.length ? 'none' : 'block';
+}
+
 async function renderDeferredColumn() {
   const column         = document.getElementById('deferredColumn');
   const list           = document.getElementById('deferredList');
   const empty          = document.getElementById('deferredEmpty');
   const countEl        = document.getElementById('deferredCount');
-  const archiveEl      = document.getElementById('deferredArchive');
+  const archiveLaunch  = document.getElementById('archiveLaunch');
   const archiveCountEl = document.getElementById('archiveCount');
-  const archiveList    = document.getElementById('archiveList');
+  const drawerCountEl  = document.getElementById('archiveDrawerCount');
 
   if (!column) return;
 
@@ -1643,9 +1664,23 @@ async function renderDeferredColumn() {
     const inboxAll = active.filter(t => !t.folderId);
     const inbox    = inboxAll.filter(savedMatches);
 
-    // Keep the column visible whenever there's an inbox, an archive, OR any
-    // folders exist — so the inbox stays available as a drag-back target.
-    if (inboxAll.length === 0 && archived.length === 0 && folders.length === 0) {
+    // Archive access is global beside search, independent of this column.
+    if (archived.length > 0) {
+      archiveCountEl.textContent = String(archived.length);
+      drawerCountEl.textContent = `${archived.length} item${archived.length !== 1 ? 's' : ''}`;
+      archiveLaunch.style.display = 'flex';
+      renderArchiveResults(archived);
+    } else {
+      archiveCountEl.textContent = '';
+      drawerCountEl.textContent = '0 items';
+      archiveLaunch.style.display = 'none';
+      renderArchiveResults([]);
+      closeArchiveDrawer();
+    }
+
+    // Keep the inbox as a drag-back target while folders exist. Archive-only
+    // state no longer creates an otherwise empty second column.
+    if (inboxAll.length === 0 && folders.length === 0) {
       clearSavedSelection();
       column.style.display = 'none';
       return;
@@ -1669,15 +1704,6 @@ async function renderDeferredColumn() {
             ? 'Inbox empty — drop a tab here to bring it back.'
             : 'Nothing saved. Living in the moment.');
       empty.style.display = 'block';
-    }
-
-    // Render archive section (archive keeps its own separate search box)
-    if (archived.length > 0) {
-      archiveCountEl.textContent = `(${archived.length})`;
-      archiveList.innerHTML = archived.map(item => renderArchiveItem(item, timeAgo)).join('');
-      archiveEl.style.display = 'block';
-    } else {
-      archiveEl.style.display = 'none';
     }
 
   } catch (err) {
@@ -1986,6 +2012,10 @@ document.addEventListener('click', async (e) => {
   if (action === 'onboarding-skip')   { finishOnboarding({ skipped: true });     return; }
   if (action === 'onboarding-prev')   { moveOnboarding(-1);                      return; }
   if (action === 'onboarding-next')   { moveOnboarding(1);                       return; }
+
+  // ---- Archive drawer ----
+  if (action === 'open-archive')  { openArchiveDrawer(actionEl); return; }
+  if (action === 'close-archive') { closeArchiveDrawer();        return; }
 
   // ---- Backup / import ----
   if (action === 'backup-menu') {
@@ -2353,6 +2383,19 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  if (action === 'restore-archive-item') {
+    const id = actionEl.dataset.deferredId;
+    if (!id) return;
+    await uncheckSavedTab(id);
+    await refreshSavedAndFolders();
+    showToast('Restored to Saved for later', async () => {
+      await checkOffSavedTab(id);
+      await refreshSavedAndFolders();
+    });
+    flashItem(id);
+    return;
+  }
+
   if (action === 'clear-archive') {
     const { archived } = await getSavedTabs();
     const removed = await dismissSavedTabs(archived.map(item => item.id));
@@ -2572,15 +2615,77 @@ function closeCloseAllDialog() {
   if (dialog) dialog.style.display = 'none';
 }
 
-// ---- Archive toggle — expand/collapse the archive section ----
-document.addEventListener('click', (e) => {
-  const toggle = e.target.closest('#archiveToggle');
-  if (!toggle) return;
+// ---- Archive drawer ----
+function isArchiveDrawerOpen() {
+  const overlay = document.getElementById('archiveDrawerOverlay');
+  return !!overlay && overlay.style.display !== 'none';
+}
 
-  toggle.classList.toggle('open');
-  const body = document.getElementById('archiveBody');
-  if (body) {
-    body.style.display = body.style.display === 'none' ? 'block' : 'none';
+function openArchiveDrawer(sourceEl) {
+  const overlay = document.getElementById('archiveDrawerOverlay');
+  const launch = document.getElementById('archiveLaunch');
+  if (!overlay) return;
+
+  archiveLastFocusEl = sourceEl || document.activeElement;
+  overlay.style.display = 'flex';
+  document.documentElement.classList.add('archive-drawer-open');
+  document.body.classList.add('archive-drawer-open');
+  if (launch) launch.setAttribute('aria-expanded', 'true');
+
+  const search = document.getElementById('archiveSearch');
+  if (search) requestAnimationFrame(() => search.focus());
+}
+
+function closeArchiveDrawer() {
+  const overlay = document.getElementById('archiveDrawerOverlay');
+  const launch = document.getElementById('archiveLaunch');
+  if (!overlay || overlay.style.display === 'none') return;
+
+  overlay.style.display = 'none';
+  document.documentElement.classList.remove('archive-drawer-open');
+  document.body.classList.remove('archive-drawer-open');
+  if (launch) launch.setAttribute('aria-expanded', 'false');
+
+  const previousFocus = archiveLastFocusEl;
+  archiveLastFocusEl = null;
+  if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === 'function') {
+    try { previousFocus.focus(); } catch {}
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const overlay = document.getElementById('archiveDrawerOverlay');
+  if (overlay && e.target === overlay) closeArchiveDrawer();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!isArchiveDrawerOpen()) return;
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    closeArchiveDrawer();
+    return;
+  }
+
+  if (e.key !== 'Tab') return;
+  const drawer = document.getElementById('archiveDrawer');
+  if (!drawer) return;
+  const focusable = [...drawer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled])')]
+    .filter(el => el.offsetParent !== null);
+  if (!focusable.length) return;
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!drawer.contains(document.activeElement)) {
+    e.preventDefault();
+    first.focus();
+  } else if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
   }
 });
 
@@ -2588,27 +2693,11 @@ document.addEventListener('click', (e) => {
 document.addEventListener('input', async (e) => {
   if (e.target.id !== 'archiveSearch') return;
 
-  const q = e.target.value.trim().toLowerCase();
-  const archiveList = document.getElementById('archiveList');
-  if (!archiveList) return;
+  archiveQuery = e.target.value;
 
   try {
     const { archived } = await getSavedTabs();
-
-    if (q.length < 2) {
-      // Show all archived items
-      archiveList.innerHTML = archived.map(item => renderArchiveItem(item, timeAgo)).join('');
-      return;
-    }
-
-    // Filter by title or URL containing the query string
-    const results = archived.filter(item =>
-      (item.title || '').toLowerCase().includes(q) ||
-      (item.url  || '').toLowerCase().includes(q)
-    );
-
-    archiveList.innerHTML = results.map(item => renderArchiveItem(item, timeAgo)).join('')
-      || '<div style="font-size:12px;color:var(--muted);padding:8px 0">No results</div>';
+    renderArchiveResults(archived);
   } catch (err) {
     console.warn('[tab-out] Archive search failed:', err);
   }

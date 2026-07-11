@@ -156,6 +156,13 @@ export function renderArchiveItem(item, timeAgo) {
         ${safeTitle}
       </a>
       <span class="archive-item-date">${ago}</span>
-      <button class="archive-remove" data-action="remove-archive-item" data-deferred-id="${safeId}" title="Remove">×</button>
+      <div class="archive-item-actions">
+        <button class="archive-item-action archive-restore" data-action="restore-archive-item" data-deferred-id="${safeId}" type="button" title="Restore to Saved for later" aria-label="Restore ${safeTitle} to Saved for later">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25 4.5 9.75m0 0L9 5.25m-4.5 4.5h10.125a4.875 4.875 0 0 1 0 9.75H12" /></svg>
+        </button>
+        <button class="archive-item-action archive-remove" data-action="remove-archive-item" data-deferred-id="${safeId}" type="button" title="Remove from archive" aria-label="Remove ${safeTitle} from archive">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m10.23-3.21c.35.05.7.1 1.04.16m-1.04-.16-.95 12.35a2.25 2.25 0 0 1-2.24 2.08H7.7a2.25 2.25 0 0 1-2.24-2.08L4.5 5.79m14.99 0a48.1 48.1 0 0 0-3.48-.4m-12.04.56c.34-.06.69-.11 1.04-.16m0 0a48.1 48.1 0 0 1 3.48-.4m7.52 0V4.48c0-1.18-.91-2.16-2.09-2.2a52.1 52.1 0 0 0-3.84 0C8.91 2.32 8 3.3 8 4.48v.91m8.01 0a48.7 48.7 0 0 0-8.01 0" /></svg>
+        </button>
+      </div>
     </div>`;
 }

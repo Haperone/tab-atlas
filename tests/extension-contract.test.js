@@ -70,6 +70,17 @@ test('extension page uses only external local scripts', async () => {
   assert.equal(/\son\w+\s*=/i.test(html), false, 'inline event handlers are forbidden');
 });
 
+test('archive access sits beside global search and stays raised in soft themes', async () => {
+  const html = await readProjectText('extension/index.html');
+  const css = await readProjectText('extension/style.css');
+  const searchRowStart = html.indexOf('<div class="global-search-row">');
+  const searchRowEnd = html.indexOf('</div>', searchRowStart);
+  const archiveLaunch = html.indexOf('id="archiveLaunch"');
+  assert.ok(searchRowStart >= 0 && archiveLaunch > searchRowStart && archiveLaunch < searchRowEnd);
+  assert.match(css, /html\[data-theme="papersoft"\].*html\[data-theme="lattesoft"\][\s\S]*?\.archive-launch[\s\S]*?box-shadow:\s*-3px -3px 6px var\(--neu-light\), 3px 3px 6px var\(--neu-dark\)/);
+  assert.match(css, /\.archive-launch[\s\S]*?:active\s*\{[\s\S]*?box-shadow:\s*inset 2px 2px 5px var\(--neu-dark\), inset -2px -2px 5px var\(--neu-light\)/);
+});
+
 test('extension JavaScript avoids dynamic execution and promise chains', async () => {
   const libraryFiles = (await readdir(path.join(extensionRoot, 'lib')))
     .filter(file => file.endsWith('.js'))

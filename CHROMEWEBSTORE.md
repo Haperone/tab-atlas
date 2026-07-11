@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Tab Atlas
 
-> Last Updated: 2026-07-10
+> Last Updated: 2026-07-11
 
 ## Store Listing
 
@@ -12,7 +12,7 @@
 
 Tab Atlas replaces Chrome's new-tab page with a clear dashboard of your open tabs, grouped by domain.
 
-See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, organize saved pages into folders, and capture whole workspaces for later restoration. Focus Sweep helps you review many tabs as one deliberate batch. Themes, privacy mode, and editable shortcuts let the dashboard fit your workflow.
+See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Focus Sweep helps you review many tabs as one deliberate batch. Themes, privacy mode, and editable shortcuts let the dashboard fit your workflow.
 
 Install the extension, open a new tab, and use the dashboard to jump to, save, group, or close tabs. The toolbar icon returns you to an existing Tab Atlas page or opens one when needed.
 
@@ -98,7 +98,7 @@ Questions about privacy can be submitted through the project's public issue trac
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
-| 1.0.0 | 2026-07-10 | Initial store draft: local tab dashboard, saved tabs/folders, Focus Sweep, workspace snapshots, themes, shortcuts, backup/import, and toolbar badge/action. | Draft |
+| 1.0.0 | 2026-07-11 | Initial store draft plus an always-accessible saved-links archive drawer with one-click restoration and Undo. | Draft |
 
 ## Review Notes
 

@@ -83,6 +83,13 @@
   <div class="global-search-row">
     <svg class="global-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
     <input type="text" class="global-search" id="globalSearch" aria-label="Search open tabs, saved tabs and folders" placeholder="Search everything…  press /  —  try domain:github or url:docs">
+    <button class="archive-launch" id="archiveLaunch" data-action="open-archive" type="button" aria-haspopup="dialog" aria-controls="archiveDrawerOverlay" aria-expanded="false" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5h16.5m-15 0 .62 10.54a2.25 2.25 0 0 0 2.25 2.12h7.76a2.25 2.25 0 0 0 2.25-2.12L18.75 7.5m-9 4.5h4.5M5.25 7.5l.78-2.34a2.25 2.25 0 0 1 2.14-1.54h7.66a2.25 2.25 0 0 1 2.14 1.54l.78 2.34" />
+      </svg>
+      <span>Archive</span>
+      <span class="archive-count" id="archiveCount"></span>
+    </button>
   </div>
 
   <div class="dashboard-columns" id="dashboardColumns">
@@ -116,19 +123,6 @@
           Nothing saved. Living in the moment.
         </div>
 
-        <!-- Archive section — collapsed by default -->
-        <div class="deferred-archive" id="deferredArchive" style="display:none">
-          <button class="archive-toggle" id="archiveToggle">
-            <svg class="archive-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-            Archive
-            <span class="archive-count" id="archiveCount"></span>
-          </button>
-          <div class="archive-body" id="archiveBody" style="display:none">
-            <input type="text" class="archive-search" id="archiveSearch" aria-label="Search archived tabs" placeholder="Search archived tabs...">
-            <button type="button" class="archive-clear" data-action="clear-archive">Clear archive</button>
-            <div class="archive-list" id="archiveList"></div>
-          </div>
-        </div>
       </div>
 
       <!-- THIRD COLUMN: Folders — organize saved tabs into collapsible folders -->
@@ -183,6 +177,37 @@
   </footer>
 
 </div><!-- end .container -->
+
+<!-- Archive drawer — opened from the Saved for later header -->
+<div class="archive-drawer-overlay" id="archiveDrawerOverlay" role="dialog" aria-modal="true" aria-labelledby="archiveDrawerTitle" style="display:none">
+  <aside class="archive-drawer" id="archiveDrawer">
+    <div class="archive-drawer-header">
+      <div>
+        <div class="archive-drawer-eyebrow">Saved for later</div>
+        <h2 id="archiveDrawerTitle">Archive</h2>
+      </div>
+      <div class="archive-drawer-header-actions">
+        <span class="archive-drawer-count" id="archiveDrawerCount"></span>
+        <button class="archive-icon-btn" data-action="close-archive" type="button" aria-label="Close archive" title="Close archive">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="archive-drawer-tools">
+      <label class="archive-search-wrap" for="archiveSearch">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.2-5.2m0 0A7.5 7.5 0 1 0 5.2 5.2a7.5 7.5 0 0 0 10.6 10.6Z" />
+        </svg>
+        <input type="text" class="archive-search" id="archiveSearch" aria-label="Search archived tabs" placeholder="Search archived tabs…">
+      </label>
+      <button type="button" class="archive-clear" data-action="clear-archive">Clear archive</button>
+    </div>
+    <div class="archive-list" id="archiveList"></div>
+    <div class="archive-empty" id="archiveEmpty" style="display:none">No archived links found.</div>
+  </aside>
+</div>
 
 <!-- ================================================================
      CONTEXT MENU — custom right-click menu for saved tabs & folders.

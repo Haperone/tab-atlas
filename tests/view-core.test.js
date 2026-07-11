@@ -110,6 +110,9 @@ test('saved-item renderers retain saved and archive markup', () => {
   assert.match(deferred, /data-action="dismiss-deferred"/);
   assert.match(deferred, /ago:date/);
   assert.match(archived, /archive-item/);
+  assert.match(archived, /data-action="restore-archive-item"/);
+  assert.match(archived, /data-action="remove-archive-item"/);
+  assert.match(archived, /aria-label="Restore Example to Saved for later"/);
   assert.match(archived, /ago:done/);
 });
 

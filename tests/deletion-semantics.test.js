@@ -119,6 +119,8 @@ test('application routes single, bulk, folder, archive, and Focus Sweep cleanup 
   assert.match(source, /const removed = await dismissSavedTabs\(tabIds\)/);
   assert.match(source, /deleteFolderRecords\(folders, deferred, id, mode\)/);
   assert.match(source, /action === 'remove-archive-item'/);
+  assert.match(source, /action === 'restore-archive-item'/);
+  assert.match(source, /showToast\('Restored to Saved for later'/);
   assert.match(source, /action === 'clear-archive'/);
   assert.match(source, /for \(const id of savedIds\).*dismissSavedTab\(id\)/s);
   assert.doesNotMatch(source, /\.dismissed\s*=\s*true/);
