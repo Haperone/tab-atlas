@@ -9,8 +9,6 @@
   <script src="theme-init.js"></script>
 
   <!-- Google Fonts: Newsreader (for headings/numbers) + DM Sans (for body text) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -127,6 +125,7 @@
           </button>
           <div class="archive-body" id="archiveBody" style="display:none">
             <input type="text" class="archive-search" id="archiveSearch" aria-label="Search archived tabs" placeholder="Search archived tabs...">
+            <button type="button" class="archive-clear" data-action="clear-archive">Clear archive</button>
             <div class="archive-list" id="archiveList"></div>
           </div>
         </div>
@@ -420,6 +419,6 @@
 </div>
 
 <!-- Main dashboard logic — loads last so the DOM is ready -->
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

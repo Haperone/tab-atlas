@@ -41,7 +41,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 
 **Private by design**
 - **100% local** — saved tabs, folders and workspace states in `chrome.storage.local`; theme and speed dial settings in `localStorage`
-- **No server, no Node.js, no npm, no external API calls** — just load the extension
+- **No server, npm install, build step or external API calls at runtime** — just load the extension
 
 ---
 
@@ -60,6 +60,14 @@ git clone https://github.com/Haperone/tab-atlas.git
 > It runs as long as the folder stays on disk and Developer mode is on. Moving/renaming the folder changes the extension ID and resets local data.
 
 To update: `git pull`, then hit **Reload** on the extension card in `chrome://extensions`.
+
+### Contributor tests
+
+The extension itself has no Node.js or npm runtime requirement. Contributors can use a current Node.js release to run the dependency-free test suite:
+
+```bash
+node --test
+```
 
 ---
 

@@ -1,0 +1,60 @@
+{
+  "app": "Tab Atlas",
+  "schemaVersion": 1,
+  "unknownRoot": "discard me",
+  "data": {
+    "folders": [
+      {
+        "id": "\" data-action=\"delete-workspace-snapshot",
+        "name": "<img src=x>",
+        "unknown": "discard me"
+      }
+    ],
+    "deferred": [
+      {
+        "id": "javascript:alert(1)",
+        "url": "javascript:alert(1)",
+        "title": "Bad"
+      },
+      {
+        "id": "data-payload",
+        "url": "data:text/html,<script>alert(1)</script>",
+        "title": "Bad data"
+      },
+      {
+        "id": "valid-but-hostile",
+        "url": "https://example.com/ok",
+        "title": "\"><button data-action=\"close-all-open-tabs\">bad</button>"
+      }
+    ],
+    "workspaceSnapshots": [
+      {
+        "id": "\" data-action=\"delete-workspace-snapshot",
+        "name": "\"><img src=https://tracker.invalid/pixel>",
+        "windowCount": "<b>999</b>",
+        "tabCount": 999999,
+        "windows": [
+          {
+            "state": "not-a-state",
+            "tabs": [
+              {
+                "url": "https://example.com/safe",
+                "title": "Safe",
+                "groupKey": "__proto__"
+              }
+            ]
+          }
+        ],
+        "groups": {
+          "__proto__": {
+            "title": "pollute",
+            "color": "red"
+          }
+        },
+        "unknown": {
+          "deep": "discard me"
+        }
+      }
+    ]
+  }
+}
