@@ -8,6 +8,7 @@ docs/superpowers/
 .agents/
 .claude/
 skills-lock.json
+.supergoal/
 
 # Personal config (landing page patterns, etc.) — never push to GitHub
 extension/config.local.js

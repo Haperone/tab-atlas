@@ -1,0 +1,60 @@
+{
+  "app": "Tab Atlas",
+  "schemaVersion": 1,
+  "exportedAt": "2026-06-01T10:00:00.000Z",
+  "data": {
+    "folders": [
+      {
+        "id": "source-folder",
+        "name": "Research",
+        "collapsed": false,
+        "color": "#78a8c8",
+        "createdAt": "2026-05-01T10:00:00.000Z"
+      }
+    ],
+    "deferred": [
+      {
+        "id": "source-tab",
+        "url": "https://example.com/article",
+        "title": "Article",
+        "savedAt": "2026-05-02T10:00:00.000Z",
+        "completed": false,
+        "dismissed": false,
+        "folderId": "source-folder"
+      }
+    ],
+    "workspaceSnapshots": [
+      {
+        "id": "source-workspace",
+        "name": "Morning work",
+        "createdAt": "2026-05-03T10:00:00.000Z",
+        "windowCount": 99,
+        "tabCount": 999,
+        "windows": [
+          {
+            "id": 42,
+            "state": "normal",
+            "focused": true,
+            "tabs": [
+              {
+                "url": "https://example.com/work",
+                "title": "Work",
+                "pinned": true,
+                "active": true,
+                "index": 0,
+                "groupKey": "42"
+              }
+            ]
+          }
+        ],
+        "groups": {
+          "42": {
+            "title": "Project",
+            "color": "blue",
+            "collapsed": true
+          }
+        }
+      }
+    ]
+  }
+}

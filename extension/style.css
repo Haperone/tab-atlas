@@ -12,6 +12,8 @@
    ============================================================ */
 :root,
 [data-theme="default"] {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
   color-scheme: dark;
   --text: #f3eee5;
   --bg: #0f1216;
@@ -482,7 +484,7 @@ html {
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   background:
     radial-gradient(circle at top, rgba(var(--neutral-rgb), 0.14), transparent 34%),
     radial-gradient(circle at 20% 20%, rgba(var(--accent-rgb), 0.08), transparent 30%),
@@ -530,7 +532,7 @@ header {
 }
 
 .header-left h1 {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-weight: 300;
   font-size: 28px;
   letter-spacing: -0.5px;
@@ -592,7 +594,7 @@ header {
 }
 
 .tab-cleanup-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   padding: 8px 20px;
@@ -623,7 +625,7 @@ header {
 }
 
 .section-header h2 {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-weight: 400;
   font-size: 18px;
   font-style: italic;
@@ -646,7 +648,7 @@ header {
 }
 
 .section-mini-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 700;
   color: var(--accent-primary);
@@ -939,7 +941,7 @@ header {
 
 .mission-page-count {
   font-size: 20px;
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-weight: 300;
   color: var(--text);
   line-height: 1;
@@ -961,7 +963,7 @@ header {
 
 .action-btn {
   font-size: 11px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 500;
   padding: 5px 14px;
   border-radius: 4px;
@@ -1004,7 +1006,7 @@ header {
   transform: translateX(-50%) translateY(80px);
   background: var(--surface-strong);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
   padding: 12px 24px;
@@ -1052,7 +1054,7 @@ footer {
 }
 
 .stat-num {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-size: 28px;
   font-weight: 300;
   color: var(--text);
@@ -1150,7 +1152,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .empty-title {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 400;
   font-style: italic;
@@ -1525,7 +1527,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-toggle {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 500;
   color: var(--muted);
@@ -1566,7 +1568,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-search {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   width: 100%;
   padding: 8px 12px;
@@ -1585,6 +1587,23 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 .archive-search::placeholder {
   color: var(--muted);
+}
+
+.archive-clear {
+  display: block;
+  margin: -4px 0 8px auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.archive-clear:hover,
+.archive-remove:hover {
+  color: var(--danger, #c33);
 }
 
 /* Archive items are simpler — just title + domain + date */
@@ -1621,6 +1640,17 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   color: var(--muted);
   opacity: 0.6;
   flex-shrink: 0;
+}
+
+.archive-remove {
+  flex-shrink: 0;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 
@@ -1688,7 +1718,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 600;
   color: var(--accent-primary);
@@ -1711,7 +1741,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .new-folder-input,
 .folder-rename-input {
   width: 100%;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
   color: var(--text);
   background: var(--surface-strong);
@@ -1846,7 +1876,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   border-radius: 10px;
   padding: 5px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
 }
 .context-menu-item {
   display: block;
@@ -1905,7 +1935,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 .dialog-title {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-size: 19px;
   color: var(--text);
   margin-bottom: 8px;
@@ -1933,7 +1963,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 .dialog-input {
   width: 100%;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
   color: var(--text);
   background: var(--surface-strong);
@@ -1945,7 +1975,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .dialog-input::placeholder { color: var(--muted); }
 .dialog-input:focus { border-color: rgba(var(--accent-rgb), 0.6); }
 .dialog-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   color: var(--text);
@@ -2029,7 +2059,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 /* Undo affordance inside the toast */
 .toast-undo {
   margin-left: 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 700;
   color: var(--accent-primary);
@@ -2348,7 +2378,7 @@ body.workspace-drawer-open .workspace-edge-save {
 }
 .global-search {
   width: 100%;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   color: var(--text);
   background: var(--surface-strong);
@@ -2434,7 +2464,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   cursor: pointer;
 }
 .privacy-clock {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-weight: 300;
   font-size: clamp(64px, 14vw, 160px);
   letter-spacing: -2px;
@@ -2518,7 +2548,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
 .onboarding-title {
   margin: 7px 0 8px;
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 17px;
   font-weight: 800;
   line-height: 1.2;
@@ -2554,7 +2584,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   background: rgba(var(--neutral-rgb), 0.08);
   border: 1px solid rgba(var(--neutral-rgb), 0.22);
   border-radius: 7px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
@@ -2720,7 +2750,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   background: transparent;
   border: 1px solid rgba(var(--neutral-rgb), 0.2);
   border-radius: 7px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
@@ -2882,7 +2912,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
 .focus-sweep-title {
   margin: 7px 0 0;
   display: -webkit-box;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 20px;
   line-height: 1.24;
   font-weight: 800;
@@ -2935,7 +2965,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   background: transparent;
   border: 1px solid transparent;
   border-radius: 6px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
@@ -2970,7 +3000,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
 }
 
 .focus-sweep-done-title {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-serif);
   font-size: 27px;
   font-weight: 400;
   color: var(--text);
@@ -3015,7 +3045,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 800;
   color: var(--text);
@@ -3191,7 +3221,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   color: var(--text);
   background: transparent;
   border: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 700;
   padding: 4px 5px 4px 0;
@@ -3262,7 +3292,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   align-items: center;
   gap: 9px;
   max-width: 220px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
@@ -3330,11 +3360,11 @@ body.selection-brush-active .deferred-item:hover {
   border-radius: 999px;
   padding: 8px 10px 8px 18px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
 }
 .selection-count { font-size: 13px; font-weight: 600; color: var(--text); margin-right: 4px; }
 .selection-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   color: var(--text);

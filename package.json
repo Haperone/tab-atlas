@@ -1,0 +1,11 @@
+{
+  "name": "tab-atlas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Development checks for the dependency-free Tab Atlas Chrome extension.",
+  "scripts": {
+    "test": "node --test",
+    "verify": "node --test && node --check extension/app.js && node --check extension/background.js && node --check extension/theme-init.js"
+  }
+}
