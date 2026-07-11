@@ -380,4 +380,3 @@ export function createOnboardingController({
     isActive: () => onboardingState.active,
   });
 }
-
