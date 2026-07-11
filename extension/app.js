@@ -2180,6 +2180,7 @@ document.addEventListener('click', async (e) => {
     const mode = action === 'folder-delete-all' ? 'delete' : 'inbox';
     let snapshot = null;
     if (pendingDeleteFolderId) snapshot = await deleteFolder(pendingDeleteFolderId, mode);
+    if (snapshot) playCloseSound();
     closeFolderDeleteDialog();
     await refreshSavedAndFolders();
     const undo = snapshot ? async () => { await restoreDeletedFolder(snapshot); await refreshSavedAndFolders(); } : undefined;
@@ -2354,6 +2355,7 @@ document.addEventListener('click', async (e) => {
     if (!id) return;
 
     const removed = await dismissSavedTab(id);
+    if (removed.length) playCloseSound();
 
     const item = actionEl.closest('.deferred-item');
     if (item) {
@@ -2375,6 +2377,7 @@ document.addEventListener('click', async (e) => {
     const id = actionEl.dataset.deferredId;
     if (!id) return;
     const removed = await dismissSavedTab(id);
+    if (removed.length) playCloseSound();
     await refreshSavedAndFolders();
     showToast('Removed from archive', async () => {
       await restoreRemovedSavedTabs(removed);
@@ -2399,6 +2402,7 @@ document.addEventListener('click', async (e) => {
   if (action === 'clear-archive') {
     const { archived } = await getSavedTabs();
     const removed = await dismissSavedTabs(archived.map(item => item.id));
+    if (removed.length) playCloseSound();
     await refreshSavedAndFolders();
     showToast(`Cleared ${removed.length} archived item${removed.length !== 1 ? 's' : ''}`, async () => {
       await restoreRemovedSavedTabs(removed);
@@ -2841,6 +2845,7 @@ async function openTabContextMenu(x, y, deferredIds) {
 
   async function removeSavedSelection() {
     const removed = await dismissSavedTabs(tabIds);
+    if (removed.length) playCloseSound();
     await refreshSavedAndFolders();
     clearSavedSelection();
     showToast(single ? 'Removed' : `Removed ${tabIds.length}`, async () => {

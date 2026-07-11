@@ -76,9 +76,73 @@ test('archive access sits beside global search and stays raised in soft themes',
   const searchRowStart = html.indexOf('<div class="global-search-row">');
   const searchRowEnd = html.indexOf('</div>', searchRowStart);
   const archiveLaunch = html.indexOf('id="archiveLaunch"');
+  const archiveRule = [...css.matchAll(/\.archive-launch\s*\{([^}]*)\}/g)]
+    .map(match => match[1])
+    .find(rule => rule.includes('--archive-label:')) || '';
   assert.ok(searchRowStart >= 0 && archiveLaunch > searchRowStart && archiveLaunch < searchRowEnd);
+  assert.match(archiveRule, /color:\s*var\(--archive-label\)/);
+  assert.match(archiveRule, /background:\s*rgba\(var\(--neutral-rgb\), 0\.07\)/);
+  assert.doesNotMatch(archiveRule, /accent-rgb/);
   assert.match(css, /html\[data-theme="papersoft"\].*html\[data-theme="lattesoft"\][\s\S]*?\.archive-launch[\s\S]*?box-shadow:\s*-3px -3px 6px var\(--neu-light\), 3px 3px 6px var\(--neu-dark\)/);
   assert.match(css, /\.archive-launch[\s\S]*?:active\s*\{[\s\S]*?box-shadow:\s*inset 2px 2px 5px var\(--neu-dark\), inset -2px -2px 5px var\(--neu-light\)/);
+  assert.match(css, /\.archive-count\s*\{[\s\S]*?box-shadow:\s*inset 1px 1px 2px var\(--neu-dark\), inset -1px -1px 2px var\(--neu-light\)/);
+});
+
+test('every theme defines a distinct checkbox hover and soft themes expose it', async () => {
+  const css = await readProjectText('extension/style.css');
+  const themeIds = [
+    'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
+    'obsidian', 'paper', 'latte', 'papersoft', 'lattesoft',
+  ];
+  const colors = themeIds.map(id => {
+    const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
+    const color = block.match(/--checkbox-hover:\s*(#[0-9a-f]{6})/i)?.[1];
+    assert.ok(color, `${id} must define --checkbox-hover`);
+    return color.toLowerCase();
+  });
+  assert.equal(new Set(colors).size, themeIds.length);
+  assert.match(css, /\.deferred-checkbox:hover:not\(:checked\)\s*\{[\s\S]*?var\(--checkbox-hover\)/);
+  assert.match(css, /html\[data-theme="papersoft"\].*html\[data-theme="lattesoft"\][\s\S]*?\.deferred-checkbox:hover:not\(:checked\)[\s\S]*?0 0 0 2px color-mix\(in srgb, var\(--checkbox-hover\) 34%, transparent\)/);
+});
+
+test('soft themes own save and close hover treatments for tab actions', async () => {
+  const css = await readProjectText('extension/style.css');
+  const softTokens = ['papersoft', 'lattesoft'].map(id => {
+    const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
+    return {
+      save: block.match(/--soft-save-hover:\s*(#[0-9a-f]{6})/i)?.[1],
+      close: block.match(/--soft-close-hover:\s*(#[0-9a-f]{6})/i)?.[1],
+    };
+  });
+  assert.ok(softTokens.every(tokens => tokens.save && tokens.close));
+  assert.notDeepEqual(softTokens[0], softTokens[1]);
+  const saveHover = css.match(/\.chip-save:hover\s*\{([^}]*)\}/)?.[1] || '';
+  const closeHover = css.match(/\.chip-close:hover, \.deferred-dismiss:hover\s*\)\s*\{([^}]*)\}/)?.[1] || '';
+  assert.match(saveHover, /color:\s*var\(--soft-save-hover\)/);
+  assert.match(saveHover, /background:\s*transparent/);
+  assert.match(saveHover, /box-shadow:\s*none/);
+  assert.doesNotMatch(saveHover, /inset/);
+  assert.match(closeHover, /color:\s*var\(--soft-close-hover\)/);
+  assert.match(closeHover, /background:\s*transparent/);
+  assert.match(closeHover, /box-shadow:\s*none/);
+  assert.doesNotMatch(closeHover, /inset/);
+  assert.match(css, /html\[data-theme="papersoft"\].*html\[data-theme="lattesoft"\][\s\S]*?\.page-chip\.clickable:hover\s*\{[\s\S]*?linear-gradient\([\s\S]*?var\(--accent-primary\)/);
+  assert.match(css, /\.page-chip\.clickable:has\(\.chip-action:hover\)\s*\{\s*background:\s*transparent/);
+});
+
+test('saved-link close buttons match the first-column close control', async () => {
+  const css = await readProjectText('extension/style.css');
+  const firstColumnIcon = css.match(/\.chip-action svg\s*\{([^}]*)\}/)?.[1] || '';
+  const savedLinkIcon = css.match(/\.deferred-dismiss svg\s*\{([^}]*)\}/)?.[1] || '';
+  const savedLinkButton = css.match(/\.deferred-dismiss\s*\{([^}]*)\}/)?.[1] || '';
+
+  for (const iconRule of [firstColumnIcon, savedLinkIcon]) {
+    assert.match(iconRule, /width:\s*15px/);
+    assert.match(iconRule, /height:\s*15px/);
+  }
+  assert.match(savedLinkButton, /display:\s*inline-flex/);
+  assert.match(savedLinkButton, /padding:\s*4px/);
+  assert.match(savedLinkButton, /opacity:\s*0\.62/);
 });
 
 test('extension JavaScript avoids dynamic execution and promise chains', async () => {

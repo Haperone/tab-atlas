@@ -125,3 +125,22 @@ test('application routes single, bulk, folder, archive, and Focus Sweep cleanup 
   assert.match(source, /for \(const id of savedIds\).*dismissSavedTab\(id\)/s);
   assert.doesNotMatch(source, /\.dismissed\s*=\s*true/);
 });
+
+test('direct saved-data deletion actions play the same close sound as the first column', async () => {
+  const source = await fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8');
+  const actionBlock = action => source.match(
+    new RegExp(`if \\(action === '${action}'\\) \\{([\\s\\S]*?)\\n  \\}`),
+  )?.[1] || '';
+
+  assert.match(actionBlock('dismiss-deferred'), /dismissSavedTab\(id\)[\s\S]*playCloseSound\(\)/);
+  assert.match(actionBlock('remove-archive-item'), /dismissSavedTab\(id\)[\s\S]*playCloseSound\(\)/);
+  assert.match(actionBlock('clear-archive'), /dismissSavedTabs\([\s\S]*playCloseSound\(\)/);
+  assert.match(
+    source,
+    /if \(action === 'folder-delete-keep' \|\| action === 'folder-delete-all'\) \{[\s\S]*deleteFolder\([\s\S]*playCloseSound\(\)/,
+  );
+  assert.match(
+    source,
+    /async function removeSavedSelection\(\) \{[\s\S]*dismissSavedTabs\(tabIds\)[\s\S]*playCloseSound\(\)/,
+  );
+});

@@ -34,6 +34,7 @@
   --neutral-rgb: 127, 146, 171;
   --danger-rgb: 201, 110, 114;
   --success-rgb: 115, 147, 122;
+  --checkbox-hover: #78a8c8;
 }
 
 /* Graphite — near-black slate with a gold accent */
@@ -58,6 +59,7 @@
   --neutral-rgb: 156, 163, 173;
   --danger-rgb: 215, 131, 127;
   --success-rgb: 100, 182, 172;
+  --checkbox-hover: #d4af37;
 }
 
 /* Solarized — Ethan Schoonover's classic dark base, deepened */
@@ -82,6 +84,7 @@
   --neutral-rgb: 91, 123, 129;
   --danger-rgb: 224, 65, 62;
   --success-rgb: 147, 163, 0;
+  --checkbox-hover: #2aa198;
 }
 
 /* Tokyo Night — deep indigo with electric blue */
@@ -106,6 +109,7 @@
   --neutral-rgb: 86, 95, 137;
   --danger-rgb: 247, 118, 142;
   --success-rgb: 158, 206, 106;
+  --checkbox-hover: #bb9af7;
 }
 
 /* Catppuccin Mocha — soft pastel dark */
@@ -130,6 +134,7 @@
   --neutral-rgb: 108, 112, 134;
   --danger-rgb: 243, 139, 168;
   --success-rgb: 166, 227, 161;
+  --checkbox-hover: #cba6f7;
 }
 
 /* Monokai — classic vivid green / pink / orange */
@@ -154,6 +159,7 @@
   --neutral-rgb: 117, 113, 94;
   --danger-rgb: 249, 38, 114;
   --success-rgb: 166, 226, 46;
+  --checkbox-hover: #66d9ef;
 }
 
 /* Obsidian — clean neutral near-black with an indigo accent */
@@ -178,6 +184,7 @@
   --neutral-rgb: 138, 138, 147;
   --danger-rgb: 251, 113, 133;
   --success-rgb: 110, 231, 183;
+  --checkbox-hover: #818cf8;
 }
 
 /* Paper — warm cream LIGHT theme (the original Tab Out look) */
@@ -202,6 +209,7 @@
   --neutral-rgb: 150, 138, 120;
   --danger-rgb: 177, 74, 74;
   --success-rgb: 79, 113, 88;
+  --checkbox-hover: #c0623a;
 }
 
 /* Catppuccin Latte — soft pastel LIGHT theme */
@@ -226,6 +234,7 @@
   --neutral-rgb: 124, 127, 147;
   --danger-rgb: 210, 15, 57;
   --success-rgb: 64, 160, 43;
+  --checkbox-hover: #8839ef;
 }
 
 /* ---- Light-theme element polish ----
@@ -278,6 +287,9 @@
   --neutral-rgb: 138, 127, 109;
   --danger-rgb: 181, 82, 74;
   --success-rgb: 111, 138, 92;
+  --checkbox-hover: #9a6b38;
+  --soft-save-hover: #9a6b38;
+  --soft-close-hover: #a65a4f;
   /* Soft-UI highlight + shadow, derived from --bg */
   --neu-light: #f4eedd;
   --neu-dark: #c9c1ac;
@@ -305,6 +317,9 @@
   --neutral-rgb: 124, 127, 147;
   --danger-rgb: 210, 15, 57;
   --success-rgb: 64, 160, 43;
+  --checkbox-hover: #7287fd;
+  --soft-save-hover: #7287fd;
+  --soft-close-hover: #c45d7a;
   --neu-light: #f1f3fb;
   --neu-dark: #c6cad6;
 }
@@ -391,6 +406,20 @@
   box-shadow: inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light);
 }
 
+/* Archive stays a quiet secondary action in soft themes: tactile surface,
+   neutral readable copy, and a subtly inset count instead of an accent badge. */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .archive-launch {
+  color: var(--archive-label);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .archive-launch:hover {
+  color: var(--text);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .archive-count {
+  color: var(--archive-label);
+  background: var(--bg);
+  box-shadow: inset 1px 1px 2px var(--neu-dark), inset -1px -1px 2px var(--neu-light);
+}
+
 /* Filled/active buttons: their text is var(--bg), so keep the accent fill
    (flattening it to the page colour would make the label invisible). They
    stay soft-raised, just accent-coloured. */
@@ -428,6 +457,45 @@
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .deferred-checkbox:checked {
   background: var(--accent-success);
   box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.18);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .deferred-checkbox:hover:not(:checked) {
+  background: color-mix(in srgb, var(--bg) 90%, var(--checkbox-hover));
+  box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light),
+              0 0 0 2px color-mix(in srgb, var(--checkbox-hover) 34%, transparent);
+}
+
+/* Soft-theme tab actions use flat thematic hover colours instead of
+   inheriting the regular-theme green/red tints or looking pressed-in. */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .chip-save:hover {
+  color: var(--soft-save-hover);
+  background: transparent;
+  box-shadow: none;
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .page-chip.clickable:hover {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent-primary) 11%, transparent),
+    transparent 76%
+  );
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .page-chip.clickable:has(.chip-action:hover) {
+  background: transparent;
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .chip-close:hover, .deferred-dismiss:hover
+) {
+  opacity: 1;
+  color: var(--soft-close-hover);
+  background: transparent;
+  box-shadow: none;
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .chip-save:focus-visible {
+  outline-color: var(--soft-save-hover);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
+  .chip-close, .deferred-dismiss
+):focus-visible {
+  outline-color: var(--soft-close-hover);
 }
 
 /* The drawer's top-glow gradient would fight the soft look — plain surface */
@@ -913,17 +981,24 @@ header {
 
 .chip-action:hover {
   opacity: 1;
-  background: rgba(var(--neutral-rgb), 0.12);
+  background: transparent;
+}
+
+.chip-action:focus-visible,
+.deferred-dismiss:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
 }
 
 .chip-save:hover {
   color: var(--accent-success);
-  background: rgba(var(--success-rgb), 0.08);
+  background: transparent;
 }
 
 .chip-close:hover {
   color: var(--status-abandoned);
-  background: rgba(var(--danger-rgb), 0.08);
+  background: transparent;
 }
 
 .page-chip.clickable {
@@ -933,6 +1008,10 @@ header {
 
 .page-chip.clickable:hover {
   background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.1), transparent 72%);
+}
+
+.page-chip.clickable:has(.chip-action:hover) {
+  background: transparent;
 }
 
 /* "+N more" overflow chip */
@@ -1420,12 +1499,19 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   cursor: pointer;
   flex-shrink: 0;
   margin-top: 1px;
-  transition: all 0.2s;
+  transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
   position: relative;
 }
 
-.deferred-checkbox:hover {
-  border-color: var(--accent-success);
+.deferred-checkbox:hover:not(:checked) {
+  border-color: var(--checkbox-hover);
+  background: color-mix(in srgb, var(--checkbox-hover) 10%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--checkbox-hover) 16%, transparent);
+}
+
+.deferred-checkbox:focus-visible {
+  outline: 2px solid var(--checkbox-hover);
+  outline-offset: 2px;
 }
 
 .deferred-checkbox:checked {
@@ -1444,6 +1530,26 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
+}
+
+@media (forced-colors: active) {
+  .deferred-checkbox {
+    background: Canvas;
+    border: 2px solid ButtonText;
+    box-shadow: none;
+  }
+
+  .deferred-checkbox:hover:not(:checked),
+  .deferred-checkbox:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .deferred-checkbox:checked {
+    background: Highlight;
+    border-color: Highlight;
+  }
 }
 
 /* Item content (title, domain, time) */
@@ -1487,20 +1593,24 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* Dismiss (X) button */
 .deferred-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--muted);
   cursor: pointer;
-  padding: 2px;
-  opacity: 0.3;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.62;
   transition: opacity 0.15s, color 0.15s;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: -1px;
 }
 
 .deferred-dismiss svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
 }
 
 .deferred-dismiss:hover {
@@ -1526,12 +1636,13 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* ---- Archive drawer trigger ---- */
 .archive-launch {
+  --archive-label: color-mix(in srgb, var(--text) 68%, var(--muted));
   font-family: var(--font-sans);
   font-size: 11px;
-  font-weight: 700;
-  color: var(--accent-primary);
-  background: rgba(var(--accent-rgb), 0.08);
-  border: 1px solid rgba(var(--accent-rgb), 0.26);
+  font-weight: 600;
+  color: var(--archive-label);
+  background: rgba(var(--neutral-rgb), 0.07);
+  border: 1px solid rgba(var(--neutral-rgb), 0.18);
   min-height: 44px;
   border-radius: 10px;
   cursor: pointer;
@@ -1545,22 +1656,23 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 .archive-launch:hover {
   color: var(--text);
-  background: rgba(var(--accent-rgb), 0.14);
-  border-color: rgba(var(--accent-rgb), 0.42);
+  background: rgba(var(--neutral-rgb), 0.11);
+  border-color: rgba(var(--neutral-rgb), 0.3);
 }
 
 .archive-launch svg {
   width: 13px;
   height: 13px;
   flex: 0 0 auto;
+  opacity: 0.78;
 }
 
 .archive-count {
   min-width: 17px;
   padding: 1px 5px;
   border-radius: 999px;
-  color: var(--text);
-  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--archive-label);
+  background: rgba(var(--neutral-rgb), 0.11);
   text-align: center;
   line-height: 1.25;
 }
