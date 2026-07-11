@@ -73,7 +73,7 @@ Locally saved data remains until the user removes it, clears extension data, or 
 
 ### Publishable Privacy Policy Copy
 
-**Privacy Policy for Tab Atlas**  
+**Privacy Policy for Tab Atlas**
 Last updated: July 10, 2026
 
 Tab Atlas does not collect, transmit, sell, or share personal data or browsing information. It processes open-tab information locally to provide tab organization features. URLs, titles, saved tabs, folders, workspace snapshots, themes, and shortcuts are stored only on the user's device when relevant features are used.
@@ -84,14 +84,14 @@ Questions about privacy can be submitted through the project's public issue trac
 
 ## Distribution
 
-**Visibility:** Public  
+**Visibility:** Public
 **Regions:** All regions
 
 ## Developer Info
 
-**Publisher Name:** `[REQUIRED BEFORE SUBMISSION]`  
-**Contact Email:** `[REQUIRED BEFORE SUBMISSION]`  
-**Support URL:** https://github.com/Haperone/tab-atlas/issues  
+**Publisher Name:** `[REQUIRED BEFORE SUBMISSION]`
+**Contact Email:** `[REQUIRED BEFORE SUBMISSION]`
+**Support URL:** https://github.com/Haperone/tab-atlas/issues
 **Homepage URL:** https://github.com/Haperone/tab-atlas
 
 ## Version History
