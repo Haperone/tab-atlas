@@ -80,10 +80,7 @@ export function createColumnScrollController({
   }
 
   function applyDelta(viewport, delta) {
-    const remainder = consumeScrollDelta(viewport, delta);
-    if (remainder !== 0) {
-      window.scrollTo(0, window.scrollY + remainder);
-    }
+    consumeScrollDelta(viewport, delta);
   }
 
   function cancelAnimation() {
@@ -145,16 +142,40 @@ export function createColumnScrollController({
 
   function handleWheel(event) {
     const viewport = closestViewport(event.target);
-    if (!viewport || window.innerWidth < minWidth || isInteractionBlocked()) return;
-    if (event.ctrlKey || event.metaKey || event.shiftKey) return;
-    if (Math.abs(event.deltaX || 0) > Math.abs(event.deltaY || 0)) return;
+    if (!viewport) return;
+    if (window.innerWidth < minWidth || isInteractionBlocked()) {
+      cancelAnimation();
+      return;
+    }
+    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      cancelAnimation();
+      return;
+    }
+    if (Math.abs(event.deltaX || 0) > Math.abs(event.deltaY || 0)) {
+      cancelAnimation();
+      return;
+    }
 
     const delta = normalizeWheelDelta(event, viewport.clientHeight);
-    if (!delta || !canScrollInDirection(viewport, delta)) return;
+    if (!delta) return;
+
+    // Once anchoring starts, one owner must handle the rest of that gesture.
+    // Letting boundary momentum fall through to the page while rAF is moving it
+    // creates two competing scroll sources and visible up/down oscillation.
+    if (animationFrame !== null) {
+      if (animationViewport === viewport) {
+        event.preventDefault();
+        queueAnchor(viewport, delta);
+        return;
+      }
+      cancelAnimation();
+    }
+
+    if (!canScrollInDirection(viewport, delta)) return;
 
     event.preventDefault();
     const targetY = anchorTop();
-    if (animationFrame !== null || Math.abs(window.scrollY - targetY) > DEFAULT_ANCHOR_TOLERANCE) {
+    if (Math.abs(window.scrollY - targetY) > DEFAULT_ANCHOR_TOLERANCE) {
       queueAnchor(viewport, delta);
       return;
     }
@@ -171,10 +192,17 @@ export function createColumnScrollController({
     cancelAnimation();
   }
 
+  function handleExternalWheel(event) {
+    if (animationFrame === null) return;
+    if (closestViewport(event.target) === animationViewport) return;
+    cancelAnimation();
+  }
+
   root.addEventListener('wheel', handleWheel, { passive: false });
   window.addEventListener('resize', handleResize);
   window.addEventListener('pointerdown', handleExternalIntent, true);
   window.addEventListener('keydown', handleExternalIntent, true);
+  window.addEventListener('wheel', handleExternalWheel, { capture: true, passive: true });
 
   return {
     destroy() {
@@ -183,6 +211,7 @@ export function createColumnScrollController({
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('pointerdown', handleExternalIntent, true);
       window.removeEventListener('keydown', handleExternalIntent, true);
+      window.removeEventListener('wheel', handleExternalWheel, true);
     },
   };
 }

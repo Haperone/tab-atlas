@@ -134,12 +134,13 @@ test('animated anchoring accumulates trackpad deltas and caps them to one viewpo
   assert.equal(harness.viewport.scrollTop, 500);
 });
 
-test('a wheel tick carries its unused remainder from the column into the page', () => {
+test('the tick that first reaches a boundary does not throw its remainder into the page', () => {
   const harness = createHarness({ reducedMotion: true });
   harness.viewport.scrollTop = 780;
   assert.equal(harness.wheel(60), true);
   assert.equal(harness.viewport.scrollTop, 800);
-  assert.equal(harness.window.scrollY, 308);
+  assert.equal(harness.window.scrollY, 268);
+  assert.equal(harness.wheel(60), false);
 });
 
 test('animation uses the current dashboard anchor when layout changes mid-flight', () => {
@@ -177,6 +178,7 @@ test('destroy cancels animation and removes listeners', () => {
   assert.equal(harness.windowListeners.has('resize'), false);
   assert.equal(harness.windowListeners.has('pointerdown'), false);
   assert.equal(harness.windowListeners.has('keydown'), false);
+  assert.equal(harness.windowListeners.has('wheel'), false);
 });
 
 test('any resize cancels active anchoring before its target becomes stale', () => {
@@ -198,4 +200,31 @@ test('pointer and non-modifier keyboard intent cancel active anchoring', () => {
   keyboardHarness.wheel(100);
   keyboardHarness.windowListeners.get('keydown')({ type: 'keydown', key: 'PageDown' });
   assert.equal(keyboardHarness.frames.size, 0);
+});
+
+test('rapid direction changes during anchoring have one scroll owner', () => {
+  const harness = createHarness();
+  harness.viewport.scrollTop = 800;
+  assert.equal(harness.wheel(-120), true);
+  assert.equal(harness.wheel(160), true);
+  assert.equal(harness.wheel(-80), true);
+  harness.flushFrames();
+  assert.equal(harness.window.scrollY, 268);
+  assert.equal(harness.viewport.scrollTop, 760);
+});
+
+test('wheel outside the active viewport cancels anchoring before native scroll proceeds', () => {
+  const harness = createHarness();
+  harness.wheel(100);
+  assert.ok(harness.frames.size > 0);
+  harness.windowListeners.get('wheel')({ target: { closest: () => null } });
+  assert.equal(harness.frames.size, 0);
+});
+
+test('modifier wheel cancels anchoring before browser-native zoom or scrolling', () => {
+  const harness = createHarness();
+  harness.wheel(100);
+  assert.ok(harness.frames.size > 0);
+  assert.equal(harness.wheel(40, { ctrlKey: true }), false);
+  assert.equal(harness.frames.size, 0);
 });

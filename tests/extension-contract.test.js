@@ -304,9 +304,11 @@ test('desktop column scrolling magnetically anchors the dashboard without trappi
   assert.doesNotMatch(app, /const columnScrollController\s*=/);
   assert.match(app, /window\.addEventListener\('scroll', \(event\) => \{[\s\S]*?event\.target !== document[\s\S]*?requestAnimationFrame/);
   assert.match(controller, /addEventListener\('wheel', handleWheel, \{ passive: false \}\)/);
-  assert.match(controller, /if \(!delta \|\| !canScrollInDirection\(viewport, delta\)\) return/);
+  assert.match(controller, /if \(animationFrame !== null\)[\s\S]*?animationViewport === viewport[\s\S]*?event\.preventDefault\(\)[\s\S]*?queueAnchor\(viewport, delta\)/);
+  assert.match(controller, /if \(!canScrollInDirection\(viewport, delta\)\) return/);
   assert.match(controller, /consumeScrollDelta\(viewport, delta\)/);
-  assert.match(controller, /window\.scrollTo\(0, window\.scrollY \+ remainder\)/);
+  assert.doesNotMatch(controller, /window\.scrollTo\(0, window\.scrollY \+ remainder\)/);
+  assert.match(controller, /addEventListener\('wheel', handleExternalWheel, \{ capture: true, passive: true \}\)/);
   assert.doesNotMatch(controller, /localStorage|chrome\.storage/);
 });
 
