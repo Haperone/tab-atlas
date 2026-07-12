@@ -51,11 +51,6 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
     element.style.display = 'flex';
   }
 
-  function updateShortcutsToggleTitle() {
-    const button = document.getElementById('shortcutsToggle');
-    if (button) button.title = speedDialEnabled() ? 'Hide shortcuts' : 'Show shortcuts';
-  }
-
   function openSpeedDialDialog(id) {
     pendingId = id || null;
     const item = id ? getSpeedDialItems().find(value => value.id === id) : null;
@@ -116,7 +111,6 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
     speedDialEnabled,
     setSpeedDialEnabled,
     renderSpeedDial,
-    updateShortcutsToggleTitle,
     openSpeedDialDialog,
     closeSpeedDialDialog,
     saveSpeedDialFromDialog,

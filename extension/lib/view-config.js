@@ -24,10 +24,10 @@ export const THEME_OPTIONS = [
   { id: 'mocha', label: 'Catppuccin Mocha', color: '#cba6f7', group: 'dark' },
   { id: 'monokai', label: 'Monokai', color: '#a6e22e', group: 'dark' },
   { id: 'obsidian', label: 'Obsidian', color: '#818cf8', group: 'dark' },
-  { id: 'paper', label: 'Paper (light)', color: '#c0623a', group: 'light' },
+  { id: 'paper', label: 'Paper (light)', color: '#9f4528', group: 'light' },
   { id: 'latte', label: 'Catppuccin Latte', color: '#8839ef', group: 'light' },
-  { id: 'papersoft', label: 'Paper Soft', color: '#b85c33', group: 'light' },
-  { id: 'lattesoft', label: 'Latte Soft', color: '#8839ef', group: 'light' },
+  { id: 'papersoft', label: 'Paper Soft', color: '#93401f', group: 'light' },
+  { id: 'lattesoft', label: 'Latte Soft', color: '#7326cf', group: 'light' },
 ];
 
 export const ONBOARDING_STEPS = [
@@ -38,6 +38,6 @@ export const ONBOARDING_STEPS = [
   { title: 'Sweep', copy: 'Sweep opens a fast triage mode for open tabs, so you can skip, save, or close decisions without digging through cards.', targets: ['[data-action="start-focus-sweep-all"]'], fallback: '#openTabsSection' },
   { title: 'Save workspace', copy: 'Use Save workspace when the whole browser setup is worth keeping as one restorable state.', targets: ['.workspace-edge-save', '[data-action="toggle-workspace-drawer"]'], fallback: '#workspacePanel', spotlightPadding: { top: 18, right: 8, bottom: 8, left: 8 } },
   { title: 'Workspaces', copy: 'Saved states let you restore windows and tabs later, then rename or remove old snapshots as needed.', targets: ['#workspacePanel'], fallback: '#dashboardColumns' },
-  { title: 'Top-right controls', copy: 'Use Backup to export or import local data, Tour to reopen this guide, Shortcuts for keys, Theme for appearance, and Privacy when the screen should be hidden.', virtualTarget: 'cornerControls', spotlightPadding: { top: 8, right: 8, bottom: 8, left: 8 } },
+  { title: 'Top-right controls', copy: 'Bloom switches between your saved light and dark themes. Open Customize to choose both sides of that pair, manage shortcuts and backup, or restart this tour. Privacy stays separate for screen sharing.', virtualTarget: 'cornerControls', spotlightPadding: { top: 8, right: 8, bottom: 8, left: 8 } },
   { title: 'Ready to go', copy: 'Tab Atlas is ready. Start with search, sweep, or a card action whenever the tab count gets heavy.', centered: true },
 ];

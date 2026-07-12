@@ -21,6 +21,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 
 **Save & organise**
 - **Save for later** — stash tabs into an inbox before closing them, with archive support for dismissed items
+- **Archive retention** — automatically remove archived links after 180 days by default; choose 30, 90 or 180 days, or turn cleanup off; automatic removals can be undone
 - **Bulk actions for saved tabs** — `Ctrl/⌘`, `Shift`, or drag-select saved items, then right-click the selection to open, move, or remove them together
 - **Folders** — create, rename, recolour, collapse, reorder and delete folders
 - **Folder ↔ tab group conversion** — open a saved folder as a named Chrome tab group, or save an open Chrome tab group back into a folder
@@ -36,11 +37,11 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 - **Auto‑refresh** — the dashboard stays in sync as tabs open/close/navigate
 
 **Make it yours**
-- **11 themes** (7 dark + 4 light) — Default, Graphite, Solarized, Tokyo Night, Catppuccin Mocha, Monokai, Obsidian, Paper, Catppuccin Latte, plus two **neumorphic / soft‑UI** variants (Paper Soft, Latte Soft) — picked from the top‑right palette and remembered across sessions
-- **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); show or hide the whole strip with the grid button in the top‑right corner
+- **11 themes** (7 dark + 4 light) — choose one dark and one light theme as a saved pair in **Customize**, then switch between them with the animated Moon → Sun Bloom control; every palette owns its Bloom colours, surface and depth, including tactile Paper Soft and Latte Soft variants
+- **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); show or hide the whole strip from **Customize**
 
 **Private by design**
-- **100% local** — saved tabs, folders and workspace states in `chrome.storage.local`; theme and speed dial settings in `localStorage`
+- **100% local** — saved tabs, folders and workspace states in `chrome.storage.local`; theme pair and speed dial settings in `localStorage`
 - **No server, npm install, build step or external API calls at runtime** — just load the extension
 
 ---
@@ -77,7 +78,7 @@ node --test
 |------|-----|
 | Extension | Chrome Manifest V3 |
 | Permissions | `tabs`, `storage`, `favicon`, `tabGroups` |
-| Storage | `chrome.storage.local` (saved tabs, folders, workspaces) · `localStorage` (theme, shortcuts) |
+| Storage | `chrome.storage.local` (saved tabs, folders, workspaces) · `localStorage` (theme pair, shortcuts, archive retention) |
 | Favicons | Chrome `_favicon` (local, offline‑friendly) |
 | Theming | CSS custom properties via `[data-theme]` |
 | Sound | Web Audio API (synthesized, no files) |

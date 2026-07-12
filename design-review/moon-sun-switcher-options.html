@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tab Atlas — Moon to Sun</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page-bg: #0f1216;
+      --page-surface: #14191f;
+      --page-text: #f3eee5;
+      --page-muted: #93a0ad;
+      --page-accent: #78a8c8;
+      --page-border: rgba(147, 160, 173, .3);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--page-bg); color: var(--page-text); }
+    button, select { font: inherit; }
+
+    .page { width: min(1120px, calc(100% - 28px)); margin: 0 auto; padding: 38px 0 54px; }
+    .eyebrow { margin: 0 0 10px; color: var(--page-accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { max-width: 820px; margin: 0; font-size: clamp(32px, 5vw, 58px); line-height: 1.04; }
+    .lead { max-width: 760px; margin: 16px 0 0; color: var(--page-muted); font-size: 17px; line-height: 1.6; }
+
+    .pair-settings {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 14px;
+      align-items: end;
+      margin: 30px 0 24px;
+      padding: 18px;
+      border: 1px solid var(--page-border);
+      border-radius: 16px;
+      background: var(--page-surface);
+    }
+
+    label { display: grid; gap: 7px; color: var(--page-muted); font-size: 13px; font-weight: 650; }
+    select {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--page-border);
+      border-radius: 10px;
+      background: #1b222a;
+      color: var(--page-text);
+      cursor: pointer;
+    }
+    .pair-arrow { padding-bottom: 11px; color: var(--page-accent); font-size: 21px; }
+
+    .concepts { display: grid; gap: 18px; }
+    .concept {
+      --bg: #0f1216;
+      --surface: #14191f;
+      --strong: #1b222a;
+      --text: #f3eee5;
+      --muted: #93a0ad;
+      --accent: #78a8c8;
+      --accent-rgb: 120, 168, 200;
+      --border: rgba(147, 160, 173, .3);
+      --shadow: rgba(0, 0, 0, .34);
+      --neu-light: #252d36;
+      --neu-dark: #080a0c;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      border: 1px solid var(--page-border);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--page-surface);
+    }
+
+    .concept-copy { padding: 24px; }
+    .concept-copy h2 { margin: 0 0 8px; font-size: 20px; }
+    .concept-copy p { margin: 0; color: var(--page-muted); line-height: 1.55; }
+    .concept-copy .number { color: var(--page-accent); }
+    .recommend { display: inline-flex; margin-top: 18px; padding: 5px 9px; border-radius: 999px; background: rgba(120, 168, 200, .12); color: var(--page-accent); font-size: 12px; }
+
+    .previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); min-height: 220px; }
+    .preview {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      padding: 18px;
+      background: var(--bg);
+      color: var(--text);
+      transition: background-color 380ms ease, color 280ms ease;
+    }
+    .preview + .preview { border-left: 1px solid var(--border); }
+    .preview.soft { background: var(--bg); }
+    .preview-label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .toolbar { display: flex; align-items: center; justify-content: flex-end; }
+
+    .celestial-toggle {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--strong);
+      color: var(--accent);
+      box-shadow: 0 8px 22px var(--shadow);
+      cursor: pointer;
+      transition: background-color 280ms ease, border-color 280ms ease, box-shadow 180ms ease, transform 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .celestial-toggle:hover { transform: translateY(-1px); box-shadow: 0 11px 26px var(--shadow); }
+    .celestial-toggle:active { transform: scale(.95); }
+    .celestial-toggle:focus-visible, select:focus-visible { outline: 2px solid var(--accent, var(--page-accent)); outline-offset: 3px; }
+
+    .soft .celestial-toggle {
+      border-color: color-mix(in srgb, var(--text) 17%, transparent);
+      background: var(--bg);
+      box-shadow: -5px -5px 11px var(--neu-light), 6px 6px 13px var(--neu-dark);
+    }
+    .soft .celestial-toggle:hover { box-shadow: -4px -4px 9px var(--neu-light), 5px 5px 11px var(--neu-dark); }
+    .soft .celestial-toggle:active { box-shadow: inset 3px 3px 7px var(--neu-dark), inset -3px -3px 7px var(--neu-light); }
+
+    .celestial {
+      position: relative;
+      width: 30px;
+      height: 30px;
+      transition: transform 460ms cubic-bezier(.2, .8, .2, 1);
+    }
+    .disc {
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 13px rgba(var(--accent-rgb), .32);
+      transition: inset 420ms cubic-bezier(.2, .8, .2, 1), box-shadow 300ms ease, background-color 280ms ease;
+    }
+    .cutout {
+      position: absolute;
+      width: 19px;
+      height: 19px;
+      top: 2px;
+      left: 10px;
+      border-radius: 50%;
+      background: var(--strong);
+      opacity: 1;
+      transition: transform 460ms cubic-bezier(.2, .8, .2, 1), opacity 250ms ease, background-color 280ms ease;
+    }
+    .soft .cutout { background: var(--bg); }
+
+    .ray {
+      position: absolute;
+      top: 1px;
+      left: 14px;
+      width: 2px;
+      height: 6px;
+      border-radius: 2px;
+      background: currentColor;
+      transform-origin: 1px 14px;
+      opacity: 0;
+      scale: .2;
+      transition: opacity 220ms ease, scale 380ms cubic-bezier(.2, .8, .2, 1);
+    }
+    .ray:nth-child(3) { transform: rotate(0deg); }
+    .ray:nth-child(4) { transform: rotate(45deg); }
+    .ray:nth-child(5) { transform: rotate(90deg); }
+    .ray:nth-child(6) { transform: rotate(135deg); }
+    .ray:nth-child(7) { transform: rotate(180deg); }
+    .ray:nth-child(8) { transform: rotate(225deg); }
+    .ray:nth-child(9) { transform: rotate(270deg); }
+    .ray:nth-child(10) { transform: rotate(315deg); }
+
+    .concept.is-light .disc { inset: 7px; box-shadow: 0 0 17px rgba(var(--accent-rgb), .4); }
+    .concept.is-light .cutout { transform: translate(18px, -15px) scale(.45); opacity: 0; }
+    .concept.is-light .ray { opacity: 1; scale: 1; }
+
+    /* A: the crescent opens and rays bloom without moving the whole icon. */
+    .concept[data-motion="bloom"].is-light .celestial { transform: rotate(90deg); }
+    .concept[data-motion="bloom"].is-light .ray { transition-delay: 110ms; }
+
+    /* B: the crescent travels through a short orbital arc. */
+    .concept[data-motion="orbit"] .cutout { transform-origin: 5px 25px; }
+    .concept[data-motion="orbit"].is-light .celestial { transform: rotate(180deg) scale(1.05); }
+    .concept[data-motion="orbit"].is-light .cutout { transform: translate(24px, -22px) scale(.2); opacity: 0; }
+    .concept[data-motion="orbit"].is-light .ray { transition-delay: 170ms; }
+
+    /* C: a tighter, quieter morph intended for dense top bars. */
+    .concept[data-motion="quiet"] .celestial { width: 27px; height: 27px; }
+    .concept[data-motion="quiet"] .ray { transform-origin: 1px 12.5px; height: 5px; left: 12.5px; }
+    .concept[data-motion="quiet"].is-light .celestial { transform: rotate(45deg); }
+    .concept[data-motion="quiet"].is-light .cutout { transform: translate(12px, -9px) scale(.55); opacity: 0; }
+
+    .state {
+      grid-column: 1 / -1;
+      padding: 9px 14px;
+      border-top: 1px solid var(--page-border);
+      color: var(--page-muted);
+      font-size: 13px;
+    }
+    .state strong { color: var(--page-text); }
+
+    @media (max-width: 780px) {
+      .pair-settings { grid-template-columns: 1fr; }
+      .pair-arrow { display: none; }
+      .concept { grid-template-columns: 1fr; }
+      .previews { min-height: 190px; }
+    }
+    @media (max-width: 500px) {
+      .previews { grid-template-columns: 1fr; }
+      .preview + .preview { border-left: 0; border-top: 1px solid var(--border); }
+      .preview { min-height: 150px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+    @media (forced-colors: active) {
+      .celestial-toggle { border: 1px solid ButtonBorder; box-shadow: none !important; forced-color-adjust: none; }
+      .disc, .ray { background: ButtonText; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Tab Atlas · Moon → Sun</p>
+    <h1>Полумесяц становится солнцем</h1>
+    <p class="lead">Во всех вариантах форма остаётся одной кнопкой: тень полумесяца уходит, диск раскрывается и появляются лучи. Справа показана та же анимация на тактильной Soft UI поверхности.</p>
+
+    <section class="pair-settings" aria-label="Темы переключателя">
+      <label>Светлая тема
+        <select id="lightTheme">
+          <option value="paper">Paper</option>
+          <option value="latte">Catppuccin Latte</option>
+          <option value="papersoft" selected>Paper Soft</option>
+          <option value="lattesoft">Latte Soft</option>
+        </select>
+      </label>
+      <span class="pair-arrow" aria-hidden="true">⇄</span>
+      <label>Тёмная тема
+        <select id="darkTheme">
+          <option value="default">Default</option>
+          <option value="graphite">Graphite</option>
+          <option value="solarized">Solarized</option>
+          <option value="tokyonight" selected>Tokyo Night</option>
+          <option value="mocha">Catppuccin Mocha</option>
+          <option value="monokai">Monokai</option>
+          <option value="obsidian">Obsidian</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="concepts" aria-label="Варианты анимации">
+      <article class="concept" data-motion="bloom">
+        <div class="concept-copy"><h2><span class="number">1.</span> Bloom</h2><p>Полумесяц раскрывается на месте, затем мягко распускаются лучи. Самая понятная и спокойная трансформация.</p><span class="recommend">Рекомендую</span></div>
+        <div class="previews">
+          <div class="preview"><span class="preview-label">Обычная тема</span><div class="toolbar"><button class="celestial-toggle" type="button" aria-pressed="true"><span class="celestial" aria-hidden="true"><span class="disc"></span><span class="cutout"></span><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i></span></button></div></div>
+          <div class="preview soft"><span class="preview-label">Soft UI</span><div class="toolbar"><button class="celestial-toggle" type="button" aria-pressed="true"><span class="celestial" aria-hidden="true"><span class="disc"></span><span class="cutout"></span><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i></span></button></div></div>
+        </div>
+        <div class="state">Сейчас: <strong>Tokyo Night · тёмная</strong></div>
+      </article>
+
+      <article class="concept" data-motion="orbit">
+        <div class="concept-copy"><h2><span class="number">2.</span> Orbit</h2><p>Тень полумесяца уходит по короткой дуге, а солнце появляется вслед за поворотом диска. Чуть живее и заметнее.</p></div>
+        <div class="previews">
+          <div class="preview"><span class="preview-label">Обычная тема</span><div class="toolbar"><button class="celestial-toggle" type="button" aria-pressed="true"><span class="celestial" aria-hidden="true"><span class="disc"></span><span class="cutout"></span><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i></span></button></div></div>
+          <div class="preview soft"><span class="preview-label">Soft UI</span><div class="toolbar"><button class="celestial-toggle" type="button" aria-pressed="true"><span class="celestial" aria-hidden="true"><span class="disc"></span><span class="cutout"></span><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i></span></button></div></div>
+        </div>
+        <div class="state">Сейчас: <strong>Tokyo Night · тёмная</strong></div>
+      </article>
+
+      <article class="concept" data-motion="quiet">
+        <div class="concept-copy"><h2><span class="number">3.</span> Quiet morph</h2><p>Компактная версия: меньше поворот и короче лучи. Подходит, если переключатель должен почти не привлекать внимание.</p></div>
+        <div class="previews">
+          <div class="preview"><span class="preview-label">Обычная тема</span><div class="toolbar"><button class="celestial-toggle" type="button" aria-pressed="true"><span class="celestial" aria-hidden="true"><span class="disc"></span><span class="cutout"></span><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i></span></button></div></div>
+          <div class="preview soft"><span class="preview-label">Soft UI</span><div class="toolbar"><button class="celestial-toggle" type="button" aria-pressed="true"><span class="celestial" aria-hidden="true"><span class="disc"></span><span class="cutout"></span><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i><i class="ray"></i></span></button></div></div>
+        </div>
+        <div class="state">Сейчас: <strong>Tokyo Night · тёмная</strong></div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const palettes = {
+      default: { label: 'Default', bg: '#0f1216', surface: '#14191f', strong: '#1b222a', text: '#f3eee5', muted: '#93a0ad', accent: '#78a8c8', rgb: '120,168,200', border: 'rgba(147,160,173,.3)', shadow: 'rgba(0,0,0,.34)', light: '#252d36', dark: '#080a0c' },
+      graphite: { label: 'Graphite', bg: '#111316', surface: '#1b1f24', strong: '#232830', text: '#f6f1e3', muted: '#9ca3ad', accent: '#d4af37', rgb: '212,175,55', border: 'rgba(156,163,173,.32)', shadow: 'rgba(0,0,0,.42)', light: '#2e343b', dark: '#090a0c' },
+      solarized: { label: 'Solarized', bg: '#00222b', surface: '#00141b', strong: '#022e39', text: '#b3c0c0', muted: '#72969a', accent: '#2f9bd8', rgb: '47,155,216', border: 'rgba(114,150,154,.34)', shadow: 'rgba(0,0,0,.44)', light: '#063744', dark: '#001218' },
+      tokyonight: { label: 'Tokyo Night', bg: '#16161e', surface: '#1a1b26', strong: '#24283b', text: '#c0caf5', muted: '#8b91b1', accent: '#7aa2f7', rgb: '122,162,247', border: 'rgba(139,145,177,.32)', shadow: 'rgba(0,0,0,.38)', light: '#30344a', dark: '#0c0c12' },
+      mocha: { label: 'Catppuccin Mocha', bg: '#181825', surface: '#1e1e2e', strong: '#313244', text: '#cdd6f4', muted: '#9399b2', accent: '#cba6f7', rgb: '203,166,247', border: 'rgba(147,153,178,.32)', shadow: 'rgba(0,0,0,.38)', light: '#333449', dark: '#0e0e16' },
+      monokai: { label: 'Monokai', bg: '#1e1f1c', surface: '#272822', strong: '#34352e', text: '#f8f8f2', muted: '#a59f85', accent: '#a6e22e', rgb: '166,226,46', border: 'rgba(165,159,133,.32)', shadow: 'rgba(0,0,0,.4)', light: '#393a33', dark: '#11120f' },
+      obsidian: { label: 'Obsidian', bg: '#0b0b0d', surface: '#131316', strong: '#1c1c21', text: '#e6e6ea', muted: '#8a8a93', accent: '#818cf8', rgb: '129,140,248', border: 'rgba(138,138,147,.3)', shadow: 'rgba(0,0,0,.5)', light: '#202027', dark: '#030304' },
+      paper: { label: 'Paper', bg: '#f4f0e8', surface: '#faf6ed', strong: '#fdfaf3', text: '#1f1a16', muted: '#6f675f', accent: '#9f4528', rgb: '159,69,40', border: 'rgba(111,103,95,.3)', shadow: 'rgba(60,45,30,.12)', light: '#fffaf0', dark: '#d7cfc1' },
+      latte: { label: 'Catppuccin Latte', bg: '#eff1f5', surface: '#f6f7fb', strong: '#fbfbfd', text: '#4c4f69', muted: '#66697f', accent: '#8839ef', rgb: '136,57,239', border: 'rgba(102,105,127,.28)', shadow: 'rgba(76,79,105,.12)', light: '#ffffff', dark: '#d4d7df' },
+      papersoft: { label: 'Paper Soft', bg: '#e6dfd0', surface: '#e6dfd0', strong: '#ebe5d8', text: '#4a4034', muted: '#665d50', accent: '#93401f', rgb: '147,64,31', border: 'rgba(102,93,80,.28)', shadow: 'rgba(120,100,70,.14)', light: '#f4eedd', dark: '#c9c1ac' },
+      lattesoft: { label: 'Latte Soft', bg: '#e0e3ea', surface: '#e0e3ea', strong: '#e6e9f0', text: '#4c4f69', muted: '#5f6277', accent: '#7326cf', rgb: '115,38,207', border: 'rgba(95,98,119,.28)', shadow: 'rgba(76,79,105,.14)', light: '#f1f3fb', dark: '#c6cad6' }
+    };
+
+    const lightTheme = document.getElementById('lightTheme');
+    const darkTheme = document.getElementById('darkTheme');
+    const concepts = [...document.querySelectorAll('.concept')];
+    const startLight = new URLSearchParams(location.search).has('light');
+
+    function paintConcept(concept) {
+      const isLight = concept.classList.contains('is-light');
+      const theme = palettes[isLight ? lightTheme.value : darkTheme.value];
+      const vars = { '--bg': theme.bg, '--surface': theme.surface, '--strong': theme.strong, '--text': theme.text, '--muted': theme.muted, '--accent': theme.accent, '--accent-rgb': theme.rgb, '--border': theme.border, '--shadow': theme.shadow, '--neu-light': theme.light, '--neu-dark': theme.dark };
+      for (const [name, value] of Object.entries(vars)) concept.style.setProperty(name, value);
+      concept.querySelector('.state strong').textContent = `${theme.label} · ${isLight ? 'светлая' : 'тёмная'}`;
+      for (const button of concept.querySelectorAll('.celestial-toggle')) {
+        button.setAttribute('aria-pressed', String(!isLight));
+        button.setAttribute('aria-label', isLight ? `Переключить на тёмную тему ${palettes[darkTheme.value].label}` : `Переключить на светлую тему ${palettes[lightTheme.value].label}`);
+      }
+    }
+
+    function toggleConcept(concept) {
+      concept.classList.toggle('is-light');
+      paintConcept(concept);
+    }
+
+    for (const concept of concepts) {
+      if (startLight) concept.classList.add('is-light');
+      for (const button of concept.querySelectorAll('.celestial-toggle')) button.addEventListener('click', () => toggleConcept(concept));
+      paintConcept(concept);
+    }
+
+    lightTheme.addEventListener('change', () => concepts.forEach(paintConcept));
+    darkTheme.addEventListener('change', () => concepts.forEach(paintConcept));
+  </script>
+</body>
+</html>

@@ -26,6 +26,9 @@
   --status-active: #6ca180;
   --status-cooling: #8fb8d4;
   --status-abandoned: #c96e72;
+  --status-active-rgb: 108, 161, 128;
+  --status-cooling-rgb: 143, 184, 212;
+  --status-abandoned-rgb: 201, 110, 114;
   --card-bg: #14191f;
   --surface-strong: #1b222a;
   --surface-strong-hover: #232c35;
@@ -35,6 +38,13 @@
   --danger-rgb: 201, 110, 114;
   --success-rgb: 115, 147, 122;
   --checkbox-hover: #78a8c8;
+  --bloom-moon: #8fb8d4;
+  --bloom-sun: #d4b978;
+  --bloom-surface: #1b222a;
+  --bloom-cutout: #1b222a;
+  --bloom-border: rgba(143, 184, 212, 0.28);
+  --bloom-shadow: 0 7px 18px rgba(0, 0, 0, 0.28);
+  --bloom-radius: 50%;
 }
 
 /* Graphite — near-black slate with a gold accent */
@@ -51,6 +61,9 @@
   --status-active: #64b6ac;
   --status-cooling: #d4af37;
   --status-abandoned: #d7837f;
+  --status-active-rgb: 100, 182, 172;
+  --status-cooling-rgb: 212, 175, 55;
+  --status-abandoned-rgb: 215, 131, 127;
   --card-bg: #1b1f24;
   --surface-strong: #232830;
   --surface-strong-hover: #2c323b;
@@ -60,6 +73,13 @@
   --danger-rgb: 215, 131, 127;
   --success-rgb: 100, 182, 172;
   --checkbox-hover: #d4af37;
+  --bloom-moon: #b9c0c8;
+  --bloom-sun: #d4af37;
+  --bloom-surface: #232830;
+  --bloom-cutout: #232830;
+  --bloom-border: rgba(212, 175, 55, 0.34);
+  --bloom-shadow: 0 6px 0 rgba(0, 0, 0, 0.2), 0 10px 24px rgba(0, 0, 0, 0.34);
+  --bloom-radius: 12px;
 }
 
 /* Solarized — Ethan Schoonover's classic dark base, deepened */
@@ -68,23 +88,33 @@
   --text: #b3c0c0;
   --bg: #00222b;
   --neutral: #0c3a45;
-  --muted: #5f8186;
+  --muted: #72969a;
   --accent-primary: #2f9bd8;
   --accent-success: #93a300;
   --accent-info: #2aa198;
-  --accent-danger: #e0413e;
+  --accent-danger: #ff6b64;
   --status-active: #93a300;
   --status-cooling: #c79612;
-  --status-abandoned: #e0413e;
+  --status-abandoned: #ff6b64;
+  --status-active-rgb: 147, 163, 0;
+  --status-cooling-rgb: 199, 150, 18;
+  --status-abandoned-rgb: 255, 107, 100;
   --card-bg: #00141b;
   --surface-strong: #022e39;
   --surface-strong-hover: #033a47;
   --shadow: rgba(0, 0, 0, 0.5);
   --accent-rgb: 47, 155, 216;
   --neutral-rgb: 91, 123, 129;
-  --danger-rgb: 224, 65, 62;
+  --danger-rgb: 255, 107, 100;
   --success-rgb: 147, 163, 0;
   --checkbox-hover: #2aa198;
+  --bloom-moon: #2aa198;
+  --bloom-sun: #c79612;
+  --bloom-surface: #022e39;
+  --bloom-cutout: #022e39;
+  --bloom-border: rgba(42, 161, 152, 0.38);
+  --bloom-shadow: inset 0 0 0 1px rgba(42, 161, 152, 0.12), 0 8px 18px rgba(0, 0, 0, 0.28);
+  --bloom-radius: 50%;
 }
 
 /* Tokyo Night — deep indigo with electric blue */
@@ -93,7 +123,7 @@
   --text: #c0caf5;
   --bg: #16161e;
   --neutral: #2a2e45;
-  --muted: #787c99;
+  --muted: #8b91b1;
   --accent-primary: #7aa2f7;
   --accent-success: #9ece6a;
   --accent-info: #7dcfff;
@@ -101,6 +131,9 @@
   --status-active: #9ece6a;
   --status-cooling: #e0af68;
   --status-abandoned: #f7768e;
+  --status-active-rgb: 158, 206, 106;
+  --status-cooling-rgb: 224, 175, 104;
+  --status-abandoned-rgb: 247, 118, 142;
   --card-bg: #1a1b26;
   --surface-strong: #24283b;
   --surface-strong-hover: #2c3047;
@@ -110,6 +143,13 @@
   --danger-rgb: 247, 118, 142;
   --success-rgb: 158, 206, 106;
   --checkbox-hover: #bb9af7;
+  --bloom-moon: #7aa2f7;
+  --bloom-sun: #e0af68;
+  --bloom-surface: #24283b;
+  --bloom-cutout: #24283b;
+  --bloom-border: rgba(122, 162, 247, 0.38);
+  --bloom-shadow: 0 0 18px rgba(122, 162, 247, 0.18), 0 9px 22px rgba(0, 0, 0, 0.36);
+  --bloom-radius: 50%;
 }
 
 /* Catppuccin Mocha — soft pastel dark */
@@ -126,6 +166,9 @@
   --status-active: #a6e3a1;
   --status-cooling: #f9e2af;
   --status-abandoned: #f38ba8;
+  --status-active-rgb: 166, 227, 161;
+  --status-cooling-rgb: 249, 226, 175;
+  --status-abandoned-rgb: 243, 139, 168;
   --card-bg: #1e1e2e;
   --surface-strong: #313244;
   --surface-strong-hover: #3a3c54;
@@ -135,6 +178,13 @@
   --danger-rgb: 243, 139, 168;
   --success-rgb: 166, 227, 161;
   --checkbox-hover: #cba6f7;
+  --bloom-moon: #cba6f7;
+  --bloom-sun: #f9e2af;
+  --bloom-surface: #313244;
+  --bloom-cutout: #313244;
+  --bloom-border: rgba(203, 166, 247, 0.32);
+  --bloom-shadow: 0 8px 22px rgba(17, 17, 27, 0.38), 0 0 14px rgba(203, 166, 247, 0.12);
+  --bloom-radius: 16px;
 }
 
 /* Monokai — classic vivid green / pink / orange */
@@ -147,19 +197,29 @@
   --accent-primary: #a6e22e;
   --accent-success: #a6e22e;
   --accent-info: #66d9ef;
-  --accent-danger: #f92672;
+  --accent-danger: #ff4d88;
   --status-active: #a6e22e;
   --status-cooling: #e6db74;
-  --status-abandoned: #f92672;
+  --status-abandoned: #ff4d88;
+  --status-active-rgb: 166, 226, 46;
+  --status-cooling-rgb: 230, 219, 116;
+  --status-abandoned-rgb: 255, 77, 136;
   --card-bg: #272822;
   --surface-strong: #34352e;
   --surface-strong-hover: #3d3e36;
   --shadow: rgba(0, 0, 0, 0.42);
   --accent-rgb: 166, 226, 46;
   --neutral-rgb: 117, 113, 94;
-  --danger-rgb: 249, 38, 114;
+  --danger-rgb: 255, 77, 136;
   --success-rgb: 166, 226, 46;
   --checkbox-hover: #66d9ef;
+  --bloom-moon: #66d9ef;
+  --bloom-sun: #e6db74;
+  --bloom-surface: #34352e;
+  --bloom-cutout: #34352e;
+  --bloom-border: rgba(166, 226, 46, 0.28);
+  --bloom-shadow: 0 5px 0 rgba(0, 0, 0, 0.2), 0 10px 20px rgba(0, 0, 0, 0.3);
+  --bloom-radius: 10px;
 }
 
 /* Obsidian — clean neutral near-black with an indigo accent */
@@ -176,6 +236,9 @@
   --status-active: #6ee7b7;
   --status-cooling: #fcd34d;
   --status-abandoned: #fb7185;
+  --status-active-rgb: 110, 231, 183;
+  --status-cooling-rgb: 252, 211, 77;
+  --status-abandoned-rgb: 251, 113, 133;
   --card-bg: #131316;
   --surface-strong: #1c1c21;
   --surface-strong-hover: #26262d;
@@ -185,6 +248,13 @@
   --danger-rgb: 251, 113, 133;
   --success-rgb: 110, 231, 183;
   --checkbox-hover: #818cf8;
+  --bloom-moon: #818cf8;
+  --bloom-sun: #fcd34d;
+  --bloom-surface: #1c1c21;
+  --bloom-cutout: #1c1c21;
+  --bloom-border: rgba(129, 140, 248, 0.34);
+  --bloom-shadow: 0 8px 24px rgba(0, 0, 0, 0.52);
+  --bloom-radius: 9px;
 }
 
 /* Paper — warm cream LIGHT theme (the original Tab Out look) */
@@ -194,22 +264,32 @@
   --bg: #f4f0e8;
   --neutral: #e0d8ca;
   --muted: #6f675f;
-  --accent-primary: #c0623a;
+  --accent-primary: #9f4528;
   --accent-success: #4f7158;
   --accent-info: #5a6b7a;
   --accent-danger: #b14a4a;
   --status-active: #3d7a4a;
   --status-cooling: #a4762a;
   --status-abandoned: #b14a4a;
+  --status-active-rgb: 61, 122, 74;
+  --status-cooling-rgb: 164, 118, 42;
+  --status-abandoned-rgb: 177, 74, 74;
   --card-bg: #faf6ed;
   --surface-strong: #fdfaf3;
   --surface-strong-hover: #f1ebdf;
   --shadow: rgba(60, 45, 30, 0.10);
-  --accent-rgb: 192, 98, 58;
+  --accent-rgb: 159, 69, 40;
   --neutral-rgb: 150, 138, 120;
   --danger-rgb: 177, 74, 74;
   --success-rgb: 79, 113, 88;
   --checkbox-hover: #c0623a;
+  --bloom-moon: #5a6b7a;
+  --bloom-sun: #a4762a;
+  --bloom-surface: #faf6ed;
+  --bloom-cutout: #faf6ed;
+  --bloom-border: rgba(111, 103, 95, 0.34);
+  --bloom-shadow: 0 1px 2px rgba(60, 45, 30, 0.08), 0 8px 18px rgba(60, 45, 30, 0.12);
+  --bloom-radius: 50%;
 }
 
 /* Catppuccin Latte — soft pastel LIGHT theme */
@@ -218,14 +298,17 @@
   --text: #4c4f69;
   --bg: #eff1f5;
   --neutral: #ccd0da;
-  --muted: #6c6f85;
+  --muted: #66697f;
   --accent-primary: #8839ef;
-  --accent-success: #40a02b;
-  --accent-info: #209fb5;
+  --accent-success: #2f7d22;
+  --accent-info: #147487;
   --accent-danger: #d20f39;
-  --status-active: #40a02b;
+  --status-active: #2f7d22;
   --status-cooling: #df8e1d;
   --status-abandoned: #d20f39;
+  --status-active-rgb: 47, 125, 34;
+  --status-cooling-rgb: 223, 142, 29;
+  --status-abandoned-rgb: 210, 15, 57;
   --card-bg: #f6f7fb;
   --surface-strong: #fbfbfd;
   --surface-strong-hover: #e9ecf2;
@@ -233,8 +316,15 @@
   --accent-rgb: 136, 57, 239;
   --neutral-rgb: 124, 127, 147;
   --danger-rgb: 210, 15, 57;
-  --success-rgb: 64, 160, 43;
+  --success-rgb: 47, 125, 34;
   --checkbox-hover: #8839ef;
+  --bloom-moon: #8839ef;
+  --bloom-sun: #9b5f00;
+  --bloom-surface: #f6f7fb;
+  --bloom-cutout: #f6f7fb;
+  --bloom-border: rgba(136, 57, 239, 0.28);
+  --bloom-shadow: 0 8px 20px rgba(76, 79, 105, 0.14);
+  --bloom-radius: 14px;
 }
 
 /* ---- Light-theme element polish ----
@@ -271,28 +361,38 @@
   --text: #4a4034;
   --bg: #e6dfd0;
   --neutral: #d3cab6;
-  --muted: #8a7f6d;
-  --accent-primary: #b85c33;
-  --accent-success: #6f8a5c;
-  --accent-info: #5a6b7a;
-  --accent-danger: #b5524a;
-  --status-active: #6f8a5c;
+  --muted: #665d50;
+  --accent-primary: #93401f;
+  --accent-success: #4b6a3e;
+  --accent-info: #465866;
+  --accent-danger: #903b37;
+  --status-active: #4b6a3e;
   --status-cooling: #b98a3a;
-  --status-abandoned: #b5524a;
+  --status-abandoned: #903b37;
+  --status-active-rgb: 75, 106, 62;
+  --status-cooling-rgb: 185, 138, 58;
+  --status-abandoned-rgb: 144, 59, 55;
   --card-bg: #e6dfd0;
   --surface-strong: #ebe5d8;
   --surface-strong-hover: #f0ebe0;
   --shadow: rgba(120, 100, 70, 0.14);
-  --accent-rgb: 184, 92, 51;
+  --accent-rgb: 147, 64, 31;
   --neutral-rgb: 138, 127, 109;
-  --danger-rgb: 181, 82, 74;
-  --success-rgb: 111, 138, 92;
+  --danger-rgb: 144, 59, 55;
+  --success-rgb: 75, 106, 62;
   --checkbox-hover: #9a6b38;
   --soft-save-hover: #9a6b38;
   --soft-close-hover: #a65a4f;
   /* Soft-UI highlight + shadow, derived from --bg */
   --neu-light: #f4eedd;
   --neu-dark: #c9c1ac;
+  --bloom-moon: #465866;
+  --bloom-sun: #7a5717;
+  --bloom-surface: #e6dfd0;
+  --bloom-cutout: #e6dfd0;
+  --bloom-border: rgba(102, 93, 80, 0.3);
+  --bloom-shadow: -4px -4px 8px var(--neu-light), 4px 4px 9px var(--neu-dark);
+  --bloom-radius: 14px;
 }
 
 /* Latte Soft — cool pastel soft UI (based on Catppuccin Latte) */
@@ -301,27 +401,37 @@
   --text: #4c4f69;
   --bg: #e0e3ea;
   --neutral: #c6cbd6;
-  --muted: #7c7f93;
-  --accent-primary: #8839ef;
-  --accent-success: #40a02b;
-  --accent-info: #209fb5;
-  --accent-danger: #d20f39;
-  --status-active: #40a02b;
+  --muted: #5f6277;
+  --accent-primary: #7326cf;
+  --accent-success: #286b1d;
+  --accent-info: #176f80;
+  --accent-danger: #b60b32;
+  --status-active: #286b1d;
   --status-cooling: #df8e1d;
-  --status-abandoned: #d20f39;
+  --status-abandoned: #b60b32;
+  --status-active-rgb: 40, 107, 29;
+  --status-cooling-rgb: 223, 142, 29;
+  --status-abandoned-rgb: 182, 11, 50;
   --card-bg: #e0e3ea;
   --surface-strong: #e6e9f0;
   --surface-strong-hover: #eceef4;
   --shadow: rgba(76, 79, 105, 0.14);
-  --accent-rgb: 136, 57, 239;
+  --accent-rgb: 115, 38, 207;
   --neutral-rgb: 124, 127, 147;
-  --danger-rgb: 210, 15, 57;
-  --success-rgb: 64, 160, 43;
+  --danger-rgb: 182, 11, 50;
+  --success-rgb: 40, 107, 29;
   --checkbox-hover: #7287fd;
   --soft-save-hover: #7287fd;
   --soft-close-hover: #c45d7a;
   --neu-light: #f1f3fb;
   --neu-dark: #c6cad6;
+  --bloom-moon: #7326cf;
+  --bloom-sun: #965700;
+  --bloom-surface: #e0e3ea;
+  --bloom-cutout: #e0e3ea;
+  --bloom-border: rgba(95, 98, 119, 0.3);
+  --bloom-shadow: -4px -4px 8px var(--neu-light), 4px 4px 9px var(--neu-dark);
+  --bloom-radius: 14px;
 }
 
 /* Kill the dark-oriented decorations on the soft themes */
@@ -338,35 +448,22 @@
   .tab-groups-bar
 ) {
   background: var(--bg);
-  border: none;
+  border-color: transparent;
   box-shadow: -5px -5px 11px var(--neu-light), 5px 5px 13px var(--neu-dark);
 }
 
-/* Open-tabs cards + folders: these stack densely, so they get a TIGHTER
-   shadow (won't bleed into neighbours), the dark-theme colour bar hidden,
-   a rounder radius, and a soft hover that stays soft (no border/drop-shadow). */
-:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .missions { gap: 18px; }
+/* Open-tabs cards + folders keep the exact regular-theme geometry so switching
+   palettes never reflows the dashboard. Soft UI changes only paint and depth. */
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .mission-card::before { display: none; }
-/* The columns are scroll containers (overflow-y:auto also clips horizontally),
-   so without side padding a card's soft shadow gets sliced at the column edge.
-   Give them room on all open sides so the shadows sit fully inside. */
-:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
-  .dashboard-columns .active-section, .deferred-column, .folders-column
-) {
-  padding-left: 13px;
-  padding-right: 13px;
-  padding-bottom: 14px;
-}
-:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .folder { margin-bottom: 16px; }
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.mission-card, .folder) {
   background: var(--bg);
-  border: none;
+  border-color: transparent;
   border-radius: 14px;
   box-shadow: -4px -4px 9px var(--neu-light), 4px 4px 10px var(--neu-dark);
 }
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.mission-card, .folder):hover {
   background: var(--bg);
-  border: none;
+  border-color: transparent;
   transform: none;
   box-shadow: -3px -3px 8px var(--neu-light), 3px 3px 9px var(--neu-dark);
 }
@@ -381,7 +478,7 @@
   .archive-launch
 ) {
   background: var(--bg);
-  border: none;
+  border-color: transparent;
   box-shadow: -3px -3px 6px var(--neu-light), 3px 3px 6px var(--neu-dark);
 }
 
@@ -420,9 +517,7 @@
   box-shadow: inset 1px 1px 2px var(--neu-dark), inset -1px -1px 2px var(--neu-light);
 }
 
-/* Filled/active buttons: their text is var(--bg), so keep the accent fill
-   (flattening it to the page colour would make the label invisible). They
-   stay soft-raised, just accent-coloured. */
+/* Filled/active controls keep the accent fill in soft themes. */
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .onboarding-btn.primary,
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .focus-sweep-mode[aria-pressed="true"] {
   background: var(--accent-primary);
@@ -438,7 +533,7 @@
   .global-search, .archive-search, .new-folder-input, .folder-rename-input, .dialog-input
 ) {
   background: var(--bg);
-  border: none;
+  border-color: transparent;
   box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
 }
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(
@@ -450,7 +545,7 @@
 
 /* Custom checkbox: pressed-in when empty, filled accent when checked */
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .deferred-checkbox {
-  border: none;
+  border-color: transparent;
   background: var(--bg);
   box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light);
 }
@@ -506,7 +601,7 @@
 /* Onboarding + Focus Sweep modals: opaque soft-UI panels (no blur/border) */
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.onboarding-card, .focus-sweep-panel) {
   background: var(--bg);
-  border: none;
+  border-color: transparent;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow: -6px -6px 14px var(--neu-light), 6px 6px 16px var(--neu-dark);
@@ -792,12 +887,12 @@ header {
 .mission-card.has-neutral-bar::before { background: var(--neutral); }
 
 .mission-card.has-active-bar {
-  border-color: rgba(108, 161, 128, 0.22);
+  border-color: rgba(var(--status-active-rgb), 0.22);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.025),
     0 10px 26px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(108, 161, 128, 0.05),
-    0 0 18px rgba(108, 161, 128, 0.06);
+    0 0 0 1px rgba(var(--status-active-rgb), 0.05),
+    0 0 18px rgba(var(--status-active-rgb), 0.06);
 }
 
 .mission-card.has-primary-bar {
@@ -1041,6 +1136,7 @@ header {
 /* ---- Actions row ---- */
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
 }
@@ -1071,15 +1167,32 @@ header {
   height: 12px;
 }
 
-.action-btn.close-tabs {
-  border-color: rgba(var(--accent-rgb), 0.34);
+.action-btn.sweep-action {
+  border-color: rgba(var(--accent-rgb), 0.24);
   color: var(--accent-primary);
-  background: rgba(var(--accent-rgb), 0.08);
+  background: rgba(var(--accent-rgb), 0.05);
+  font-weight: 600;
+}
+
+.action-btn.sweep-action:hover {
+  border-color: rgba(var(--accent-rgb), 0.42);
+  color: var(--text);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.action-btn.close-tabs {
+  border-color: rgba(var(--danger-rgb), 0.4);
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.08);
 }
 
 .action-btn.close-tabs:hover {
-  background: rgba(var(--accent-rgb), 0.14);
-  border-color: var(--accent-primary);
+  background: rgba(var(--danger-rgb), 0.14);
+  border-color: var(--accent-danger);
+}
+
+.action-btn.dedup-tabs {
+  background: transparent;
 }
 
 /* ---- Toast notification ---- */
@@ -1259,6 +1372,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 /* ---- Responsive dashboard grid ---- */
 .dashboard-columns {
   display: grid;
+  --dashboard-sticky-offset: 32px;
   --dashboard-gap: clamp(18px, 2.4vw, 32px);
   --side-column-width: clamp(280px, 26vw, 330px);
   --side-rail-width: clamp(292px, 31vw, 360px);
@@ -1287,32 +1401,55 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   display: contents;
 }
 
-/* Open tabs column takes most of the space — and scrolls on its own, the
-   same way the other two columns do (consistent + keeps the header in view) */
-.dashboard-columns .active-section {
-  grid-area: open;
+/* Column shells own layout and sticky positioning; their headers stay outside
+   the inner scroll viewport so only the content moves. */
+.dashboard-columns .active-section,
+.deferred-column,
+.folders-column {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
   position: sticky;
-  top: 32px;
+  top: var(--dashboard-sticky-offset);
   max-height: calc(100vh - 64px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
   container: dashboard-column / inline-size;
 }
 
-/* Saved for later column — fixed width on the right, scrolls independently.
-   overscroll-behavior: contain stops the page from scrolling once this
-   column reaches the end of its own content. */
+.dashboard-columns .active-section {
+  grid-area: open;
+}
+
 .deferred-column {
   grid-area: saved;
   width: 100%;
+}
+
+.dashboard-columns :is(.active-section, .deferred-column, .folders-column) > .section-header,
+.folders-column > .new-folder-input-row {
+  flex: 0 0 auto;
+}
+
+/* The scrollport extends eight pixels beyond the card layout on both sides.
+   Its equal padding keeps card widths unchanged while giving diagonal Soft UI
+   shadows room to paint before overflow clipping occurs. */
+.column-scroll {
+  flex: 1 1 auto;
   min-width: 0;
-  position: sticky;
-  top: 32px;
-  max-height: calc(100vh - 64px);
+  min-height: 0;
+  width: calc(100% + 16px);
+  margin: -8px -8px 0;
+  padding: 8px 8px 10px;
+  overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior: contain;
-  container: dashboard-column / inline-size;
+  overscroll-behavior-y: auto;
+}
+
+.column-scroll:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.48);
+  outline-offset: -3px;
+  border-radius: 10px;
 }
 
 /* Breathing room on the right so the scrollbar doesn't hug the content */
@@ -1361,9 +1498,9 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
     gap: var(--dashboard-gap);
     min-width: 0;
     position: sticky;
-    top: 32px;
+    top: var(--dashboard-sticky-offset);
     max-height: calc(100vh - 64px);
-    overflow: hidden;
+    overflow: visible;
   }
 
   .dashboard-side-rail .deferred-column,
@@ -1372,12 +1509,34 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
     min-width: 0;
     position: static;
     max-height: calc(100vh - 64px);
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .dashboard-columns.has-deferred.has-folders .dashboard-side-rail .deferred-column,
   .dashboard-columns.has-deferred.has-folders .dashboard-side-rail .folders-column {
     max-height: calc((100vh - 64px - var(--dashboard-gap)) / 2);
+  }
+}
+
+@media (max-width: 959px) {
+  .dashboard-side-rail {
+    display: contents;
+  }
+
+  .dashboard-columns .active-section,
+  .deferred-column,
+  .folders-column {
+    width: 100%;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .column-scroll {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
   }
 }
 
@@ -1408,18 +1567,6 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
       "folders";
   }
 
-  .dashboard-side-rail {
-    display: contents;
-  }
-
-  .dashboard-columns .active-section,
-  .deferred-column,
-  .folders-column {
-    width: 100%;
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
 }
 
 @media (max-width: 800px) {
@@ -1457,18 +1604,6 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
       "folders";
   }
 
-  .dashboard-side-rail {
-    display: contents;
-  }
-
-  .dashboard-columns .active-section,
-  .deferred-column,
-  .folders-column {
-    width: 100%;
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
 }
 
 /* ---- Checklist items ---- */
@@ -1809,11 +1944,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   background: var(--card-bg);
   color: var(--text);
   outline: none;
-  transition: border-color 0.2s;
-}
-
-.archive-search:focus {
-  border-color: var(--accent-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .archive-search::placeholder {
@@ -1910,8 +2041,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .archive-launch:focus-visible,
 .archive-icon-btn:focus-visible,
 .archive-item-action:focus-visible,
-.archive-clear:focus-visible,
-.archive-search:focus-visible {
+.archive-clear:focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
 }
@@ -1963,25 +2093,8 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .folders-column {
   grid-area: folders;
   width: 100%;
-  min-width: 0;
-  position: sticky;
-  top: 32px;
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  container: dashboard-column / inline-size;
 }
 .folders-column .section-header { animation: fadeUp 0.5s ease 0.14s both; }
-
-@media (max-width: 959px) {
-  .folders-column {
-    width: 100%;
-    min-width: 0;
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-}
 
 .tab-groups-column {
   position: fixed;
@@ -2674,7 +2787,8 @@ body.workspace-drawer-open .workspace-edge-save {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .global-search::placeholder { color: var(--muted); }
-.global-search:focus {
+.global-search:focus,
+.archive-search:focus {
   border-color: rgba(var(--accent-rgb), 0.55);
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
@@ -2702,10 +2816,10 @@ body.workspace-drawer-open .workspace-edge-save {
   }
 }
 
-/* Top-right corner buttons (theme picker + privacy) */
+/* Top-right controls: one discoverable Customize entry + instant Privacy. */
 .corner-btn {
   position: fixed;
-  top: 18px;
+  top: 50px;
   z-index: 95;
   width: 36px;
   height: 36px;
@@ -2717,11 +2831,11 @@ body.workspace-drawer-open .workspace-edge-save {
   border: 1px solid rgba(var(--neutral-rgb), 0.11);
   border-radius: 50%;
   cursor: pointer;
-  opacity: 0.36;
+  opacity: 0.52;
   box-shadow: none;
   transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.corner-btn svg { width: 18px; height: 18px; }
+.corner-btn svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .corner-btn:hover,
 .corner-btn:focus-visible {
   opacity: 0.92;
@@ -2734,10 +2848,179 @@ body.workspace-drawer-open .workspace-edge-save {
   outline: none;
 }
 .privacy-toggle   { right: 18px; }
-.theme-toggle     { right: 62px; }
-.shortcuts-toggle { right: 106px; }
-.onboarding-toggle { right: 150px; }
-.backup-toggle { right: 194px; }
+.customize-toggle {
+  right: 62px;
+  width: auto;
+  padding: 0 13px;
+  gap: 7px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.82;
+}
+
+/* Bloom theme toggle. Its geometry stays familiar while every theme supplies
+   its own surface, celestial colours, border, depth, and corner language. */
+.theme-mode-toggle {
+  top: 46px;
+  right: 182px;
+  width: 44px;
+  height: 44px;
+  color: var(--bloom-moon);
+  background: var(--bloom-surface);
+  border-color: var(--bloom-border);
+  border-radius: var(--bloom-radius);
+  opacity: 0.88;
+  box-shadow: var(--bloom-shadow);
+  transition:
+    opacity 160ms ease,
+    color 280ms ease,
+    background-color 280ms ease,
+    border-color 280ms ease,
+    box-shadow 180ms ease,
+    transform 160ms ease;
+}
+
+.corner-btn.theme-mode-toggle:hover {
+  color: var(--bloom-moon);
+  background: var(--bloom-surface);
+  border-color: var(--bloom-border);
+  opacity: 1;
+  box-shadow: var(--bloom-shadow), 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+  transform: translateY(-1px);
+}
+
+.corner-btn.theme-mode-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-mode-toggle:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+  box-shadow: var(--bloom-shadow);
+}
+
+.theme-bloom {
+  position: relative;
+  display: block;
+  width: 28px;
+  height: 28px;
+  transform: rotate(0deg);
+  transition: transform 440ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.theme-bloom-disc {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 12px color-mix(in srgb, currentColor 34%, transparent);
+  transition: inset 400ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 280ms ease, box-shadow 280ms ease;
+}
+
+.theme-bloom-cutout {
+  position: absolute;
+  top: 1px;
+  left: 10px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: var(--bloom-cutout);
+  opacity: 1;
+  transition: transform 440ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 220ms ease, background-color 280ms ease;
+}
+
+.theme-bloom-ray {
+  position: absolute;
+  top: 0;
+  left: 13px;
+  display: block;
+  width: 2px;
+  height: 6px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0;
+  scale: 0.2;
+  transform-origin: 1px 14px;
+  transition: opacity 200ms ease, scale 360ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 280ms ease;
+}
+.theme-bloom-ray:nth-child(3)  { transform: rotate(0deg); }
+.theme-bloom-ray:nth-child(4)  { transform: rotate(45deg); }
+.theme-bloom-ray:nth-child(5)  { transform: rotate(90deg); }
+.theme-bloom-ray:nth-child(6)  { transform: rotate(135deg); }
+.theme-bloom-ray:nth-child(7)  { transform: rotate(180deg); }
+.theme-bloom-ray:nth-child(8)  { transform: rotate(225deg); }
+.theme-bloom-ray:nth-child(9)  { transform: rotate(270deg); }
+.theme-bloom-ray:nth-child(10) { transform: rotate(315deg); }
+
+html[data-theme-mode="light"] .theme-mode-toggle {
+  color: var(--bloom-sun);
+}
+html[data-theme-mode="light"] .theme-mode-toggle:hover {
+  color: var(--bloom-sun);
+}
+html[data-theme-mode="light"] .theme-bloom {
+  transform: rotate(90deg);
+}
+html[data-theme-mode="light"] .theme-bloom-disc {
+  inset: 6px;
+  box-shadow: 0 0 16px color-mix(in srgb, currentColor 42%, transparent);
+}
+html[data-theme-mode="light"] .theme-bloom-cutout {
+  transform: translate(17px, -14px) scale(0.45);
+  opacity: 0;
+}
+html[data-theme-mode="light"] .theme-bloom-ray {
+  opacity: 1;
+  scale: 1;
+  transition-delay: 100ms;
+}
+
+/* Soft variants use the same Bloom morph, but the control is made from the
+   page material: raised at rest, closer on hover, and inset while pressed. */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .theme-mode-toggle {
+  color: var(--bloom-moon);
+  background: var(--bg);
+  border: 1px solid var(--bloom-border);
+  box-shadow: var(--bloom-shadow);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"])[data-theme-mode="light"] .theme-mode-toggle {
+  color: var(--bloom-sun);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .theme-mode-toggle:hover {
+  background: var(--bg);
+  box-shadow: -3px -3px 6px var(--neu-light), 3px 3px 7px var(--neu-dark);
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .theme-mode-toggle:active {
+  box-shadow: inset 3px 3px 7px var(--neu-dark), inset -3px -3px 7px var(--neu-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-mode-toggle,
+  .theme-bloom,
+  .theme-bloom-disc,
+  .theme-bloom-cutout,
+  .theme-bloom-ray {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .theme-mode-toggle,
+  :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .theme-mode-toggle {
+    color: ButtonText;
+    background: ButtonFace;
+    border: 1px solid ButtonBorder;
+    box-shadow: none;
+    forced-color-adjust: none;
+  }
+  .theme-mode-toggle:focus-visible { outline-color: Highlight; }
+  .theme-bloom-disc,
+  .theme-bloom-ray { background: ButtonText; box-shadow: none; }
+  .theme-bloom-cutout { background: ButtonFace; }
+}
 
 /* Theme menu swatch (uses the context-menu engine) */
 .context-menu-theme-sw {
@@ -2934,10 +3217,8 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
 
 @media (max-width: 520px) {
   .privacy-toggle   { right: 10px; }
-  .theme-toggle     { right: 50px; }
-  .shortcuts-toggle { right: 90px; }
-  .onboarding-toggle { right: 130px; }
-  .backup-toggle { right: 170px; }
+  .customize-toggle { right: 50px; }
+  .theme-mode-toggle { right: 174px; }
   .onboarding-card {
     width: calc(100vw - 28px);
     padding: 14px;

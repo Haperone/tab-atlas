@@ -126,6 +126,14 @@ test('application routes single, bulk, folder, archive, and Focus Sweep cleanup 
   assert.doesNotMatch(source, /\.dismissed\s*=\s*true/);
 });
 
+test('automatic archive retention uses physical deletion and exposes Undo restoration', async () => {
+  const source = await fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8');
+  assert.match(source, /async function removeExpiredArchiveLinks\(\)/);
+  assert.match(source, /expiredArchiveRecordIds\(deferred, days\)/);
+  assert.match(source, /expiredIds\.length \? await dismissSavedTabs\(expiredIds\) : \[\]/);
+  assert.match(source, /showArchiveCleanupResult[\s\S]*restoreRemovedSavedTabs\(removed\)/);
+});
+
 test('direct saved-data deletion actions play the same close sound as the first column', async () => {
   const source = await fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8');
   const actionBlock = action => source.match(

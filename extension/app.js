@@ -37,7 +37,16 @@ import {
   renderDeferredItem,
   renderDomainCard,
 } from './lib/renderers.js';
+import {
+  ARCHIVE_RETENTION_KEY,
+  ARCHIVE_RETENTION_OPTIONS,
+  DEFAULT_ARCHIVE_RETENTION_DAYS,
+  archiveRetentionLabel,
+  expiredArchiveRecordIds,
+  normalizeArchiveRetentionDays,
+} from './lib/archive-retention.js';
 import { createOnboardingController } from './lib/onboarding-controller.js';
+import { createColumnScrollController } from './lib/column-scroll-controller.js';
 import { parseSearch, recordMatches } from './lib/search.js';
 import { createSpeedDialController } from './lib/speed-dial.js';
 import {
@@ -77,12 +86,14 @@ const {
   saveSpeedDialFromDialog,
   setSpeedDialEnabled,
   speedDialEnabled,
-  updateShortcutsToggleTitle,
 } = speedDialController;
 const {
   applyTheme,
   currentTheme,
+  currentThemeOption,
+  currentThemePairOptions,
   openThemeMenu,
+  toggleThemeMode,
 } = createThemeController({
   document,
   storage: localStorage,
@@ -969,6 +980,89 @@ function openBackupMenu(x, y) {
   ]);
 }
 
+function currentArchiveRetentionDays() {
+  try {
+    return normalizeArchiveRetentionDays(localStorage.getItem(ARCHIVE_RETENTION_KEY));
+  } catch {
+    return DEFAULT_ARCHIVE_RETENTION_DAYS;
+  }
+}
+
+function setArchiveRetentionDays(days) {
+  const normalized = normalizeArchiveRetentionDays(days);
+  try { localStorage.setItem(ARCHIVE_RETENTION_KEY, String(normalized)); } catch {}
+  return normalized;
+}
+
+async function removeExpiredArchiveLinks() {
+  const days = currentArchiveRetentionDays();
+  if (days === 0) return { days, removed: [] };
+  const deferred = await storageRepository.getDeferred();
+  const expiredIds = expiredArchiveRecordIds(deferred, days);
+  const removed = expiredIds.length ? await dismissSavedTabs(expiredIds) : [];
+  return { days, removed };
+}
+
+function showArchiveCleanupResult({ days, removed }, announceEmpty = false) {
+  if (removed.length) {
+    const count = removed.length;
+    showToast(`Removed ${count} archived link${count !== 1 ? 's' : ''} older than ${days} days`, async () => {
+      await restoreRemovedSavedTabs(removed);
+      await refreshSavedAndFolders();
+    });
+    return;
+  }
+  if (announceEmpty) {
+    showToast(days === 0 ? 'Archive cleanup turned off' : `Archive cleanup: keep ${days} days`);
+  }
+}
+
+function openArchiveRetentionMenu(x, y) {
+  const current = currentArchiveRetentionDays();
+  showContextMenu(x, y, [
+    { heading: true, label: 'Archive cleanup' },
+    ...ARCHIVE_RETENTION_OPTIONS.map(days => ({
+      label: days === 0 ? 'Off' : `Delete after ${days} days`,
+      checked: days === current,
+      onClick: async () => {
+        setArchiveRetentionDays(days);
+        const result = await removeExpiredArchiveLinks();
+        if (result.removed.length) await refreshSavedAndFolders();
+        showArchiveCleanupResult(result, true);
+      },
+    })),
+  ]);
+}
+
+function toggleShortcutsFromCustomize() {
+  setSpeedDialEnabled(!speedDialEnabled());
+  renderSpeedDial();
+}
+
+function openCustomizeMenu(x, y) {
+  const themePair = currentThemePairOptions();
+  const retentionDays = currentArchiveRetentionDays();
+  showContextMenu(x, y, [
+    { heading: true, label: 'Customize' },
+    {
+      label: `Theme pair · ${themePair.light.label} ↔ ${themePair.dark.label}`,
+      swatchColor: currentThemeOption().color,
+      onClick: () => openThemeMenu(x, y),
+    },
+    {
+      label: speedDialEnabled() ? 'Hide shortcuts' : 'Show shortcuts',
+      onClick: toggleShortcutsFromCustomize,
+    },
+    {
+      label: `Archive cleanup · ${archiveRetentionLabel(retentionDays)}`,
+      onClick: () => openArchiveRetentionMenu(x, y),
+    },
+    { separator: true },
+    { label: 'Backup & restore…', onClick: () => openBackupMenu(x, y) },
+    { label: 'Restart tour', onClick: () => startOnboarding({ manual: true }) },
+  ]);
+}
+
 async function importTabAtlasBackupFile(file) {
   try {
     const backup = await parseBackupFile(file);
@@ -1686,7 +1780,7 @@ async function renderDeferredColumn() {
       return;
     }
 
-    column.style.display = 'block';
+    column.style.display = '';
 
     // Render active checklist items (inbox only)
     if (inbox.length > 0) {
@@ -1746,7 +1840,7 @@ async function renderFoldersColumn() {
       return;
     }
 
-    column.style.display = 'block';
+    column.style.display = '';
 
     if (folders.length === 0) {
       listEl.innerHTML = '';
@@ -1942,7 +2036,7 @@ async function renderStaticDashboard() {
     if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open tabs';
     openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
     openTabsMissionsEl.innerHTML = domainGroups.map(group => renderDomainCard(group, expandedOverflowCards)).join('');
-    openTabsSection.style.display = 'block';
+    openTabsSection.style.display = '';
   } else if (openTabsSection) {
     openTabsSection.style.display = 'none';
   }
@@ -2017,11 +2111,18 @@ document.addEventListener('click', async (e) => {
   if (action === 'open-archive')  { openArchiveDrawer(actionEl); return; }
   if (action === 'close-archive') { closeArchiveDrawer();        return; }
 
-  // ---- Backup / import ----
-  if (action === 'backup-menu') {
+  // ---- Consolidated appearance and utility menu ----
+  if (action === 'customize-menu') {
     e.stopPropagation();
     const rect = actionEl.getBoundingClientRect();
-    openBackupMenu(rect.right, rect.bottom + 6);
+    openCustomizeMenu(rect.right, rect.bottom + 6);
+    return;
+  }
+
+  if (action === 'toggle-theme-mode') {
+    e.stopPropagation();
+    closeContextMenu();
+    toggleThemeMode();
     return;
   }
 
@@ -2534,22 +2635,6 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Toggle the speed-dial shortcut strip ----
-  if (action === 'toggle-shortcuts') {
-    e.stopPropagation();
-    setSpeedDialEnabled(!speedDialEnabled());
-    renderSpeedDial();
-    updateShortcutsToggleTitle();
-    return;
-  }
-
-  // ---- Open the theme picker ----
-  if (action === 'toggle-theme-menu') {
-    e.stopPropagation();
-    const rect = actionEl.getBoundingClientRect();
-    openThemeMenu(rect.right, rect.bottom + 6);
-    return;
-  }
 });
 
 /**
@@ -3272,11 +3357,16 @@ document.addEventListener('keydown', (e) => {
   if (!closed) setPrivacy(true);
 });
 
-window.addEventListener('scroll', () => {
+let fixedUiPositionFrame = null;
+window.addEventListener('scroll', (event) => {
   closeContextMenu();
-  positionTabGroupsDock();
-  positionWorkspaceDrawer();
-  scheduleOnboardingPosition();
+  if (event.target !== document || fixedUiPositionFrame !== null) return;
+  fixedUiPositionFrame = requestAnimationFrame(() => {
+    fixedUiPositionFrame = null;
+    positionTabGroupsDock();
+    positionWorkspaceDrawer();
+    scheduleOnboardingPosition();
+  });
 }, true);
 window.addEventListener('resize', () => {
   positionTabGroupsDock();
@@ -4767,23 +4857,36 @@ document.addEventListener('error', (e) => {
    INITIALIZE
    ---------------------------------------------------------------- */
 
+createColumnScrollController({
+  window,
+  document,
+  root: document.getElementById('dashboardColumns'),
+  minWidth: 960,
+  isInteractionBlocked: () => (
+    Boolean(dragData)
+    || privacyOn
+    || focusSweep.active
+    || isOnboardingActive()
+    || document.documentElement.classList.contains('archive-drawer-open')
+  ),
+});
+
 // Safety net: make sure a valid saved theme is applied even if theme-init.js
 // didn't run (keeps the dashboard and the picker in sync, and heals a stored
 // theme that has since been removed).
 try {
   const t = currentTheme();
-  document.documentElement.dataset.theme = t;
-  localStorage.setItem('tabout-theme', t);
+  applyTheme(t);
 } catch {}
 
 // Paint initial UI after all helpers are registered.
 (async function initializeTabAtlas() {
   try {
     await purgeLegacyDismissedTabs();
+    const archiveCleanup = await removeExpiredArchiveLinks();
 
-    // Paint the speed-dial shortcut strip + sync its corner toggle tooltip
+    // Paint the speed-dial shortcut strip; its visibility is managed in Customize.
     renderSpeedDial();
-    updateShortcutsToggleTitle();
 
     // Paint saved workspace snapshots.
     await renderWorkspacePanel();
@@ -4794,6 +4897,7 @@ try {
     try { if (localStorage.getItem('tabout-privacy') === '1') setPrivacy(true); } catch {}
 
     await renderDashboard();
+    showArchiveCleanupResult(archiveCleanup);
     maybeStartOnboarding();
   } catch (err) {
     console.error('[tab-atlas] Failed to initialize:', err);

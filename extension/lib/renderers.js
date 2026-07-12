@@ -88,7 +88,7 @@ export function renderDomainCard(group, expandedCards = new Set()) {
       ? buildOverflowChips(uniqueTabs.slice(8), urlCounts, expandedCards.has(stableId))
       : '');
   let actions = `
-    <button class="action-btn" data-action="start-focus-sweep-domain" data-domain-source="${escapeHtml(group.domain)}">
+    <button class="action-btn sweep-action" data-action="start-focus-sweep-domain" data-domain-source="${escapeHtml(group.domain)}">
       Sweep
     </button>
     <button class="action-btn close-tabs" data-action="close-domain-tabs" data-domain-id="${stableId}">
@@ -98,7 +98,7 @@ export function renderDomainCard(group, expandedCards = new Set()) {
   if (hasDuplicates) {
     const encoded = duplicateUrls.map(([url]) => encodeURIComponent(url)).join(',');
     actions += `
-      <button class="action-btn" data-action="dedup-keep-one" data-dupe-urls="${encoded}">
+      <button class="action-btn dedup-tabs" data-action="dedup-keep-one" data-dupe-urls="${encoded}">
         Close ${totalExtras} duplicate${totalExtras !== 1 ? 's' : ''}
       </button>`;
   }

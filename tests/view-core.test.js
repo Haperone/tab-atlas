@@ -9,6 +9,7 @@ import {
 } from '../extension/lib/renderers.js';
 import { parseSearch, recordMatches } from '../extension/lib/search.js';
 import { renderSpeedDialMarkup } from '../extension/lib/speed-dial.js';
+import { createThemeController } from '../extension/lib/theme-controller.js';
 import {
   escapeHtml,
   favIcon,
@@ -75,6 +76,90 @@ test('domain and landing-page helpers preserve grouping behavior', () => {
   assert.equal(isLandingPageUrl('https://example.com/article', patterns), false);
 });
 
+test('theme controller exposes the current option for the Customize menu', () => {
+  const controller = createThemeController({
+    document: { documentElement: { dataset: {} } },
+    storage: { getItem: () => 'papersoft', setItem: () => {} },
+    showContextMenu: () => {},
+    showToast: () => {},
+  });
+  assert.deepEqual(controller.currentThemeOption(), {
+    id: 'papersoft',
+    label: 'Paper Soft',
+    color: '#93401f',
+    group: 'light',
+  });
+});
+
+test('theme controller persists a light/dark pair and Bloom toggles only between it', () => {
+  const values = new Map([['tabout-theme', 'tokyonight']]);
+  const attributes = new Map();
+  const toggle = {
+    dataset: {},
+    setAttribute: (name, value) => attributes.set(name, value),
+  };
+  const toasts = [];
+  const controller = createThemeController({
+    document: {
+      documentElement: { dataset: {} },
+      getElementById: id => id === 'themeModeToggle' ? toggle : null,
+    },
+    storage: {
+      getItem: key => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+    },
+    showContextMenu: () => {},
+    showToast: message => toasts.push(message),
+  });
+
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(controller.currentThemePairOptions()).map(([mode, option]) => [mode, option.id])),
+    { dark: 'tokyonight', light: 'paper' },
+  );
+  controller.setThemeForMode('light', 'lattesoft');
+  assert.equal(controller.currentTheme(), 'tokyonight', 'editing the inactive side must not switch immediately');
+  assert.equal(values.get('tabout-theme-light'), 'lattesoft');
+
+  controller.toggleThemeMode();
+  assert.equal(controller.currentTheme(), 'lattesoft');
+  assert.equal(toggle.dataset.mode, 'light');
+  assert.equal(attributes.get('aria-pressed'), 'true');
+  assert.equal(attributes.get('aria-label'), 'Switch to Tokyo Night');
+
+  controller.setThemeForMode('dark', 'graphite');
+  assert.equal(controller.currentTheme(), 'lattesoft');
+  controller.toggleThemeMode();
+  assert.equal(controller.currentTheme(), 'graphite');
+  assert.equal(attributes.get('aria-pressed'), 'false');
+  assert.equal(attributes.get('aria-label'), 'Switch to Latte Soft');
+  assert.deepEqual(toasts, ['Theme: Latte Soft', 'Theme: Graphite']);
+});
+
+test('theme pair menu keeps both selectors together while either side is edited', () => {
+  const values = new Map([['tabout-theme', 'default']]);
+  const menus = [];
+  const controller = createThemeController({
+    document: { documentElement: { dataset: {} } },
+    storage: {
+      getItem: key => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+    },
+    showContextMenu: (x, y, items) => menus.push({ x, y, items }),
+    showToast: () => {},
+  });
+
+  controller.openThemeMenu(120, 80);
+  assert.deepEqual(
+    menus[0].items.filter(item => item.heading).map(item => item.label),
+    ['Dark theme · Bloom pair', 'Light theme · Bloom pair'],
+  );
+  const latte = menus[0].items.find(item => item.label === 'Catppuccin Latte');
+  latte.onClick();
+  assert.equal(values.get('tabout-theme-light'), 'latte');
+  assert.equal(menus.length, 2, 'the pair menu should reopen so the other side can be selected');
+  assert.equal(menus[1].items.find(item => item.label === 'Catppuccin Latte').checked, true);
+});
+
 test('tab-chip renderer escapes content and retains action names', () => {
   const html = renderTabChip({
     url: 'https://example.com/?q="quoted"',
@@ -96,9 +181,9 @@ test('domain-card renderer retains duplicate and sweep actions', () => {
     ],
   };
   const html = renderDomainCard(group, new Set());
-  assert.match(html, /data-action="start-focus-sweep-domain"/);
-  assert.match(html, /data-action="close-domain-tabs"/);
-  assert.match(html, /data-action="dedup-keep-one"/);
+  assert.match(html, /class="action-btn sweep-action" data-action="start-focus-sweep-domain"/);
+  assert.match(html, /class="action-btn close-tabs" data-action="close-domain-tabs"/);
+  assert.match(html, /class="action-btn dedup-tabs" data-action="dedup-keep-one"/);
   assert.match(html, /2 tabs open/);
 });
 
