@@ -1,6 +1,9 @@
 const DEFAULT_LINE_HEIGHT = 16;
 const DEFAULT_STICKY_OFFSET = 32;
-const DEFAULT_ANCHOR_DURATION = 120;
+const DEFAULT_ANCHOR_DURATION = 90;
+const DEFAULT_SCROLL_DURATION = 80;
+const DEFAULT_IMMEDIATE_RATIO = 0.4;
+const DEFAULT_SMOOTH_THRESHOLD = 24;
 const DEFAULT_ANCHOR_TOLERANCE = 2;
 
 export function normalizeWheelDelta(event, viewportHeight, lineHeight = DEFAULT_LINE_HEIGHT) {
@@ -14,11 +17,6 @@ export function canScrollInDirection(viewport, delta, epsilon = 1) {
   if (!viewport || !delta) return false;
   if (delta < 0) return viewport.scrollTop > epsilon;
   return viewport.scrollTop + viewport.clientHeight < viewport.scrollHeight - epsilon;
-}
-
-export function clampScrollDelta(delta, viewportHeight) {
-  const limit = Math.max(0, Number(viewportHeight) || 0);
-  return Math.max(-limit, Math.min(limit, delta));
 }
 
 export function consumeScrollDelta(viewport, delta) {
@@ -47,13 +45,20 @@ export function createColumnScrollController({
   root,
   minWidth = 960,
   anchorDuration = DEFAULT_ANCHOR_DURATION,
+  scrollDuration = DEFAULT_SCROLL_DURATION,
+  immediateRatio = DEFAULT_IMMEDIATE_RATIO,
+  smoothThreshold = DEFAULT_SMOOTH_THRESHOLD,
   isInteractionBlocked = () => false,
 }) {
   if (!window || !document || !root) throw new TypeError('Column scroll controller requires window, document and root');
 
-  let animationFrame = null;
-  let animationViewport = null;
-  let pendingDelta = 0;
+  let anchorFrame = null;
+  let anchorViewport = null;
+  let scrollFrame = null;
+  let scrollViewport = null;
+  let scrollStart = 0;
+  let scrollTarget = 0;
+  let scrollStartedAt = null;
 
   const reducedMotionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
 
@@ -79,60 +84,125 @@ export function createColumnScrollController({
     });
   }
 
-  function applyDelta(viewport, delta) {
-    consumeScrollDelta(viewport, delta);
+  function clampTarget(viewport, target) {
+    const maximum = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    return Math.max(0, Math.min(maximum, target));
   }
 
-  function cancelAnimation() {
-    if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
-    animationFrame = null;
-    animationViewport = null;
-    pendingDelta = 0;
+  function cancelAnchor() {
+    if (anchorFrame !== null) window.cancelAnimationFrame(anchorFrame);
+    anchorFrame = null;
+    anchorViewport = null;
   }
 
-  function finishAnimation(viewport) {
+  function cancelScrollSmoothing() {
+    if (scrollFrame !== null) window.cancelAnimationFrame(scrollFrame);
+    scrollFrame = null;
+    scrollViewport = null;
+    scrollStartedAt = null;
+  }
+
+  function cancelAnimations() {
+    cancelAnchor();
+    cancelScrollSmoothing();
+  }
+
+  function activeViewport() {
+    return anchorViewport || scrollViewport;
+  }
+
+  function finishAnchor(viewport) {
     window.scrollTo(0, anchorTop());
-    const delta = pendingDelta;
-    animationFrame = null;
-    animationViewport = null;
-    pendingDelta = 0;
-    applyDelta(viewport, delta);
+    anchorFrame = null;
+    anchorViewport = null;
   }
 
-  function queueAnchor(viewport, delta) {
-    pendingDelta = clampScrollDelta(
-      animationViewport === viewport ? pendingDelta + delta : delta,
-      viewport.clientHeight,
-    );
+  function startAnchor(viewport) {
+    if (anchorFrame !== null && anchorViewport === viewport) return;
+    cancelAnchor();
 
-    if (animationFrame !== null && animationViewport === viewport) return;
-    if (animationFrame !== null) cancelAnimation();
-
-    animationViewport = viewport;
-    pendingDelta = clampScrollDelta(delta, viewport.clientHeight);
+    anchorViewport = viewport;
     const startY = window.scrollY;
     const targetY = anchorTop();
     const duration = reducedMotionQuery?.matches ? 0 : anchorDuration;
 
     if (duration <= 0 || Math.abs(startY - targetY) <= DEFAULT_ANCHOR_TOLERANCE) {
-      finishAnimation(viewport);
+      finishAnchor(viewport);
       return;
     }
 
     let startedAt = null;
     const step = timestamp => {
-      if (animationViewport !== viewport) return;
+      if (anchorViewport !== viewport) return;
       if (startedAt === null) startedAt = timestamp;
       const progress = Math.min(1, (timestamp - startedAt) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
       window.scrollTo(0, startY + ((targetY - startY) * eased));
       if (progress < 1) {
-        animationFrame = window.requestAnimationFrame(step);
+        anchorFrame = window.requestAnimationFrame(step);
         return;
       }
-      finishAnimation(viewport);
+      finishAnchor(viewport);
     };
-    animationFrame = window.requestAnimationFrame(step);
+    anchorFrame = window.requestAnimationFrame(step);
+  }
+
+  function finishScrollSmoothing(viewport) {
+    viewport.scrollTop = clampTarget(viewport, scrollTarget);
+    scrollFrame = null;
+    scrollViewport = null;
+    scrollStartedAt = null;
+  }
+
+  function scheduleScrollSmoothing(viewport) {
+    if (scrollFrame !== null) window.cancelAnimationFrame(scrollFrame);
+    scrollViewport = viewport;
+    scrollStart = viewport.scrollTop;
+    scrollStartedAt = null;
+
+    if (scrollDuration <= 0 || Math.abs(scrollTarget - scrollStart) <= DEFAULT_ANCHOR_TOLERANCE) {
+      finishScrollSmoothing(viewport);
+      return;
+    }
+
+    const step = timestamp => {
+      if (scrollViewport !== viewport) return;
+      if (scrollStartedAt === null) scrollStartedAt = timestamp;
+      const progress = Math.min(1, (timestamp - scrollStartedAt) / scrollDuration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      viewport.scrollTop = scrollStart + ((scrollTarget - scrollStart) * eased);
+      if (progress < 1) {
+        scrollFrame = window.requestAnimationFrame(step);
+        return;
+      }
+      finishScrollSmoothing(viewport);
+    };
+    scrollFrame = window.requestAnimationFrame(step);
+  }
+
+  function applyWheelDelta(viewport, delta, event) {
+    const reducedMotion = reducedMotionQuery?.matches;
+    const existingDistance = scrollViewport === viewport
+      ? scrollTarget - viewport.scrollTop
+      : 0;
+    if (scrollFrame !== null && Math.sign(existingDistance) !== Math.sign(delta)) {
+      cancelScrollSmoothing();
+    }
+
+    const smooth = !reducedMotion && (
+      scrollViewport === viewport
+      || event.deltaMode !== 0
+      || Math.abs(delta) > smoothThreshold
+    );
+    if (!smooth) {
+      consumeScrollDelta(viewport, delta);
+      return;
+    }
+
+    const baseTarget = scrollViewport === viewport ? scrollTarget : viewport.scrollTop;
+    scrollTarget = clampTarget(viewport, baseTarget + delta);
+    consumeScrollDelta(viewport, delta * immediateRatio);
+    scheduleScrollSmoothing(viewport);
   }
 
   function closestViewport(target) {
@@ -144,31 +214,37 @@ export function createColumnScrollController({
     const viewport = closestViewport(event.target);
     if (!viewport) return;
     if (window.innerWidth < minWidth || isInteractionBlocked()) {
-      cancelAnimation();
+      cancelAnimations();
       return;
     }
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
-      cancelAnimation();
+      cancelAnimations();
       return;
     }
     if (Math.abs(event.deltaX || 0) > Math.abs(event.deltaY || 0)) {
-      cancelAnimation();
+      cancelAnimations();
       return;
     }
 
     const delta = normalizeWheelDelta(event, viewport.clientHeight);
     if (!delta) return;
 
-    // Once anchoring starts, one owner must handle the rest of that gesture.
+    // Once either animation starts, one owner must handle the rest of that gesture.
     // Letting boundary momentum fall through to the page while rAF is moving it
     // creates two competing scroll sources and visible up/down oscillation.
-    if (animationFrame !== null) {
-      if (animationViewport === viewport) {
+    const owner = activeViewport();
+    if (owner) {
+      if (owner === viewport) {
+        if (anchorFrame === null && !canScrollInDirection(viewport, delta)) {
+          cancelScrollSmoothing();
+          return;
+        }
         event.preventDefault();
-        queueAnchor(viewport, delta);
+        startAnchor(viewport);
+        applyWheelDelta(viewport, delta, event);
         return;
       }
-      cancelAnimation();
+      cancelAnimations();
     }
 
     if (!canScrollInDirection(viewport, delta)) return;
@@ -176,26 +252,26 @@ export function createColumnScrollController({
     event.preventDefault();
     const targetY = anchorTop();
     if (Math.abs(window.scrollY - targetY) > DEFAULT_ANCHOR_TOLERANCE) {
-      queueAnchor(viewport, delta);
-      return;
+      startAnchor(viewport);
     }
-    applyDelta(viewport, delta);
+    applyWheelDelta(viewport, delta, event);
   }
 
   function handleResize() {
-    cancelAnimation();
+    cancelAnimations();
   }
 
   function handleExternalIntent(event) {
-    if (animationFrame === null) return;
+    if (!activeViewport()) return;
     if (event.type === 'keydown' && ['Control', 'Meta', 'Shift', 'Alt'].includes(event.key)) return;
-    cancelAnimation();
+    cancelAnimations();
   }
 
   function handleExternalWheel(event) {
-    if (animationFrame === null) return;
-    if (closestViewport(event.target) === animationViewport) return;
-    cancelAnimation();
+    const owner = activeViewport();
+    if (!owner) return;
+    if (closestViewport(event.target) === owner) return;
+    cancelAnimations();
   }
 
   root.addEventListener('wheel', handleWheel, { passive: false });
@@ -206,7 +282,7 @@ export function createColumnScrollController({
 
   return {
     destroy() {
-      cancelAnimation();
+      cancelAnimations();
       root.removeEventListener('wheel', handleWheel);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('pointerdown', handleExternalIntent, true);

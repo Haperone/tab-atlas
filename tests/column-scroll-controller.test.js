@@ -4,7 +4,6 @@ import test from 'node:test';
 import {
   calculateDashboardAnchor,
   canScrollInDirection,
-  clampScrollDelta,
   consumeScrollDelta,
   createColumnScrollController,
   normalizeWheelDelta,
@@ -25,12 +24,10 @@ test('scroll direction detects both boundaries with an epsilon', () => {
   assert.equal(canScrollInDirection(viewport, -20), true);
 });
 
-test('anchor and pending deltas remain inside their scroll ranges', () => {
+test('dashboard anchors remain inside the document scroll range', () => {
   assert.equal(calculateDashboardAnchor({ rootTop: 400, scrollY: 100, stickyOffset: 32, documentHeight: 1800, viewportHeight: 800 }), 468);
   assert.equal(calculateDashboardAnchor({ rootTop: 20, scrollY: 0, stickyOffset: 32, documentHeight: 600, viewportHeight: 800 }), 0);
   assert.equal(calculateDashboardAnchor({ rootTop: 900, scrollY: 700, stickyOffset: 32, documentHeight: 1800, viewportHeight: 800 }), 1000);
-  assert.equal(clampScrollDelta(900, 640), 640);
-  assert.equal(clampScrollDelta(-900, 640), -640);
 });
 
 test('scroll consumption returns the unused delta at both boundaries', () => {
@@ -104,6 +101,11 @@ function createHarness({ reducedMotion = false, innerWidth = 1440, blocked = fal
       callbacks.forEach(callback => callback(timestamp));
     }
   }
+  function stepFrames(timestamp) {
+    const callbacks = [...frames.values()];
+    frames.clear();
+    callbacks.forEach(callback => callback(timestamp));
+  }
   return {
     controller,
     frames,
@@ -113,6 +115,7 @@ function createHarness({ reducedMotion = false, innerWidth = 1440, blocked = fal
     window,
     windowListeners,
     flushFrames,
+    stepFrames,
     setRootTop(value) { absoluteRootTop = value; },
   };
 }
@@ -125,13 +128,60 @@ test('reduced motion anchors immediately and applies the wheel delta', () => {
   assert.equal(harness.frames.size, 0);
 });
 
-test('animated anchoring accumulates trackpad deltas and caps them to one viewport', () => {
+test('large wheel deltas react immediately and converge to one updated target', () => {
   const harness = createHarness();
   assert.equal(harness.wheel(250), true);
+  assert.equal(harness.viewport.scrollTop, 200);
   assert.equal(harness.wheel(250), true);
+  assert.equal(harness.viewport.scrollTop, 300);
+  assert.equal(harness.frames.size, 2);
   harness.flushFrames();
   assert.equal(harness.window.scrollY, 268);
-  assert.equal(harness.viewport.scrollTop, 500);
+  assert.equal(harness.viewport.scrollTop, 600);
+});
+
+test('large wheel smoothing applies 40 percent now and finishes over 80ms', () => {
+  const harness = createHarness();
+  harness.wheel(100);
+  assert.equal(harness.viewport.scrollTop, 140);
+  harness.stepFrames(0);
+  assert.equal(harness.viewport.scrollTop, 140);
+  harness.stepFrames(40);
+  assert.equal(harness.viewport.scrollTop, 192.5);
+  harness.stepFrames(80);
+  assert.equal(harness.viewport.scrollTop, 200);
+});
+
+test('small pixel deltas stay direct while page anchoring runs independently', () => {
+  const harness = createHarness();
+  harness.wheel(24);
+  assert.equal(harness.viewport.scrollTop, 124);
+  assert.equal(harness.frames.size, 1);
+  harness.flushFrames();
+  assert.equal(harness.window.scrollY, 268);
+});
+
+test('dashboard anchor completes in 90ms while column input is already visible', () => {
+  const harness = createHarness();
+  harness.wheel(24);
+  assert.equal(harness.viewport.scrollTop, 124);
+  harness.stepFrames(0);
+  assert.equal(harness.window.scrollY, 0);
+  harness.stepFrames(45);
+  assert.equal(harness.window.scrollY, 234.5);
+  harness.stepFrames(90);
+  assert.equal(harness.window.scrollY, 268);
+});
+
+test('direction reversal discards the old smoothing trajectory immediately', () => {
+  const harness = createHarness();
+  harness.wheel(100);
+  assert.equal(harness.viewport.scrollTop, 140);
+  harness.wheel(-80);
+  assert.equal(harness.viewport.scrollTop, 108);
+  assert.equal(harness.frames.size, 2);
+  harness.flushFrames();
+  assert.equal(harness.viewport.scrollTop, 60);
 });
 
 test('the tick that first reaches a boundary does not throw its remainder into the page', () => {
@@ -140,6 +190,16 @@ test('the tick that first reaches a boundary does not throw its remainder into t
   assert.equal(harness.wheel(60), true);
   assert.equal(harness.viewport.scrollTop, 800);
   assert.equal(harness.window.scrollY, 268);
+  assert.equal(harness.wheel(60), false);
+});
+
+test('outward wheel hands off natively once smoothing has reached the boundary', () => {
+  const harness = createHarness();
+  harness.window.scrollY = 268;
+  harness.viewport.scrollTop = 780;
+  assert.equal(harness.wheel(60), true);
+  harness.flushFrames();
+  assert.equal(harness.viewport.scrollTop, 800);
   assert.equal(harness.wheel(60), false);
 });
 
@@ -187,7 +247,7 @@ test('any resize cancels active anchoring before its target becomes stale', () =
   assert.ok(harness.frames.size > 0);
   harness.windowListeners.get('resize')();
   assert.equal(harness.frames.size, 0);
-  assert.equal(harness.viewport.scrollTop, 100);
+  assert.equal(harness.viewport.scrollTop, 140);
 });
 
 test('pointer and non-modifier keyboard intent cancel active anchoring', () => {
@@ -210,7 +270,7 @@ test('rapid direction changes during anchoring have one scroll owner', () => {
   assert.equal(harness.wheel(-80), true);
   harness.flushFrames();
   assert.equal(harness.window.scrollY, 268);
-  assert.equal(harness.viewport.scrollTop, 760);
+  assert.equal(harness.viewport.scrollTop, 720);
 });
 
 test('wheel outside the active viewport cancels anchoring before native scroll proceeds', () => {

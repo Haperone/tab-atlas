@@ -304,10 +304,15 @@ test('desktop column scrolling magnetically anchors the dashboard without trappi
   assert.doesNotMatch(app, /const columnScrollController\s*=/);
   assert.match(app, /window\.addEventListener\('scroll', \(event\) => \{[\s\S]*?event\.target !== document[\s\S]*?requestAnimationFrame/);
   assert.match(controller, /addEventListener\('wheel', handleWheel, \{ passive: false \}\)/);
-  assert.match(controller, /if \(animationFrame !== null\)[\s\S]*?animationViewport === viewport[\s\S]*?event\.preventDefault\(\)[\s\S]*?queueAnchor\(viewport, delta\)/);
+  assert.match(controller, /DEFAULT_ANCHOR_DURATION\s*=\s*90/);
+  assert.match(controller, /DEFAULT_SCROLL_DURATION\s*=\s*80/);
+  assert.match(controller, /DEFAULT_IMMEDIATE_RATIO\s*=\s*0\.4/);
+  assert.match(controller, /DEFAULT_SMOOTH_THRESHOLD\s*=\s*24/);
+  assert.match(controller, /const owner = activeViewport\(\)[\s\S]*?owner === viewport[\s\S]*?event\.preventDefault\(\)[\s\S]*?startAnchor\(viewport\)[\s\S]*?applyWheelDelta\(viewport, delta, event\)/);
   assert.match(controller, /if \(!canScrollInDirection\(viewport, delta\)\) return/);
   assert.match(controller, /consumeScrollDelta\(viewport, delta\)/);
   assert.doesNotMatch(controller, /window\.scrollTo\(0, window\.scrollY \+ remainder\)/);
+  assert.doesNotMatch(css, /\.column-scroll\s*\{[^}]*scroll-behavior:\s*smooth/);
   assert.match(controller, /addEventListener\('wheel', handleExternalWheel, \{ capture: true, passive: true \}\)/);
   assert.doesNotMatch(controller, /localStorage|chrome\.storage/);
 });
