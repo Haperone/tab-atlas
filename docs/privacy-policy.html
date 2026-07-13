@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <title>Privacy Policy — Tab Atlas</title>
+  <meta name="description" content="Privacy policy for the Tab Atlas Chrome extension: 100% local, no data collection, no analytics, no third-party services.">
+  <style>
+    :root {
+      --bg: #f7f5f0;
+      --surface: #ffffff;
+      --text: #23201b;
+      --muted: #6b6459;
+      --accent: #9f4528;
+      --border: #e4ded3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181c;
+        --surface: #1e2228;
+        --text: #e6e8ea;
+        --muted: #9aa0a6;
+        --accent: #78a8c8;
+        --border: #2c3038;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      font-size: 17px;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+    h1 { font-size: 1.9rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+    h2 { font-size: 1.2rem; margin: 40px 0 10px; letter-spacing: -0.01em; }
+    .eyebrow { color: var(--accent); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 10px; }
+    .updated { color: var(--muted); font-size: 0.9rem; margin: 6px 0 0; }
+    p { margin: 12px 0; }
+    ul { margin: 12px 0; padding-left: 22px; }
+    li { margin: 6px 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin: 24px 0;
+    }
+    .card strong { color: var(--text); }
+    footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <p class="eyebrow">Tab Atlas</p>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: July 13, 2026</p>
+    </header>
+
+    <p>
+      <strong>Tab Atlas does not collect, transmit, sell, or share personal data or
+      browsing information.</strong> It processes open-tab information locally, on your
+      own device, to provide its tab-organization features.
+    </p>
+
+    <div class="card">
+      <p style="margin-top:0"><strong>The short version:</strong> everything stays on your
+      computer. There is no account, no server, no analytics, no advertising, and no
+      automatic third-party requests. Nothing about your tabs ever leaves your device.</p>
+    </div>
+
+    <h2>What Tab Atlas stores locally</h2>
+    <p>
+      When you use the save, folder, workspace, theme, or shortcut features, Tab Atlas
+      stores the relevant data using Chrome's local storage
+      (<code>chrome.storage.local</code>) and the browser's <code>localStorage</code>.
+      This may include:
+    </p>
+    <ul>
+      <li>URLs and page titles of tabs you explicitly save for later or archive</li>
+      <li>Folder names and the pages you file into them</li>
+      <li>Workspace snapshots (window layouts and the tabs they contain)</li>
+      <li>Your theme choice, privacy-mode state, and editable shortcuts</li>
+    </ul>
+    <p>
+      All of this remains on your device. It is never sent to the developer or any third
+      party.
+    </p>
+
+    <h2>What Tab Atlas does <em>not</em> do</h2>
+    <ul>
+      <li>No analytics or telemetry</li>
+      <li>No advertising</li>
+      <li>No accounts or sign-in</li>
+      <li>No cookies</li>
+      <li>No remote APIs or servers</li>
+      <li>No automatic external resource requests (fonts, icons, and scripts are all packaged locally)</li>
+    </ul>
+
+    <h2>Site icons (favicons)</h2>
+    <p>
+      Tab Atlas displays site icons using Chrome's built-in local favicon cache
+      (the <code>_favicon</code> API). It does not contact the sites themselves or any
+      third-party icon service to fetch them.
+    </p>
+
+    <h2>Data use</h2>
+    <ul>
+      <li>Data is <strong>not</strong> sold to third parties.</li>
+      <li>Data is <strong>not</strong> used for any purpose unrelated to the extension's core functionality.</li>
+      <li>Data is <strong>not</strong> used for creditworthiness or lending purposes.</li>
+    </ul>
+
+    <h2>Retention and your control</h2>
+    <p>
+      Locally saved data stays until you remove it. You can delete saved items and archive
+      entries directly in the extension, clear the extension's local storage, or uninstall
+      the extension to remove everything. Backup files are exported and imported only at
+      your explicit request, and they are ordinary local files on your computer.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about privacy can be submitted through the project's public issue tracker:
+      <a href="https://github.com/Haperone/tab-atlas/issues">github.com/Haperone/tab-atlas/issues</a>.
+    </p>
+
+    <footer>
+      Tab Atlas is an open-source Chrome extension.
+      Source: <a href="https://github.com/Haperone/tab-atlas">github.com/Haperone/tab-atlas</a>.
+      This page makes no external requests.
+    </footer>
+  </main>
+</body>
+</html>

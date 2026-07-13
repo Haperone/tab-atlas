@@ -97,6 +97,17 @@ export function favIcon(pageUrl, size = 16, runtime = globalThis.chrome?.runtime
   return '';
 }
 
+/**
+ * True for favicon image URLs produced by favIcon(). Used by the global image
+ * error handler to hide only favicons that fail to load. Favicons come from the
+ * Chrome `_favicon` API (chrome-extension://<id>/_favicon/?…); the legacy Google
+ * `s2/favicons` form is kept so forks that customise favIcon() still fall back.
+ */
+export function isFaviconRequestUrl(src) {
+  const value = src || '';
+  return value.includes('/_favicon/') || value.includes('/s2/favicons');
+}
+
 export function stripTitleNoise(title) {
   if (!title) return '';
   return title

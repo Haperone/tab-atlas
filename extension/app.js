@@ -53,6 +53,7 @@ import {
   escapeHtml,
   favIcon,
   friendlyDomain,
+  isFaviconRequestUrl,
   isLandingPageUrl,
   tabUpdateAffectsDashboard,
   tabsSignature,
@@ -712,12 +713,12 @@ async function checkOffSavedTab(id) {
  * Reverses checkOffSavedTab() — used by the "Undo" toast action.
  */
 async function uncheckSavedTab(id) {
-  const { deferred = [] } = await chrome.storage.local.get('deferred');
+  const deferred = await storageRepository.getDeferred();
   const tab = deferred.find(t => t.id === id);
   if (tab) {
     tab.completed = false;
     delete tab.completedAt;
-    await chrome.storage.local.set({ deferred });
+    await storageRepository.setDeferred(deferred);
   }
 }
 
@@ -4842,12 +4843,13 @@ try {
    we listen for image load errors in the capture phase (error events
    don't bubble) and hide any favicon that fails to load — restoring
    the graceful fallback that inline onerror used to provide. All
-   favicons share the same Google s2 source, so one listener covers
-   tab chips, the saved-for-later sidebar, and the archive.
+   favicons come from the Chrome `_favicon` API (see favIcon()), so one
+   listener covers tab chips, the saved-for-later sidebar, the archive,
+   and the speed-dial shortcuts.
    ---------------------------------------------------------------- */
 document.addEventListener('error', (e) => {
   const el = e.target;
-  if (el && el.tagName === 'IMG' && /\/s2\/favicons\?/.test(el.src)) {
+  if (el && el.tagName === 'IMG' && isFaviconRequestUrl(el.src)) {
     el.style.display = 'none';
   }
 }, true);

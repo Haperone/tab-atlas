@@ -14,6 +14,7 @@ import {
   escapeHtml,
   favIcon,
   friendlyDomain,
+  isFaviconRequestUrl,
   isLandingPageUrl,
   tabUpdateAffectsDashboard,
   tabsSignature,
@@ -43,6 +44,18 @@ test('favicon construction uses a supplied packaged Chrome runtime', () => {
     favIcon('https://example.com/a?b=1', 32, runtime),
     'chrome-extension://test-id/_favicon/?pageUrl=https%3A%2F%2Fexample.com%2Fa%3Fb%3D1&amp;size=32',
   );
+});
+
+test('favicon error handler recognises the URLs favIcon() actually produces', () => {
+  const runtime = { getURL: path => `chrome-extension://test-id${path}` };
+  // The real favicon URL (with &amp; from favIcon) and the DOM-resolved form both match.
+  assert.equal(isFaviconRequestUrl(favIcon('https://example.com', 16, runtime)), true);
+  assert.equal(isFaviconRequestUrl('chrome-extension://test-id/_favicon/?pageUrl=https%3A%2F%2Fx&size=16'), true);
+  // Legacy Google source kept for forks that customise favIcon().
+  assert.equal(isFaviconRequestUrl('https://www.google.com/s2/favicons?domain=example.com'), true);
+  // Non-favicon images must not be hidden.
+  assert.equal(isFaviconRequestUrl('https://example.com/logo.png'), false);
+  assert.equal(isFaviconRequestUrl(''), false);
 });
 
 test('tab signatures change for every rendered or behaviorally relevant field', () => {

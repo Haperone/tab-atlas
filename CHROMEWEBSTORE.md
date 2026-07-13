@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Tab Atlas
 
-> Last Updated: 2026-07-12
+> Last Updated: 2026-07-13
 
 ## Store Listing
 
@@ -40,6 +40,36 @@ Support and source: https://github.com/Haperone/tab-atlas
 
 Use real extension UI with representative, non-sensitive example tabs. Show domain grouping and search first, saved tabs/folders second, and Focus Sweep or workspace restoration third. Refresh screenshots after any material UI change.
 
+### Screenshot capture procedure
+
+**Option A — seeded demo harness (fastest, no live tabs needed).** `tools/screenshot-harness.html`
+renders the *real* dashboard (`extension/app.js` + `extension/style.css`) against a mocked `chrome.*`
+API with representative example data, so you don't have to load the extension or arrange tabs:
+
+1. From the repo root run `node tools/serve.mjs` (serves at `http://localhost:8232`).
+2. Open `http://localhost:8232/tools/screenshot-harness.html` in Chrome.
+3. Force a **1280×800** viewport (DevTools device toolbar → Responsive → set 1280×800) and screenshot.
+4. To vary the shots, tweak the `SEED_TABS` / `SEED_STORE` data at the top of the harness, or open the
+   Sweep / workspace UI before capturing. Save PNGs into `extension/store-assets/`.
+
+**Option B — the real loaded extension (most authentic).** Capture once, in Chrome:
+
+1. Load the unpacked extension: `chrome://extensions` → Developer mode → **Load unpacked** → select the `extension/` folder.
+2. Open ~12–15 representative, non-sensitive tabs across several domains (e.g. GitHub, YouTube,
+   a couple of docs sites, Gmail/X homepages) so domain grouping and the Homepages card are populated.
+   Save 3–4 pages for later and create a folder or two so the side rail is non-empty.
+3. Set the browser window to a clean size and use a **1280×800** capture region (or 640×400).
+   Chrome DevTools device toolbar can force an exact 1280×800 viewport; or use any OS screenshot tool
+   cropped to size. Pick the theme that reads best (Paper light tends to photograph cleanly).
+4. Capture, in order:
+   - **Screenshot 1 — Dashboard overview:** domain cards grid + the search row (type into `/` search to show filtering).
+   - **Screenshot 2 — Saved tabs & folders:** the right-hand Saved-for-later column and Folders column with a few items.
+   - **Screenshot 3 — Focus Sweep / workspaces:** trigger Sweep (or open the workspace drawer) to show batch triage.
+5. Save as PNG, drop into `extension/store-assets/` (or attach directly in the dashboard), and flip the
+   table rows above to ✅.
+
+Optional promo tile (440×280): a cropped dashboard hero with the "Tab Atlas" name overlaid.
+
 ## Permissions Justification
 
 | Permission | Type | Justification |
@@ -69,18 +99,23 @@ Locally saved data remains until the user removes it, clears extension data, or 
 
 ## Privacy Policy
 
-**Privacy Policy URL:** `[REQUIRED BEFORE SUBMISSION — publish the policy below at a stable public URL]`
+**Privacy Policy URL:** https://haperone.github.io/tab-atlas/privacy-policy.html
+
+> Published from [`docs/privacy-policy.html`](docs/privacy-policy.html). Enable GitHub Pages
+> once (repo **Settings → Pages → Source: Deploy from a branch → `main` / `/docs`**) and this
+> URL goes live. The page is self-contained and makes no external requests. The copy below is
+> the source of truth for that page — keep them in sync.
 
 ### Publishable Privacy Policy Copy
 
 **Privacy Policy for Tab Atlas**
-Last updated: July 10, 2026
+Last updated: July 13, 2026
 
 Tab Atlas does not collect, transmit, sell, or share personal data or browsing information. It processes open-tab information locally to provide tab organization features. URLs, titles, saved tabs, folders, workspace snapshots, themes, and shortcuts are stored only on the user's device when relevant features are used.
 
 Tab Atlas does not use analytics, advertising, cookies, accounts, remote APIs, or third-party services. Users can remove saved data in the extension, clear the extension's local storage, or uninstall the extension. Backup files are exported and imported only at the user's explicit request.
 
-Questions about privacy can be submitted through the project's public issue tracker until a publisher contact email is supplied: https://github.com/Haperone/tab-atlas/issues
+Questions about privacy can be submitted through the project's public issue tracker: https://github.com/Haperone/tab-atlas/issues
 
 ## Distribution
 
@@ -89,8 +124,13 @@ Questions about privacy can be submitted through the project's public issue trac
 
 ## Developer Info
 
-**Publisher Name:** `[REQUIRED BEFORE SUBMISSION]`
-**Contact Email:** `[REQUIRED BEFORE SUBMISSION]`
+> These two fields are entered (and the email **verified**) in the Chrome Web Store
+> Developer Dashboard — **Account settings** for the publisher identity, and the item's
+> listing for the shown contact. The values below are the repo's source of truth; copy
+> them into the dashboard. Change the email if you prefer a different public contact.
+
+**Publisher Name:** Haperone
+**Contact Email:** nsvyatogo26@gmail.com
 **Support URL:** https://github.com/Haperone/tab-atlas/issues
 **Homepage URL:** https://github.com/Haperone/tab-atlas
 
@@ -111,7 +151,14 @@ Questions about privacy can be submitted through the project's public issue trac
 
 ### Submission Blockers
 
-- Supply publisher name and monitored contact email.
-- Publish and verify the privacy-policy URL.
-- Create at least one current 1280×800 or 640×400 screenshot.
-- Confirm that version `1.0.0` is greater than any version already uploaded to the store.
+- [x] **Privacy-policy URL** — page written at [`docs/privacy-policy.html`](docs/privacy-policy.html);
+      URL wired above. Remaining action: flip on GitHub Pages (Settings → Pages → `main` / `/docs`)
+      and confirm the URL loads.
+- [x] **Version** — `1.0.0`. No git tags / prior uploads exist, so nothing higher is published. Keep
+      this greater than any version already uploaded before each future submission.
+- [x] **Publisher name and contact email** — filled in "Developer Info" (Publisher: Haperone,
+      Contact: nsvyatogo26@gmail.com). Remaining action: enter them in the Developer Dashboard and
+      **verify the email** there (verification can only happen in your account, not in the repo).
+- [ ] **At least one 1280×800 or 640×400 screenshot** — a seeded demo harness that renders the real
+      dashboard UI is at [`tools/screenshot-harness.html`](tools/screenshot-harness.html); open it and
+      capture. See "Screenshot capture procedure" below.
