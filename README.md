@@ -72,6 +72,25 @@ node --test
 
 ---
 
+## Repository layout & publishing
+
+Everything the extension ships is under `extension/`. Supporting material for
+publishing lives outside it (so it never ends up in the store ZIP):
+
+| Path | What it is |
+|------|-----------|
+| `extension/` | The extension itself — this is the only folder you load unpacked or zip for the store |
+| `CHROMEWEBSTORE.md` | Source-of-truth draft for the Chrome Web Store listing: description, permission justifications, privacy answers, developer info, and a **Submission Blockers** checklist. A contract test (`tests/webstore-contract.test.js`) keeps it in sync with `manifest.json`. |
+| `docs/privacy-policy.html` | The published privacy policy. Self-contained, no external requests. Served via **GitHub Pages** (Settings → Pages → Source: `main` / `/docs`) at `https://haperone.github.io/tab-atlas/privacy-policy.html` — this is the URL the store's privacy-policy field points to. `docs/index.html` is a small landing page. |
+| `tools/screenshot-harness.html` | Renders the **real** dashboard (`extension/app.js` + `style.css`) against a mocked `chrome.*` API with seed data, so store screenshots can be captured at 1280×800 without loading the extension or arranging live tabs. |
+| `tools/serve.mjs` | Tiny static server for previewing the above locally. See [`tools/README.md`](tools/README.md). |
+
+To capture store screenshots: `node tools/serve.mjs`, open
+`http://localhost:8232/tools/screenshot-harness.html` at a 1280×800 viewport, and grab
+the shot. Full step-by-step (including the real-extension path) is in `CHROMEWEBSTORE.md`.
+
+---
+
 ## Tech stack
 
 | What | How |
