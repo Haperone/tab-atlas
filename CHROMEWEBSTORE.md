@@ -12,7 +12,7 @@
 
 Tab Atlas replaces Chrome's new-tab page with a clear dashboard of your open tabs, grouped by domain.
 
-See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Select several open or saved tabs with modifier clicks, then drag the selected group into a folder or handle it with bulk actions. Independent columns stay aligned while you scroll and release naturally when you reach an edge. Focus Sweep helps you review many tabs as one deliberate batch. Choose from 13 local themes, including animated, minimalist dark, soft-grey and warm cream glass styles, then save one light and one dark favourite as a quick-switch pair. Privacy mode and editable shortcuts let the dashboard fit your workflow.
+See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Select several open or saved tabs with modifier clicks, then drag the selected group into a folder or handle it with bulk actions. Independent columns stay aligned while you scroll and release naturally when you reach an edge. Focus Sweep presents tabs as a calm card deck: swipe left to close, up to save, or right to keep, then review the batch before applying it. Choose from 13 local themes, including animated, minimalist dark, soft-grey and warm cream glass styles, then save one light and one dark favourite as a quick-switch pair. Privacy mode and editable shortcuts let the dashboard fit your workflow.
 
 Install the extension, open a new tab, and use the dashboard to jump to, save, group, or close tabs. The toolbar icon returns you to an existing Tab Atlas page or opens one when needed.
 
@@ -33,12 +33,12 @@ Support and source: https://github.com/Haperone/tab-atlas
 | Store Icon | 128×128 PNG | ✅ Ready | `extension/icons/icon128.png` |
 | Screenshot 1 | 1280×800 or 640×400 | ⬜ Not created | Dashboard overview |
 | Screenshot 2 | 1280×800 or 640×400 | ⬜ Not created | Saved tabs and folders |
-| Screenshot 3 | 1280×800 or 640×400 | ⬜ Not created | Focus Sweep and workspace drawer |
+| Screenshot 3 | 1280×800 or 640×400 | ⬜ Refresh required | Focus Sweep card deck and workspace drawer |
 | Small Promo Tile | 440×280 | ⬜ Not created | |
 
 ### Screenshot Notes
 
-Use real extension UI with representative, non-sensitive example tabs. Show domain grouping and search first, saved tabs/folders second, and Focus Sweep or workspace restoration third. Refresh screenshots after any material UI change.
+Use real extension UI with representative, non-sensitive example tabs. Show domain grouping and search first, saved tabs/folders second, and the Focus Sweep card deck or workspace restoration third. Screenshot 3 must be refreshed for the card-deck redesign.
 
 ### Screenshot capture procedure
 
@@ -64,7 +64,7 @@ API with representative example data, so you don't have to load the extension or
 4. Capture, in order:
    - **Screenshot 1 — Dashboard overview:** domain cards grid + the search row (type into `/` search to show filtering).
    - **Screenshot 2 — Saved tabs & folders:** the right-hand Saved-for-later column and Folders column with a few items.
-   - **Screenshot 3 — Focus Sweep / workspaces:** trigger Sweep (or open the workspace drawer) to show batch triage.
+   - **Screenshot 3 — Focus Sweep / workspaces:** trigger Sweep to show the swipeable three-card deck and review controls (or open the workspace drawer).
 5. Save as PNG, drop into `extension/store-assets/` (or attach directly in the dashboard), and flip the
    table rows above to ✅.
 
@@ -138,7 +138,7 @@ Questions about privacy can be submitted through the project's public issue trac
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
-| 1.0.1 | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. Glass search fields now use the same restrained focus ring as the regular themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Ready to upload |
+| 1.0.1 | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. Redesigned Focus Sweep as an animated three-card deck with swipe, keyboard and button controls, a safe review summary, folder-aware saving and an optional Instant mode. Glass search fields now use the same restrained focus ring as the regular themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Ready to upload |
 | 1.0.0 | 2026-07-12 | Initial store draft with the saved-links archive, one-click restoration, Undo, and aligned independent column scrolling. | Draft |
 
 ## Release Package

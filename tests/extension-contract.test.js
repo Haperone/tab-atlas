@@ -282,6 +282,42 @@ test('Sweep stays visually secondary across regular and soft themes', async () =
   assert.match(renderers, /class="action-btn sweep-action"/);
 });
 
+test('Focus Sweep renders an accessible three-card decision deck', async () => {
+  const html = await readProjectText('extension/index.html');
+  const css = await readProjectText('extension/style.css');
+  const app = await readProjectText('extension/app.js');
+
+  assert.equal([...html.matchAll(/data-sweep-card-slot="[012]"/g)].length, 3);
+  assert.match(html, /id="focusSweepCardCurrent"/);
+  assert.match(html, /id="focusSweepDestination"[\s\S]*?Save to: Inbox/);
+  assert.match(html, /id="focusSweepSummary"[\s\S]*?Review decisions/);
+  assert.match(html, /role="status" aria-live="polite"/);
+  for (const action of ['focus-sweep-close', 'focus-sweep-save', 'focus-sweep-keep', 'focus-sweep-undo', 'focus-sweep-review']) {
+    assert.match(html, new RegExp(`data-action="${action}"`));
+  }
+  for (const retiredAction of ['focus-sweep-save-rest-domain', 'focus-sweep-close-rest-domain', 'focus-sweep-keep-rest-domain']) {
+    assert.doesNotMatch(html, new RegExp(`data-action="${retiredAction}"`));
+  }
+  assert.doesNotMatch(html, /id="focusSweepMode"/);
+
+  assert.match(css, /FOCUS SWEEP CARD DECK/);
+  const overlayRule = css.match(/\.focus-sweep-overlay\s*\{([^}]*)\}/)?.[1] || '';
+  assert.match(overlayRule, /position:\s*fixed/);
+  assert.match(overlayRule, /inset:\s*0/);
+  assert.match(overlayRule, /align-items:\s*center/);
+  assert.match(overlayRule, /justify-content:\s*center/);
+  assert.match(css, /\.focus-sweep-card-third[\s\S]*?scale\(0\.94\)/);
+  assert.match(css, /\.focus-sweep-card-next[\s\S]*?scale\(0\.97\)/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.focus-sweep-card/);
+  assert.match(css, /@media \(forced-colors: active\)[\s\S]*?\.focus-sweep-card/);
+
+  assert.match(app, /createFocusSweepDeckController/);
+  assert.match(app, /key === 'ArrowLeft'[\s\S]*?animateFocusSweepDecision\('close', 'keyboard'\)/);
+  assert.match(app, /key === 'ArrowUp'[\s\S]*?animateFocusSweepDecision\('save', 'keyboard'\)/);
+  assert.match(app, /key === 'ArrowRight'[\s\S]*?animateFocusSweepDecision\('keep', 'keyboard'\)/);
+  assert.match(app, /focusSweep\.actionMode === 'review'[\s\S]*?stageFocusSweepAction/);
+});
+
 test('archive and global search share the same themed focus treatment', async () => {
   const css = await readProjectText('extension/style.css');
   const sharedRule = css.match(/\.global-search:focus,\s*\.archive-search:focus\s*\{([^}]*)\}/)?.[1] || '';

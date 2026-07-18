@@ -12,7 +12,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 - Open tabs **grouped by domain**, with homepages (Gmail, X, YouTube, GitHub, LinkedIn…) pulled into their own card
 - **Click any tab to jump to it** across windows — no new tab opened
 - **Multi‑select open tabs** — `Ctrl/⌘`‑click to pick tabs, `Shift`‑click for a range, or drag across chips; then close, save, or file them into a folder in bulk
-- **Focus Sweep v2** — sweep all tabs, a selection, one domain card (including Homepages), or a live Chrome tab group; stage Skip/Save/Close decisions, choose a save folder, then Apply the batch
+- **Focus Sweep card deck** — review all tabs, a selection, one domain card (including Homepages), or a live Chrome tab group one card at a time; swipe left to close, up to save, or right to keep, then review and Apply the batch
 - **Native Chrome tab groups dock** — see open tab groups next to your folders, collapse/expand them, rename, recolour, or save a live group into a folder
 - **Duplicate detection** flags repeated pages, with one‑click cleanup
 - **Close with style** — swoosh sound + confetti burst

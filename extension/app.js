@@ -47,6 +47,7 @@ import {
 } from './lib/archive-retention.js';
 import { createOnboardingController } from './lib/onboarding-controller.js';
 import { createColumnScrollController } from './lib/column-scroll-controller.js';
+import { createFocusSweepDeckController } from './lib/focus-sweep-deck.js';
 import { parseSearch, recordMatches } from './lib/search.js';
 import { createSpeedDialController } from './lib/speed-dial.js';
 import {
@@ -2176,20 +2177,18 @@ document.addEventListener('click', async (e) => {
   if (action === 'start-focus-sweep-all')       { await startFocusSweep('all');       return; }
   if (action === 'start-focus-sweep-domain')    { await startFocusSweepV2({ scope: 'domain', sourceId: actionEl.dataset.domainSource || '' }); return; }
   if (action === 'start-focus-sweep-group')     { await startFocusSweepV2({ scope: 'group', sourceId: actionEl.dataset.groupId || '' }); return; }
-  if (action === 'focus-sweep-mode-toggle')     { toggleFocusSweepMode();             return; }
-  if (action === 'focus-sweep-keep')            { await keepFocusSweepTab();          return; }
-  if (action === 'focus-sweep-prev')            { moveFocusSweepIndex(-1);            return; }
-  if (action === 'focus-sweep-next')            { moveFocusSweepIndex(1);             return; }
-  if (action === 'focus-sweep-save')            { await saveFocusSweepTab();          return; }
+  if (action === 'focus-sweep-menu')            { openFocusSweepOptions(actionEl);    return; }
+  if (action === 'focus-sweep-review')          { showFocusSweepSummary();             return; }
+  if (action === 'focus-sweep-resume')          { resumeFocusSweepDeck();              return; }
+  if (action === 'focus-sweep-undo')            { await undoFocusSweepDecision();      return; }
+  if (action === 'focus-sweep-keep')            { await animateFocusSweepDecision('keep', 'button');  return; }
+  if (action === 'focus-sweep-save')            { await animateFocusSweepDecision('save', 'button');  return; }
   if (action === 'focus-sweep-save-menu')       { await openFocusSweepSaveMenuFromButton(actionEl); return; }
-  if (action === 'focus-sweep-close')           { await closeFocusSweepTab();         return; }
+  if (action === 'focus-sweep-close')           { await animateFocusSweepDecision('close', 'button'); return; }
   if (action === 'focus-sweep-jump')            { await jumpToFocusSweepTab();        return; }
-  if (action === 'focus-sweep-save-rest-domain'){ await stageFocusSweepRestFromDomain('save'); return; }
-  if (action === 'focus-sweep-close-rest-domain'){ await stageFocusSweepRestFromDomain('close'); return; }
-  if (action === 'focus-sweep-keep-rest-domain'){ await stageFocusSweepRestFromDomain('keep'); return; }
   if (action === 'focus-sweep-apply')           { await applyFocusSweepActions();     return; }
   if (action === 'focus-sweep-discard')         { discardFocusSweepActions();         return; }
-  if (action === 'focus-sweep-exit')            { exitFocusSweep();                   return; }
+  if (action === 'focus-sweep-exit')            { requestFocusSweepExit();             return; }
 
   // ---- Reveal the inline "new folder" name input ----
   if (action === 'new-folder') {
@@ -3311,16 +3310,24 @@ document.addEventListener('keydown', async (e) => {
     return;
   }
 
+  if (e.key === 'Tab') {
+    trapFocusSweepTabKey(e);
+    return;
+  }
+
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
   const key = e.key;
   let action = null;
 
-  if (key === 'Escape') action = () => exitFocusSweep();
-  else if (key === ' ' || key === 'j' || key === 'J' || key === 'ArrowRight') action = () => keepFocusSweepTab();
-  else if (key === 'k' || key === 'K' || key === 'ArrowLeft') action = () => moveFocusSweepIndex(-1);
+  if (key === 'Escape') action = () => handleFocusSweepEscape();
+  else if (key === 'z' || key === 'Z' || key === 'k' || key === 'K') action = () => undoFocusSweepDecision();
   else if ((key === 's' || key === 'S') && e.shiftKey) action = () => openFocusSweepSaveMenuFromButton();
-  else if (key === 's' || key === 'S') action = () => saveFocusSweepTab();
-  else if (key === 'x' || key === 'X' || key === 'Delete') action = () => closeFocusSweepTab();
-  else if (key === 'Enter') action = () => jumpToFocusSweepTab();
+  else if (focusSweep.view === 'deck' && (key === 'ArrowLeft' || key === 'x' || key === 'X' || key === 'Delete')) action = () => animateFocusSweepDecision('close', 'keyboard');
+  else if (focusSweep.view === 'deck' && (key === 'ArrowUp' || key === 's' || key === 'S')) action = () => animateFocusSweepDecision('save', 'keyboard');
+  else if (focusSweep.view === 'deck' && (key === 'ArrowRight' || key === 'j' || key === 'J')) action = () => animateFocusSweepDecision('keep', 'keyboard');
+  else if (focusSweep.view === 'deck' && key === ' ' && document.activeElement?.id === 'focusSweepCardOpen') action = () => animateFocusSweepDecision('keep', 'keyboard');
+  else if (focusSweep.view === 'deck' && key === 'Enter' && document.activeElement?.id === 'focusSweepCardOpen') action = () => jumpToFocusSweepTab();
 
   if (!action) return;
   e.preventDefault();
@@ -3729,12 +3736,14 @@ const focusSweep = {
   active: false,
   queue: [],
   index: 0,
+  view: 'deck',
   scope: 'all',
   scopeLabel: 'All tabs sweep',
   actionMode: 'review',
   saveFolderId: null,
   saveFolderName: 'Inbox',
   stagedActions: new Map(),
+  decisionHistory: [],
   reviewedIds: new Set(),
   selfActionIds: new Set(),
   busyAction: false,
@@ -3744,23 +3753,25 @@ const focusSweep = {
   closed: 0,
   saved: 0,
   skipped: 0,
-  batchSkipped: 0,
   lastFocusEl: null,
 };
 
 let focusSweepGoneTimer = null;
 let focusSweepVerifyToken = 0;
+let focusSweepDeckController = null;
 
 function resetFocusSweepState() {
   focusSweep.active = false;
   focusSweep.queue = [];
   focusSweep.index = 0;
+  focusSweep.view = 'deck';
   focusSweep.scope = 'all';
   focusSweep.scopeLabel = 'All tabs sweep';
   focusSweep.actionMode = getFocusSweepModePreference();
   focusSweep.saveFolderId = null;
   focusSweep.saveFolderName = 'Inbox';
   focusSweep.stagedActions = new Map();
+  focusSweep.decisionHistory = [];
   focusSweep.reviewedIds = new Set();
   focusSweep.selfActionIds = new Set();
   focusSweep.busyAction = false;
@@ -3770,7 +3781,6 @@ function resetFocusSweepState() {
   focusSweep.closed = 0;
   focusSweep.saved = 0;
   focusSweep.skipped = 0;
-  focusSweep.batchSkipped = 0;
   focusSweep.lastFocusEl = null;
   clearTimeout(focusSweepGoneTimer);
 }
@@ -3933,6 +3943,7 @@ async function startFocusSweepV2({ scope = 'all', sourceId = '', actionMode = nu
   focusSweep.active = true;
   focusSweep.queue = queue;
   focusSweep.index = 0;
+  focusSweep.view = 'deck';
   focusSweep.scope = scope;
   focusSweep.scopeLabel = label;
   focusSweep.actionMode = actionMode === 'instant' || actionMode === 'review'
@@ -3941,6 +3952,7 @@ async function startFocusSweepV2({ scope = 'all', sourceId = '', actionMode = nu
   focusSweep.saveFolderId = options.folderId || null;
   focusSweep.saveFolderName = options.folderName || 'Inbox';
   focusSweep.stagedActions = new Map();
+  focusSweep.decisionHistory = [];
   focusSweep.reviewedIds = new Set();
   focusSweep.selfActionIds = new Set();
   focusSweep.busyAction = false;
@@ -3950,7 +3962,6 @@ async function startFocusSweepV2({ scope = 'all', sourceId = '', actionMode = nu
   focusSweep.closed = 0;
   focusSweep.saved = 0;
   focusSweep.skipped = 0;
-  focusSweep.batchSkipped = 0;
   focusSweep.lastFocusEl = document.activeElement;
 
   clearSelection();
@@ -3960,11 +3971,14 @@ async function startFocusSweepV2({ scope = 'all', sourceId = '', actionMode = nu
   document.documentElement.classList.add('focus-sweep-open');
   document.body.classList.add('focus-sweep-open');
   if (overlay) overlay.style.display = 'flex';
+  ensureFocusSweepDeckController();
   renderFocusSweep();
   focusFocusSweepPrimary();
 }
 
 function exitFocusSweep() {
+  focusSweepDeckController?.cancel();
+  closeContextMenu();
   const overlay = document.getElementById('focusSweepOverlay');
   if (overlay) overlay.style.display = 'none';
   document.documentElement.classList.remove('focus-sweep-open');
@@ -3986,7 +4000,9 @@ function focusFocusSweepPrimary() {
   requestAnimationFrame(() => {
     const overlay = document.getElementById('focusSweepOverlay');
     if (!overlay || overlay.style.display === 'none') return;
-    const primary = overlay.querySelector('[data-action="focus-sweep-keep"]');
+    const primary = focusSweep.view === 'summary'
+      ? overlay.querySelector('#focusSweepApply:not([style*="display: none"])')
+      : overlay.querySelector('[data-action="focus-sweep-keep"]');
     if (primary && typeof primary.focus === 'function') primary.focus();
   });
 }
@@ -4006,203 +4022,268 @@ function focusSweepCounts() {
     kept: focusSweep.kept + staged.kept,
     saved: focusSweep.saved + staged.saved,
     closed: focusSweep.closed + staged.closed,
-    skipped: focusSweep.skipped + focusSweep.batchSkipped,
+    skipped: focusSweep.skipped,
   };
 }
 
-function focusSweepPendingText() {
-  if (focusSweep.applied) return 'Applied';
-  const counts = { keep: 0, save: 0, close: 0 };
-  for (const action of focusSweep.stagedActions.values()) {
-    if (action.type === 'keep') counts.keep += 1;
-    if (action.type === 'save') counts.save += 1;
-    if (action.type === 'close') counts.close += 1;
+function ensureFocusSweepDeckController() {
+  if (focusSweepDeckController) return focusSweepDeckController;
+  const card = document.getElementById('focusSweepCardCurrent');
+  const deck = document.getElementById('focusSweepDeck');
+  if (!card || !deck) return null;
+  focusSweepDeckController = createFocusSweepDeckController({
+    window,
+    element: card,
+    deck,
+    isEnabled: () => (
+      focusSweep.active &&
+      focusSweep.view === 'deck' &&
+      !focusSweep.busyAction &&
+      !!currentFocusSweepItem() &&
+      !currentFocusSweepItem().gone
+    ),
+    onCommit: async (action, source) => {
+      await commitFocusSweepDecision(action, source);
+    },
+  });
+  return focusSweepDeckController;
+}
+
+function setFocusSweepCardText(card, field, value) {
+  const element = card.querySelector(`[data-sweep-field="${field}"]`);
+  if (element) element.textContent = value || '';
+}
+
+function renderFocusSweepCard(slotIndex, item) {
+  const card = document.querySelector(`[data-sweep-card-slot="${slotIndex}"]`);
+  if (!card) return;
+  card.style.display = item ? '' : 'none';
+  if (!item) return;
+
+  setFocusSweepCardText(card, 'domain', focusSweepDomainLabel(item.url));
+  setFocusSweepCardText(card, 'title', item.title || item.url || 'Untitled tab');
+  setFocusSweepCardText(card, 'url', item.url || '');
+  const favicon = card.querySelector('[data-sweep-field="favicon"]');
+  if (favicon) {
+    const src = (item.favIconUrl || favIcon(item.url, 32)).replace(/&amp;/g, '&');
+    favicon.style.display = src ? '' : 'none';
+    if (src) favicon.src = src;
+    else favicon.removeAttribute('src');
   }
-  const parts = [];
-  if (counts.keep) parts.push(`${counts.keep} keep`);
-  if (counts.save) parts.push(`${counts.save} save`);
-  if (counts.close) parts.push(`${counts.close} close`);
-  return parts.length ? `${parts.join(' · ')} staged` : 'No pending actions';
+
+  if (slotIndex !== 0) return;
+  const badgeState = {
+    pinned: !!item.pinned,
+    audible: !!item.audible,
+    discarded: !!item.discarded,
+    gone: !!item.gone,
+  };
+  for (const [name, visible] of Object.entries(badgeState)) {
+    const badge = card.querySelector(`[data-sweep-badge="${name}"]`);
+    if (badge) badge.style.display = visible ? '' : 'none';
+  }
+  const group = card.querySelector('[data-sweep-badge="group"]');
+  const groupLabel = item.groupMeta ? (item.groupMeta.title || 'Group') : '';
+  if (group) {
+    group.textContent = groupLabel ? `Group: ${groupLabel}` : '';
+    group.style.display = groupLabel ? '' : 'none';
+  }
+  const openButton = document.getElementById('focusSweepCardOpen');
+  if (openButton) openButton.setAttribute('aria-label', `Open ${item.title || focusSweepDomainLabel(item.url) || 'current tab'}`);
 }
 
-function focusSweepActionLabel(action) {
-  if (!action) return '';
-  if (action.type === 'keep') return 'Skipped';
-  if (action.type === 'close') return 'Staged: Close';
-  if (action.type === 'save') return `Staged: Save to ${action.folderName || 'Inbox'}`;
-  return '';
+function focusSweepPositionText(total, done) {
+  if (!total) return '0 / 0';
+  return `${done ? total : Math.min(total, focusSweep.index + 1)} / ${total}`;
 }
 
-function focusSweepRestFromCurrentDomain() {
-  const item = currentFocusSweepItem();
-  if (!item) return [];
-  return focusSweep.queue.filter(entry => (
-    entry.id !== item.id &&
-    !entry.gone &&
-    entry.domain === item.domain
-  ));
+function announceFocusSweep(message) {
+  const live = document.getElementById('focusSweepLive');
+  if (!live) return;
+  live.textContent = '';
+  requestAnimationFrame(() => { live.textContent = message; });
+}
+
+function renderFocusSweepSummary() {
+  const counts = focusSweepCounts();
+  const destructive = counts.saved + counts.closed;
+  const applied = !!focusSweep.applied;
+  const instant = focusSweep.actionMode === 'instant';
+  const title = document.getElementById('focusSweepSummaryTitle');
+  const copy = document.getElementById('focusSweepSummaryCopy');
+  const keep = document.getElementById('focusSweepSummaryKeep');
+  const save = document.getElementById('focusSweepSummarySave');
+  const close = document.getElementById('focusSweepSummaryClose');
+  const skipped = document.getElementById('focusSweepSummarySkipped');
+  const skippedRow = document.getElementById('focusSweepSummarySkippedRow');
+  const apply = document.getElementById('focusSweepApply');
+  const resume = document.getElementById('focusSweepResume');
+  const discard = document.getElementById('focusSweepDiscard');
+
+  if (title) title.textContent = applied ? 'Sweep applied' : instant ? 'Sweep complete' : 'Review decisions';
+  if (copy) {
+    copy.textContent = applied
+      ? 'Your tabs now match these decisions.'
+      : instant
+        ? 'Actions were applied as you moved through the deck.'
+        : destructive
+          ? 'Nothing changes until you apply.'
+          : 'No tabs will be changed.';
+  }
+  if (keep) keep.textContent = String(counts.kept);
+  if (save) save.textContent = String(counts.saved);
+  if (close) close.textContent = String(counts.closed);
+  if (skipped) skipped.textContent = String(counts.skipped);
+  if (skippedRow) skippedRow.style.display = counts.skipped ? 'flex' : 'none';
+  if (apply) {
+    apply.textContent = applied || instant || !destructive
+      ? 'Done'
+      : `Apply ${destructive} change${destructive === 1 ? '' : 's'}`;
+    apply.disabled = focusSweep.busyAction;
+  }
+  if (resume) {
+    resume.style.display = !applied && focusSweep.index < focusSweep.queue.length ? 'inline-flex' : 'none';
+    resume.disabled = focusSweep.busyAction;
+  }
+  if (discard) {
+    discard.style.display = !applied && !instant && focusSweep.stagedActions.size ? 'inline-flex' : 'none';
+    discard.disabled = focusSweep.busyAction;
+  }
 }
 
 function renderFocusSweep() {
   const overlay = document.getElementById('focusSweepOverlay');
-  if (!overlay) return;
-
+  if (!overlay || !focusSweep.active) return;
   const total = focusSweep.queue.length;
   const done = focusSweep.index >= total;
+  if (done && focusSweep.view === 'deck') focusSweep.view = 'summary';
+  const showingSummary = focusSweep.view === 'summary';
   const item = done ? null : currentFocusSweepItem();
+  const progressValue = total ? (done ? total : Math.min(total, focusSweep.index + 1)) : 0;
 
+  overlay.classList.toggle('is-busy', focusSweep.busyAction);
+  overlay.classList.toggle('is-summary', showingSummary);
   const scope = document.getElementById('focusSweepScope');
   const progress = document.getElementById('focusSweepProgress');
-  const meter = document.getElementById('focusSweepMeterFill');
-  const staged = document.getElementById('focusSweepStaged');
-  const destination = document.getElementById('focusSweepDestination');
-  const modeButton = document.getElementById('focusSweepMode');
-  const body = document.getElementById('focusSweepBody');
-  const contextActions = document.getElementById('focusSweepContextActions');
-  const doneEl = document.getElementById('focusSweepDone');
-  const doneTitle = document.getElementById('focusSweepDoneTitle');
-  const doneMeta = document.getElementById('focusSweepDoneMeta');
-  const favicon = document.getElementById('focusSweepFavicon');
-  const domain = document.getElementById('focusSweepDomain');
-  const pinned = document.getElementById('focusSweepPinned');
-  const audible = document.getElementById('focusSweepAudible');
-  const discarded = document.getElementById('focusSweepDiscarded');
-  const group = document.getElementById('focusSweepGroup');
-  const gone = document.getElementById('focusSweepGone');
-  const title = document.getElementById('focusSweepTitle');
-  const url = document.getElementById('focusSweepUrl');
-  const actionState = document.getElementById('focusSweepActionState');
-
-  overlay.classList.toggle('is-done', done);
-  overlay.classList.toggle('is-busy', focusSweep.busyAction);
+  const meter = document.getElementById('focusSweepMeter');
+  const meterFill = document.getElementById('focusSweepMeterFill');
+  const deckView = document.getElementById('focusSweepDeckView');
+  const summary = document.getElementById('focusSweepSummary');
+  const review = document.getElementById('focusSweepReviewLaunch');
+  const instantBadge = document.getElementById('focusSweepInstantBadge');
+  const destinationText = document.getElementById('focusSweepDestinationText');
+  const undo = document.getElementById('focusSweepUndo');
 
   if (scope) scope.textContent = focusSweep.scopeLabel;
-  if (progress) progress.textContent = done ? `${total} of ${total}` : `${focusSweep.index + 1} of ${total}`;
-  if (meter) meter.style.width = total ? `${Math.min(100, (Math.min(focusSweep.index + 1, total) / total) * 100)}%` : '0%';
-  if (staged) staged.textContent = focusSweepPendingText();
-  if (destination) destination.textContent = `Saving to: ${focusSweep.saveFolderName || 'Inbox'}`;
-  if (modeButton) {
-    modeButton.textContent = focusSweep.actionMode === 'instant' ? 'Instant' : 'Review';
-    modeButton.setAttribute('aria-pressed', focusSweep.actionMode === 'instant' ? 'true' : 'false');
+  if (progress) progress.textContent = focusSweepPositionText(total, done);
+  if (meter) {
+    meter.setAttribute('aria-valuemax', String(total));
+    meter.setAttribute('aria-valuenow', String(progressValue));
   }
-
-  if (body) body.style.display = done ? 'none' : 'grid';
-  if (contextActions) contextActions.style.display = done ? 'none' : 'flex';
-  if (doneEl) doneEl.style.display = done ? 'block' : 'none';
-  if (doneTitle) doneTitle.textContent = focusSweep.applied ? 'Applied' : 'Sweep complete';
-  if (doneMeta) {
-    const counts = focusSweepCounts();
-    doneMeta.textContent =
-      `${counts.reviewed} reviewed · ${counts.kept} left untouched · ${counts.saved} saved · ${counts.closed} closed · ${counts.skipped} skipped`;
+  if (meterFill) meterFill.style.width = total ? `${(progressValue / total) * 100}%` : '0%';
+  if (deckView) deckView.style.display = showingSummary ? 'none' : 'block';
+  if (summary) summary.style.display = showingSummary ? 'block' : 'none';
+  if (review) {
+    const count = focusSweep.stagedActions.size;
+    review.textContent = `Review · ${count}`;
+    review.style.display = !showingSummary && focusSweep.actionMode === 'review' && count ? 'inline-flex' : 'none';
   }
+  if (instantBadge) instantBadge.style.display = focusSweep.actionMode === 'instant' ? 'inline-flex' : 'none';
+  if (destinationText) destinationText.textContent = `Save to: ${focusSweep.saveFolderName || 'Inbox'}`;
+  if (undo) undo.disabled = (
+    focusSweep.actionMode !== 'review' ||
+    !focusSweep.decisionHistory.length ||
+    focusSweep.busyAction ||
+    focusSweep.applied
+  );
 
-  if (!item) {
-    setFocusSweepActionDisabled(true);
-    renderFocusSweepDoneActions();
-    return;
-  }
+  renderFocusSweepSummary();
+  if (showingSummary) return;
 
-  setFocusSweepActionDisabled(false);
-  if (favicon) {
-    const src = (item.favIconUrl || favIcon(item.url, 32)).replace(/&amp;/g, '&');
-    favicon.style.display = src ? '' : 'none';
-    favicon.src = src;
-  }
-  if (domain) domain.textContent = focusSweepDomainLabel(item.url);
-  if (pinned) pinned.style.display = item.pinned ? '' : 'none';
-  if (audible) audible.style.display = item.audible ? '' : 'none';
-  if (discarded) discarded.style.display = item.discarded ? '' : 'none';
-  if (group) {
-    const label = item.groupMeta ? (item.groupMeta.title || 'Group') : '';
-    group.textContent = label ? `Group: ${label}` : '';
-    group.style.display = label ? '' : 'none';
-  }
-  if (gone) gone.style.display = item.gone ? '' : 'none';
-  if (title) title.textContent = item.title || item.url || 'Untitled tab';
-  if (url) url.textContent = item.url || '';
-  if (actionState) {
-    const label = focusSweepActionLabel(focusSweep.stagedActions.get(item.id));
-    actionState.textContent = label;
-    actionState.style.display = label ? '' : 'none';
-  }
-
-  renderFocusSweepContextLabels();
-  renderFocusSweepDoneActions();
-
-  if (!item.gone) verifyCurrentFocusSweepTab(item.id);
-}
-
-function renderFocusSweepContextLabels() {
-  const overlay = document.getElementById('focusSweepOverlay');
-  if (!overlay) return;
-  const rest = focusSweepRestFromCurrentDomain();
-  const actions = {
-    'focus-sweep-save-rest-domain': rest.length ? `Save rest from domain (${rest.length})` : 'Save rest from domain',
-    'focus-sweep-close-rest-domain': rest.length ? `Close rest from domain (${rest.length})` : 'Close rest from domain',
-    'focus-sweep-keep-rest-domain': rest.length ? `Skip rest from domain (${rest.length})` : 'Skip rest from domain',
-  };
-
-  for (const [action, label] of Object.entries(actions)) {
-    const button = overlay.querySelector(`[data-action="${action}"]`);
-    if (button) button.textContent = label;
-  }
-}
-
-function renderFocusSweepDoneActions() {
-  const overlay = document.getElementById('focusSweepOverlay');
-  if (!overlay) return;
-  const done = focusSweep.index >= focusSweep.queue.length;
-  const hasDestructive = [...focusSweep.stagedActions.values()].some(action => action.type === 'save' || action.type === 'close');
-  const applyButtons = overlay.querySelectorAll('[data-action="focus-sweep-apply"]');
-  applyButtons.forEach(button => {
-    const inline = button.classList.contains('apply-inline');
-    const shouldShow = !focusSweep.applied && focusSweep.actionMode === 'review' && hasDestructive;
-    button.style.display = shouldShow && (inline ? !done : done) ? 'inline-flex' : 'none';
-    button.disabled = focusSweep.busyAction;
-  });
-
-  const discard = overlay.querySelector('[data-action="focus-sweep-discard"]');
-  if (discard) {
-    discard.style.display = !focusSweep.applied && focusSweep.stagedActions.size ? '' : 'none';
-    discard.disabled = focusSweep.busyAction;
-  }
-
+  renderFocusSweepCard(0, item);
+  renderFocusSweepCard(1, focusSweep.queue[focusSweep.index + 1] || null);
+  renderFocusSweepCard(2, focusSweep.queue[focusSweep.index + 2] || null);
+  setFocusSweepActionDisabled(done);
+  if (item && !item.gone) verifyCurrentFocusSweepTab(item.id);
 }
 
 function setFocusSweepActionDisabled(done) {
   const overlay = document.getElementById('focusSweepOverlay');
   if (!overlay) return;
   const item = currentFocusSweepItem();
-  const itemUnavailable = !item || item.gone;
-  const disabled = done || focusSweep.busyAction || itemUnavailable;
-  for (const action of [
-    'focus-sweep-keep',
-    'focus-sweep-save',
-    'focus-sweep-save-menu',
-    'focus-sweep-close',
-    'focus-sweep-jump',
-  ]) {
+  const disabled = done || focusSweep.busyAction || !item || item.gone || focusSweep.view !== 'deck';
+  for (const action of ['focus-sweep-keep', 'focus-sweep-save', 'focus-sweep-close', 'focus-sweep-jump']) {
     const button = overlay.querySelector(`[data-action="${action}"]`);
     if (button) button.disabled = disabled;
   }
+  const destination = document.getElementById('focusSweepDestination');
+  if (destination) destination.disabled = focusSweep.busyAction || focusSweep.view !== 'deck';
+}
 
-  const rest = focusSweepRestFromCurrentDomain();
-  const contextual = {
-    'focus-sweep-save-rest-domain': disabled || !rest.length,
-    'focus-sweep-close-rest-domain': disabled || !rest.length,
-    'focus-sweep-keep-rest-domain': disabled || !rest.length,
-  };
-  for (const [action, isDisabled] of Object.entries(contextual)) {
-    const button = overlay.querySelector(`[data-action="${action}"]`);
-    if (button) button.disabled = isDisabled;
+function focusSweepFocusableElements() {
+  const overlay = document.getElementById('focusSweepOverlay');
+  if (!overlay) return [];
+  return [...overlay.querySelectorAll('button:not(:disabled), [href], [tabindex]:not([tabindex="-1"])')]
+    .filter(element => element.offsetParent !== null && element.getAttribute('aria-hidden') !== 'true');
+}
+
+function trapFocusSweepTabKey(event) {
+  const focusable = focusSweepFocusableElements();
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
   }
+}
 
-  const prev = overlay.querySelector('[data-action="focus-sweep-prev"]');
-  if (prev) prev.disabled = !focusSweep.active || focusSweep.busyAction || focusSweep.index <= 0;
-  const next = overlay.querySelector('[data-action="focus-sweep-next"]');
-  if (next) next.disabled = !focusSweep.active || focusSweep.busyAction || focusSweep.index >= focusSweep.queue.length;
-  const mode = overlay.querySelector('[data-action="focus-sweep-mode-toggle"]');
-  if (mode) mode.disabled = focusSweep.busyAction;
+function showFocusSweepSummary() {
+  if (!focusSweep.active || focusSweep.busyAction) return;
+  focusSweepDeckController?.cancel();
+  focusSweep.view = 'summary';
+  renderFocusSweep();
+  focusFocusSweepPrimary();
+}
+
+function resumeFocusSweepDeck() {
+  if (!focusSweep.active || focusSweep.busyAction || focusSweep.applied) return;
+  focusSweep.view = 'deck';
+  renderFocusSweep();
+  focusFocusSweepPrimary();
+}
+
+function requestFocusSweepExit() {
+  if (!focusSweep.active || focusSweep.busyAction) return;
+  if (focusSweep.actionMode === 'review' && focusSweep.stagedActions.size) {
+    showFocusSweepSummary();
+    return;
+  }
+  exitFocusSweep();
+}
+
+function handleFocusSweepEscape() {
+  if (focusSweep.view === 'summary' && !focusSweep.applied) {
+    resumeFocusSweepDeck();
+    return;
+  }
+  requestFocusSweepExit();
+}
+
+function openFocusSweepOptions(button) {
+  if (!focusSweep.active || !button) return;
+  const rect = button.getBoundingClientRect();
+  const instant = focusSweep.actionMode === 'instant';
+  showContextMenu(rect.right, rect.bottom + 5, [
+    { heading: true, label: 'Focus Sweep' },
+    {
+      label: `${instant ? '✓ ' : ''}Apply actions immediately`,
+      onClick: () => toggleFocusSweepMode(),
+    },
+  ]);
 }
 
 async function verifyCurrentFocusSweepTab(tabId) {
@@ -4297,121 +4378,65 @@ function stageFocusSweepAction(item, type, folderId = null, options = {}) {
   return true;
 }
 
-function isUnsafeFocusSweepBatchItem(item) {
-  return !!(item && (item.pinned || item.audible || item.active));
+async function animateFocusSweepDecision(action, source = 'programmatic') {
+  if (!focusSweep.active || focusSweep.view !== 'deck' || focusSweep.busyAction) return;
+  const controller = ensureFocusSweepDeckController();
+  if (!controller) return;
+  await controller.animateDecision(action, { source });
 }
 
-async function runInstantFocusSweepBatch(items, type, options = {}) {
-  if (focusSweep.busyAction) return;
-  const usable = [];
-  let skipped = 0;
-  for (const item of items) {
-    if (!item || item.gone) { skipped += 1; continue; }
-    if (options.excludeUnsafe && isUnsafeFocusSweepBatchItem(item)) { skipped += 1; continue; }
-    usable.push(item);
-  }
+async function commitFocusSweepDecision(action, source = 'programmatic') {
+  if (!focusSweep.active || focusSweep.view !== 'deck' || focusSweep.busyAction) return;
+  const item = currentFocusSweepItem();
+  if (!item) return;
+  const tab = await getCurrentFocusSweepLiveTab();
+  if (!tab) return;
 
-  if (!usable.length) {
-    if (skipped) focusSweep.batchSkipped += skipped;
-    showToast(skipped ? `Skipped ${skipped} protected tab${skipped !== 1 ? 's' : ''}` : 'Nothing to apply');
-    renderFocusSweep();
+  if (focusSweep.actionMode === 'review') {
+    const previous = focusSweep.stagedActions.get(item.id) || null;
+    stageFocusSweepAction(item, action, focusSweep.saveFolderId, { folderName: focusSweep.saveFolderName });
+    focusSweep.decisionHistory.push({
+      id: item.id,
+      index: focusSweep.index,
+      action,
+      previous,
+    });
+    const label = action === 'close'
+      ? 'Close staged'
+      : action === 'save'
+        ? `Save to ${focusSweep.saveFolderName || 'Inbox'} staged`
+        : 'Keep open staged';
+    completeFocusSweepItem(action === 'close' ? 'closed' : action === 'save' ? 'saved' : 'kept', { count: false });
+    announceFocusSweep(`${label}. ${focusSweepPositionText(focusSweep.queue.length, focusSweep.index >= focusSweep.queue.length)}`);
     return;
   }
 
-  if (type === 'keep') {
-    for (const item of usable) {
-      focusSweep.reviewedIds.add(item.id);
-      focusSweep.kept += 1;
-    }
-    if (skipped) focusSweep.batchSkipped += skipped;
-    skipAlreadyReviewedFocusSweepItems();
-    renderFocusSweep();
-    showToast(`Skipped ${usable.length} tab${usable.length !== 1 ? 's' : ''}${skipped ? ` · ${skipped} skipped` : ''}`);
-    return;
-  }
-
-  focusSweep.busyAction = true;
-  renderFocusSweep();
-
-  const liveTabs = await chrome.tabs.query({});
-  const liveById = new Map(liveTabs.map(tab => [tab.id, tab]));
-  const closeIds = [];
-  const undoTabs = [];
-  const savedIds = [];
-  let savedCount = 0;
-  let closedCount = 0;
-
-  for (const item of usable) {
-    const tab = liveById.get(item.id);
-    if (!tab || isInternalBrowserUrl(tab.url)) { skipped += 1; continue; }
-    if (type === 'save') {
-      try {
-        const id = await saveTabForLater({ url: tab.url, title: tab.title || item.title }, options.folderId || null);
-        savedIds.push(id);
-        undoTabs.push(tabUndoSnapshot(tab));
-        closeIds.push(tab.id);
-        focusSweep.selfActionIds.add(tab.id);
-        focusSweep.reviewedIds.add(tab.id);
-        savedCount += 1;
-      } catch {
-        skipped += 1;
-      }
-    } else {
-      undoTabs.push(tabUndoSnapshot(tab));
-      closeIds.push(tab.id);
-      focusSweep.selfActionIds.add(tab.id);
-      focusSweep.reviewedIds.add(tab.id);
-      closedCount += 1;
-    }
-  }
-
-  if (closeIds.length) {
-    try { await chrome.tabs.remove([...new Set(closeIds)]); } catch {}
-    playCloseSound();
-  }
-
-  if (type === 'save') focusSweep.saved += savedCount;
-  if (type === 'close') focusSweep.closed += closedCount;
-  if (skipped) focusSweep.batchSkipped += skipped;
-
-  await fetchOpenTabs();
-  await renderStaticDashboard();
-  focusSweep.busyAction = false;
-  skipAlreadyReviewedFocusSweepItems();
-  renderFocusSweep();
-
-  const appliedCount = type === 'save' ? savedCount : closedCount;
-  const actionLabel = type === 'save' ? 'Saved' : 'Closed';
-  showToast(`${actionLabel} ${appliedCount} tab${appliedCount !== 1 ? 's' : ''}${skipped ? ` · ${skipped} skipped` : ''}`, async () => {
-    await restoreUndoTabs(undoTabs);
-    for (const id of savedIds) { try { await dismissSavedTab(id); } catch {} }
-    await fetchOpenTabs();
-    await renderStaticDashboard();
-  });
+  if (action === 'close') await closeFocusSweepTab();
+  else if (action === 'save') await saveFocusSweepTab();
+  else await keepFocusSweepTab();
+  announceFocusSweep(`${action === 'close' ? 'Closed' : action === 'save' ? 'Saved and closed' : 'Kept open'}. ${focusSweepPositionText(focusSweep.queue.length, focusSweep.index >= focusSweep.queue.length)}`);
 }
 
-async function stageFocusSweepItems(items, type, options = {}) {
-  if (focusSweep.actionMode === 'instant') {
-    await runInstantFocusSweepBatch(items, type, options);
-    return;
-  }
-
-  let staged = 0;
-  let skipped = 0;
-  for (const item of items) {
-    if (!item || item.gone) { skipped += 1; continue; }
-    if (options.excludeUnsafe && isUnsafeFocusSweepBatchItem(item)) { skipped += 1; continue; }
-    if (stageFocusSweepAction(item, type, options.folderId || focusSweep.saveFolderId, {
-      folderName: options.folderName || focusSweep.saveFolderName,
-    })) staged += 1;
-  }
-
-  if (skipped) focusSweep.batchSkipped += skipped;
-  skipAlreadyReviewedFocusSweepItems();
+async function undoFocusSweepDecision() {
+  if (
+    !focusSweep.active ||
+    focusSweep.busyAction ||
+    focusSweep.actionMode !== 'review' ||
+    focusSweep.applied ||
+    !focusSweep.decisionHistory.length
+  ) return;
+  const entry = focusSweep.decisionHistory.pop();
+  const index = focusSweep.queue.findIndex(item => item.id === entry.id);
+  if (index < 0) return;
+  if (entry.previous) focusSweep.stagedActions.set(entry.id, entry.previous);
+  else focusSweep.stagedActions.delete(entry.id);
+  if (!entry.previous) focusSweep.reviewedIds.delete(entry.id);
+  focusSweep.index = index;
+  focusSweep.view = 'deck';
   renderFocusSweep();
-
-  const label = type === 'keep' ? 'Skipped' : type === 'save' ? 'Staged save for' : 'Staged close for';
-  showToast(`${label} ${staged} tab${staged !== 1 ? 's' : ''}${skipped ? ` · ${skipped} skipped` : ''}`);
+  await focusSweepDeckController?.animateReturn(entry.action);
+  announceFocusSweep('Last decision undone');
+  focusFocusSweepPrimary();
 }
 
 async function keepFocusSweepTab() {
@@ -4425,12 +4450,6 @@ async function keepFocusSweepTab() {
     return;
   }
   completeFocusSweepItem('kept', { count: true });
-}
-
-function moveFocusSweepIndex(delta) {
-  if (!focusSweep.active || !focusSweep.queue.length || focusSweep.busyAction) return;
-  focusSweep.index = Math.max(0, Math.min(focusSweep.queue.length, focusSweep.index + delta));
-  renderFocusSweep();
 }
 
 async function saveFocusSweepTab() {
@@ -4519,30 +4538,18 @@ async function jumpToFocusSweepTab() {
   }
 }
 
-async function stageFocusSweepRestFromDomain(type) {
-  if (!focusSweep.active) return;
-  const rest = focusSweepRestFromCurrentDomain();
-  if (!rest.length) {
-    showToast('No more tabs from this domain');
-    return;
-  }
-  await stageFocusSweepItems(rest, type, {
-    excludeUnsafe: type === 'save' || type === 'close',
-    folderId: focusSweep.saveFolderId,
-    folderName: focusSweep.saveFolderName,
-  });
-}
-
 function toggleFocusSweepMode() {
   if (!focusSweep.active || focusSweep.busyAction) return;
   const next = focusSweep.actionMode === 'instant' ? 'review' : 'instant';
   if (next === 'instant' && focusSweep.stagedActions.size) {
-    showToast('Apply or discard staged actions first');
+    showFocusSweepSummary();
+    showToast('Apply or discard reviewed decisions first');
     return;
   }
   focusSweep.actionMode = next;
   setFocusSweepModePreference(next);
   renderFocusSweep();
+  showToast(next === 'instant' ? 'Instant mode: actions apply immediately' : 'Review mode: actions wait for Apply');
 }
 
 async function openFocusSweepSaveMenuFromButton(button = null) {
@@ -4582,6 +4589,11 @@ function setFocusSweepSaveDestination(folderId, folderName) {
 
 async function applyFocusSweepActions() {
   if (!focusSweep.active || focusSweep.busyAction) return;
+
+  if (focusSweep.applied || focusSweep.actionMode === 'instant') {
+    exitFocusSweep();
+    return;
+  }
 
   const stagedEntries = [...focusSweep.stagedActions.entries()]
     .filter(([, action]) => action.type === 'save' || action.type === 'close');
@@ -4648,11 +4660,13 @@ async function applyFocusSweepActions() {
     kept: stagedCounts.kept,
     saved: savedCount,
     closed: closedCount,
-    skipped: focusSweep.skipped + focusSweep.batchSkipped + skippedCount,
+    skipped: focusSweep.skipped + skippedCount,
   };
   focusSweep.stagedActions = new Map();
+  focusSweep.decisionHistory = [];
   focusSweep.busyAction = false;
   focusSweep.index = focusSweep.queue.length;
+  focusSweep.view = 'summary';
   renderFocusSweep();
 
   const parts = [];
