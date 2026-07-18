@@ -9,8 +9,11 @@ import {
   readProjectJson,
   readProjectText,
 } from './helpers.js';
+import { THEME_OPTIONS } from '../extension/lib/view-config.js';
 
 const manifestPath = 'extension/manifest.json';
+const THEME_IDS = THEME_OPTIONS.map(theme => theme.id);
+const GLASS_THEME_IDS = ['auroraglass', 'smokeglass', 'pearlglass', 'paperglass'];
 
 test('manifest uses MV3 with the expected entry points', async () => {
   const manifest = await readProjectJson(manifestPath);
@@ -91,17 +94,33 @@ test('top-right utilities keep Customize consolidated and expose the Bloom mode 
   assert.match(app, /action === 'toggle-theme-mode'/);
 });
 
+test('multi-select onboarding includes a motion demo and a reduced-motion fallback', async () => {
+  const html = await readProjectText('extension/index.html');
+  const css = await readProjectText('extension/style.css');
+  const controller = await readProjectText('extension/lib/onboarding-controller.js');
+  assert.match(html, /id="onboardingGestureDemo"[^>]*aria-hidden="true"/);
+  assert.match(html, /class="onboarding-demo-key">Ctrl<\/kbd>/);
+  assert.match(html, /class="onboarding-demo-drag-stack">3<\/span>/);
+  assert.match(html, /class="onboarding-demo-folder"/);
+  assert.match(html, /class="onboarding-demo-grab-icon"/);
+  assert.match(html, /3 tabs selected/);
+  assert.match(html, /Moved 3 tabs to Research/);
+  assert.match(css, /\[data-demo="multiSelect"\] \.onboarding-gesture-demo/);
+  assert.match(css, /\[data-demo="dragSelection"\] \.onboarding-gesture-demo/);
+  assert.match(css, /@keyframes onboarding-demo-cursor-drag/);
+  assert.match(css, /@keyframes onboarding-demo-folder-drop/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.onboarding-demo-cursor[\s\S]*?display:\s*none/);
+  assert.match(controller, /overlay\.dataset\.demo = step\.demo/);
+  assert.match(controller, /delete overlay\.dataset\.demo/);
+});
+
 test('Bloom owns theme-specific tokens in all themes and accessible motion fallbacks', async () => {
   const css = await readProjectText('extension/style.css');
-  const themeIds = [
-    'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
-    'obsidian', 'paper', 'latte', 'papersoft', 'lattesoft',
-  ];
   const tokens = [
     'bloom-moon', 'bloom-sun', 'bloom-surface', 'bloom-cutout',
     'bloom-border', 'bloom-shadow', 'bloom-radius',
   ];
-  for (const id of themeIds) {
+  for (const id of THEME_IDS) {
     const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
     for (const token of tokens) {
       assert.match(block, new RegExp(`--${token}:`), `${id} needs an explicit --${token}`);
@@ -120,10 +139,6 @@ test('Bloom owns theme-specific tokens in all themes and accessible motion fallb
 
 test('Bloom celestial states keep non-text contrast in every theme', async () => {
   const css = await readProjectText('extension/style.css');
-  const themeIds = [
-    'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
-    'obsidian', 'paper', 'latte', 'papersoft', 'lattesoft',
-  ];
   const luminance = hex => {
     const channels = [1, 3, 5]
       .map(index => Number.parseInt(hex.slice(index, index + 2), 16) / 255)
@@ -135,7 +150,7 @@ test('Bloom celestial states keep non-text contrast in every theme', async () =>
     return (values[0] + 0.05) / (values[1] + 0.05);
   };
 
-  for (const id of themeIds) {
+  for (const id of THEME_IDS) {
     const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
     const token = name => block.match(new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i'))?.[1];
     for (const state of ['bloom-moon', 'bloom-sun']) {
@@ -146,10 +161,6 @@ test('Bloom celestial states keep non-text contrast in every theme', async () =>
 
 test('theme text roles meet WCAG AA on page and card surfaces', async () => {
   const css = await readProjectText('extension/style.css');
-  const themeIds = [
-    'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
-    'obsidian', 'paper', 'latte', 'papersoft', 'lattesoft',
-  ];
   const roles = ['muted', 'accent-primary', 'accent-success', 'accent-info', 'accent-danger'];
   const luminance = hex => {
     const channels = [1, 3, 5]
@@ -162,7 +173,7 @@ test('theme text roles meet WCAG AA on page and card surfaces', async () => {
     return (values[0] + 0.05) / (values[1] + 0.05);
   };
 
-  for (const id of themeIds) {
+  for (const id of THEME_IDS) {
     const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
     const tokens = {};
     for (const match of block.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)) tokens[match[1]] = match[2];
@@ -179,19 +190,77 @@ test('theme text roles meet WCAG AA on page and card surfaces', async () => {
 
 test('theme status decoration is driven entirely by semantic tokens', async () => {
   const css = await readProjectText('extension/style.css');
-  const themeIds = [
-    'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
-    'obsidian', 'paper', 'latte', 'papersoft', 'lattesoft',
-  ];
-  for (const id of themeIds) {
+  for (const id of THEME_IDS) {
     const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
     for (const token of ['status-active-rgb', 'status-cooling-rgb', 'status-abandoned-rgb']) {
       assert.match(block, new RegExp(`--${token}:\\s*\\d+,\\s*\\d+,\\s*\\d+`), `${id} needs ${token}`);
     }
   }
-  const activeCard = css.match(/\.mission-card\.has-active-bar\s*\{([^}]*)\}/)?.[1] || '';
-  assert.match(activeCard, /rgba\(var\(--status-active-rgb\)/);
-  assert.doesNotMatch(activeCard, /rgba\(108,\s*161,\s*128/);
+  const activeCardRules = [...css.matchAll(/\.mission-card\.has-active-bar[^\{]*\{([^}]*)\}/g)]
+    .map(match => match[1]);
+  assert.ok(
+    activeCardRules.some(rule => /rgba\(var\(--status-active-rgb\)|--glass-card-accent-rgb:\s*var\(--status-active-rgb\)/.test(rule)),
+    'active card decoration must consume the semantic status token',
+  );
+  assert.doesNotMatch(activeCardRules.join('\n'), /rgba\(108,\s*161,\s*128/);
+});
+
+test('glass themes share one accessible material system but keep distinct motion profiles', async () => {
+  const css = await readProjectText('extension/style.css');
+  const glassStart = css.indexOf('GLASSMORPHIC THEMES');
+  const glassEnd = css.indexOf('* { margin: 0; padding: 0; box-sizing: border-box; }', glassStart);
+  const glassSection = css.slice(glassStart, glassEnd);
+  const glassTokens = [
+    'glass-surface', 'glass-surface-hover', 'glass-surface-strong', 'glass-control',
+    'glass-control-hover', 'glass-border',
+    'glass-shadow', 'glass-blur', 'glass-saturation', 'glass-radius',
+  ];
+
+  assert.ok(glassStart >= 0 && glassEnd > glassStart, 'glass material section must be present');
+  assert.doesNotMatch(css, /\[data-theme="(?:paper|latte)"\]/, 'retired light themes must not retain CSS blocks');
+  for (const id of GLASS_THEME_IDS) {
+    const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
+    for (const token of glassTokens) {
+      assert.match(block, new RegExp(`--${token}:`), `${id} needs an explicit --${token}`);
+    }
+  }
+
+  assert.match(glassSection, /html\[data-theme="auroraglass"\] body::after[\s\S]*?animation:\s*aurora-glass-drift 36s/);
+  assert.match(glassSection, /@keyframes aurora-glass-drift/);
+  assert.doesNotMatch(glassSection, /html\[data-theme="smokeglass"\] body::after/);
+  assert.match(glassSection, /:is\(html\[data-theme="pearlglass"\], html\[data-theme="paperglass"\]\) body::before\s*\{\s*display:\s*none/);
+  assert.doesNotMatch(glassSection, /html\[data-theme="pearlglass"\] body::after/);
+  assert.match(glassSection, /html\[data-theme="paperglass"\] body\s*\{[\s\S]*?linear-gradient/);
+  assert.doesNotMatch(glassSection, /html\[data-theme="paperglass"\] body::after/);
+  assert.match(glassSection, /Primary panes:[\s\S]*?background:\s*var\(--glass-surface\);[\s\S]*?backdrop-filter:\s*blur\(var\(--glass-blur\)\)/);
+  assert.match(glassSection, /\.mission-card::before\s*\{[\s\S]*?background:\s*rgba\(var\(--glass-card-accent-rgb\), 0\.5\);[\s\S]*?box-shadow:\s*none/);
+  assert.match(glassSection, /\.mission-card::after\s*\{\s*box-shadow:\s*none/);
+  assert.doesNotMatch(glassSection, /linear-gradient\(180deg,\s*var\(--glass-highlight\)/, 'glass panes must not use directional faux-metal sheen');
+  assert.doesNotMatch(glassSection, /inset\s+0\s+1px\s+0\s+var\(--glass-highlight\)/, 'glass panes must not use hard inset metal edges');
+  assert.doesNotMatch(glassSection, /html\[data-theme="(?:auroraglass|smokeglass|pearlglass|paperglass)"\]\s+:is\(\.mission-card, \.folder, \.speed-tile\)\s*\{\s*background:/, 'individual themes must not reintroduce reflective card paint');
+  assert.match(glassSection, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?aurora-glass-drift|@media \(prefers-reduced-motion: reduce\)[\s\S]*?animation:\s*none/);
+  assert.match(glassSection, /@media \(prefers-reduced-transparency: reduce\), \(prefers-contrast: more\)/);
+  assert.match(glassSection, /@supports not \(\(-webkit-backdrop-filter: blur\(1px\)\) or \(backdrop-filter: blur\(1px\)\)\)/);
+  assert.match(glassSection, /@media \(forced-colors: active\)[\s\S]*?background:\s*Canvas !important/);
+  assert.doesNotMatch(glassSection, /padding-(?:left|right|top|bottom):|\.missions\s*\{[^}]*gap:/);
+
+  const controlsStart = glassSection.indexOf('Controls participate in the same material language');
+  const controlsEnd = glassSection.indexOf('Semantic controls retain their meaning', controlsStart);
+  const controlsSection = glassSection.slice(controlsStart, controlsEnd);
+  assert.doesNotMatch(controlsSection, /backdrop-filter/, 'nested controls must not create extra blur layers');
+
+  const savedSelection = css.match(/html\[data-theme\$="glass"\] \.deferred-item\.selected\s*\{([^}]*)\}/)?.[1] || '';
+  const savedSelectionHover = css.match(/html\[data-theme\$="glass"\] \.deferred-item\.selected:hover\s*\{([^}]*)\}/)?.[1] || '';
+  assert.match(savedSelection, /background:\s*var\(--selection-bg\)/, 'glass themes must preserve saved batch selection');
+  assert.match(savedSelection, /box-shadow:\s*0 0 0 1px rgba\(var\(--accent-rgb\), 0\.18\)/, 'glass saved selection needs a material-safe boundary');
+  assert.match(savedSelectionHover, /background:\s*var\(--selection-bg\)/, 'glass hover must not erase saved batch selection');
+
+  const dangerHover = glassSection.match(/html\[data-theme\$="glass"\] :is\([\s\S]*?\.selection-btn\.danger[\s\S]*?\):hover\s*\{([^}]*)\}/)?.[1] || '';
+  const primaryHover = glassSection.match(/html\[data-theme\$="glass"\] :is\([\s\S]*?\.onboarding-btn\.primary[\s\S]*?\):hover:not\(:disabled\)\s*\{([^}]*)\}/)?.[1] || '';
+  assert.match(dangerHover, /color:\s*var\(--accent-danger\)/, 'glass danger actions must stay semantic on hover');
+  assert.match(dangerHover, /background:\s*rgba\(var\(--danger-rgb\), 0\.16\)/, 'glass danger hover needs a danger-tinted surface');
+  assert.match(primaryHover, /color:\s*var\(--bg\)/, 'glass primary actions must retain contrast on hover');
+  assert.match(primaryHover, /background:\s*color-mix\(in srgb, var\(--accent-primary\) 88%, var\(--text\)\)/, 'glass primary hover must stay accent-filled');
 });
 
 test('Sweep stays visually secondary across regular and soft themes', async () => {
@@ -319,17 +388,13 @@ test('desktop column scrolling magnetically anchors the dashboard without trappi
 
 test('every theme defines a distinct checkbox hover and soft themes expose it', async () => {
   const css = await readProjectText('extension/style.css');
-  const themeIds = [
-    'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
-    'obsidian', 'paper', 'latte', 'papersoft', 'lattesoft',
-  ];
-  const colors = themeIds.map(id => {
+  const colors = THEME_IDS.map(id => {
     const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
     const color = block.match(/--checkbox-hover:\s*(#[0-9a-f]{6})/i)?.[1];
     assert.ok(color, `${id} must define --checkbox-hover`);
     return color.toLowerCase();
   });
-  assert.equal(new Set(colors).size, themeIds.length);
+  assert.equal(new Set(colors).size, THEME_IDS.length);
   assert.match(css, /\.deferred-checkbox:hover:not\(:checked\)\s*\{[\s\S]*?var\(--checkbox-hover\)/);
   assert.match(css, /html\[data-theme="papersoft"\].*html\[data-theme="lattesoft"\][\s\S]*?\.deferred-checkbox:hover:not\(:checked\)[\s\S]*?0 0 0 2px color-mix\(in srgb, var\(--checkbox-hover\) 34%, transparent\)/);
 });
@@ -432,5 +497,7 @@ test('theme initialization remains a packaged pre-paint script', async () => {
   const appIndex = html.search(/<script\b[^>]*\bsrc="app\.js"[^>]*><\/script>/);
   assert.ok(themeIndex >= 0 && themeIndex < stylesheetIndex);
   assert.ok(appIndex > stylesheetIndex);
+  assert.match(init, /lightThemes = new Set\(\[[^\]]*'pearlglass'[^\]]*'paperglass'/);
+  assert.match(init, /legacyThemes = \{ paper: 'paperglass', latte: 'lattesoft' \}/);
   assert.match(init, /dataset\.themeMode = lightThemes\.has\(theme\) \? 'light' : 'dark'/);
 });

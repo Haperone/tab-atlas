@@ -10,6 +10,7 @@ import {
 import { parseSearch, recordMatches } from '../extension/lib/search.js';
 import { renderSpeedDialMarkup } from '../extension/lib/speed-dial.js';
 import { createThemeController } from '../extension/lib/theme-controller.js';
+import { ONBOARDING_STEPS, THEME_OPTIONS } from '../extension/lib/view-config.js';
 import {
   escapeHtml,
   favIcon,
@@ -104,6 +105,62 @@ test('theme controller exposes the current option for the Customize menu', () =>
   });
 });
 
+test('theme registry exposes two dark and two light glass variants', () => {
+  const glassThemes = Object.fromEntries(
+    THEME_OPTIONS
+      .filter(theme => theme.id.endsWith('glass'))
+      .map(theme => [theme.id, { label: theme.label, color: theme.color, group: theme.group }]),
+  );
+
+  assert.deepEqual(glassThemes, {
+    auroraglass: { label: 'Aurora Glass', color: '#86dfff', group: 'dark' },
+    smokeglass: { label: 'Smoke Glass', color: '#d3c7b8', group: 'dark' },
+    pearlglass: { label: 'Pearl Glass', color: '#6f5ab0', group: 'light' },
+    paperglass: { label: 'Paper Glass', color: '#b98a3a', group: 'light' },
+  });
+  assert.equal(THEME_OPTIONS.filter(theme => theme.group === 'dark').length, 9);
+  assert.equal(THEME_OPTIONS.filter(theme => theme.group === 'light').length, 4);
+  assert.equal(THEME_OPTIONS.some(theme => theme.id === 'paper' || theme.id === 'latte'), false);
+});
+
+test('retired light themes migrate to supported replacements', () => {
+  const migrations = { paper: 'paperglass', latte: 'lattesoft' };
+
+  for (const [legacy, replacement] of Object.entries(migrations)) {
+    const values = new Map([
+      ['tabout-theme', legacy],
+      ['tabout-theme-light', legacy],
+    ]);
+    const controller = createThemeController({
+      document: { documentElement: { dataset: {} } },
+      storage: {
+        getItem: key => values.get(key) ?? null,
+        setItem: (key, value) => values.set(key, value),
+      },
+      showContextMenu: () => {},
+      showToast: () => {},
+    });
+
+    assert.equal(controller.currentTheme(), replacement);
+    assert.equal(controller.currentThemePairOptions().light.id, replacement);
+    assert.equal(values.get('tabout-theme'), replacement);
+    assert.equal(values.get('tabout-theme-light'), replacement);
+  }
+});
+
+test('onboarding separates modifier selection from dragging the selected group', () => {
+  const selectionStep = ONBOARDING_STEPS.find(step => step.title === 'Select multiple tabs');
+  const dragStep = ONBOARDING_STEPS.find(step => step.title === 'Move selected tabs');
+  assert.ok(selectionStep);
+  assert.ok(dragStep);
+  assert.match(selectionStep.copy, /Hold Ctrl/);
+  assert.equal(selectionStep.demo, 'multiSelect');
+  assert.deepEqual(selectionStep.targets, ['#openTabsSection']);
+  assert.match(dragStep.copy, /selected saved tab from Saved for later/);
+  assert.equal(dragStep.demo, 'dragSelection');
+  assert.deepEqual(dragStep.targets, ['#deferredColumn']);
+});
+
 test('theme controller persists a light/dark pair and Bloom toggles only between it', () => {
   const values = new Map([['tabout-theme', 'tokyonight']]);
   const attributes = new Map();
@@ -127,7 +184,7 @@ test('theme controller persists a light/dark pair and Bloom toggles only between
 
   assert.deepEqual(
     Object.fromEntries(Object.entries(controller.currentThemePairOptions()).map(([mode, option]) => [mode, option.id])),
-    { dark: 'tokyonight', light: 'paper' },
+    { dark: 'tokyonight', light: 'paperglass' },
   );
   controller.setThemeForMode('light', 'lattesoft');
   assert.equal(controller.currentTheme(), 'tokyonight', 'editing the inactive side must not switch immediately');
@@ -166,11 +223,12 @@ test('theme pair menu keeps both selectors together while either side is edited'
     menus[0].items.filter(item => item.heading).map(item => item.label),
     ['Dark theme · Bloom pair', 'Light theme · Bloom pair'],
   );
-  const latte = menus[0].items.find(item => item.label === 'Catppuccin Latte');
-  latte.onClick();
-  assert.equal(values.get('tabout-theme-light'), 'latte');
+  const paperGlass = menus[0].items.find(item => item.label === 'Paper Glass');
+  paperGlass.onClick();
+  assert.equal(values.get('tabout-theme-light'), 'paperglass');
   assert.equal(menus.length, 2, 'the pair menu should reopen so the other side can be selected');
-  assert.equal(menus[1].items.find(item => item.label === 'Catppuccin Latte').checked, true);
+  assert.equal(menus[1].items.find(item => item.label === 'Paper Glass').checked, true);
+  assert.equal(menus[1].items.some(item => item.label === 'Catppuccin Latte' || item.label === 'Paper (light)'), false);
 });
 
 test('tab-chip renderer escapes content and retains action names', () => {

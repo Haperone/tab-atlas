@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Tab Atlas
 
-> Last Updated: 2026-07-13
+> Last Updated: 2026-07-18
 
 ## Store Listing
 
@@ -12,7 +12,7 @@
 
 Tab Atlas replaces Chrome's new-tab page with a clear dashboard of your open tabs, grouped by domain.
 
-See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Independent columns stay aligned while you scroll and release naturally when you reach an edge. Focus Sweep helps you review many tabs as one deliberate batch. Themes, privacy mode, and editable shortcuts let the dashboard fit your workflow.
+See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Select several open or saved tabs with modifier clicks, then drag the selected group into a folder or handle it with bulk actions. Independent columns stay aligned while you scroll and release naturally when you reach an edge. Focus Sweep helps you review many tabs as one deliberate batch. Choose from 13 local themes, including animated, minimalist dark, soft-grey and warm cream glass styles, then save one light and one dark favourite as a quick-switch pair. Privacy mode and editable shortcuts let the dashboard fit your workflow.
 
 Install the extension, open a new tab, and use the dashboard to jump to, save, group, or close tabs. The toolbar icon returns you to an existing Tab Atlas page or opens one when needed.
 
@@ -60,7 +60,7 @@ API with representative example data, so you don't have to load the extension or
    Save 3–4 pages for later and create a folder or two so the side rail is non-empty.
 3. Set the browser window to a clean size and use a **1280×800** capture region (or 640×400).
    Chrome DevTools device toolbar can force an exact 1280×800 viewport; or use any OS screenshot tool
-   cropped to size. Pick the theme that reads best (Paper light tends to photograph cleanly).
+   cropped to size. Pearl Glass photographs cleanly; Aurora Glass is the stronger visual showcase.
 4. Capture, in order:
    - **Screenshot 1 — Dashboard overview:** domain cards grid + the search row (type into `/` search to show filtering).
    - **Screenshot 2 — Saved tabs & folders:** the right-hand Saved-for-later column and Folders column with a few items.
@@ -138,7 +138,17 @@ Questions about privacy can be submitted through the project's public issue trac
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
+| Unreleased | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Working tree |
 | 1.0.0 | 2026-07-12 | Initial store draft with the saved-links archive, one-click restoration, Undo, and aligned independent column scrolling. | Draft |
+
+## Release Package
+
+- **Upload file:** `release/tab-atlas-1.0.0-chrome-web-store.zip`
+- **Package size:** 111,579 bytes
+- **Runtime files:** 25
+- **SHA-256:** `01731d2b6df30e763ddf384eaa30bcffc7a644c97d521bca9aaa37e949399714`
+- **Validated:** `manifest.json` is at the ZIP root; package contains no tests, repository metadata,
+  development dependencies, source maps, store assets, or store documentation.
 
 ## Review Notes
 
@@ -152,8 +162,7 @@ Questions about privacy can be submitted through the project's public issue trac
 ### Submission Blockers
 
 - [x] **Privacy-policy URL** — page written at [`docs/privacy-policy.html`](docs/privacy-policy.html);
-      URL wired above. Remaining action: flip on GitHub Pages (Settings → Pages → `main` / `/docs`)
-      and confirm the URL loads.
+      the public URL returned HTTP 200 and was verified on 2026-07-13.
 - [x] **Version** — `1.0.0`. No git tags / prior uploads exist, so nothing higher is published. Keep
       this greater than any version already uploaded before each future submission.
 - [x] **Publisher name and contact email** — filled in "Developer Info" (Publisher: Haperone,

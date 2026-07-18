@@ -9,3 +9,9 @@
 - Smooth large wheel steps with an immediate partial move plus one short retargetable animation; keep small pixel deltas direct and cancel the old target on direction reversal.
 - Capture-phase scroll handlers must distinguish document scrolling from descendant scrolling before running layout measurements.
 - Keep shared mobile resets in one breakpoint block so later column variants cannot drift apart.
+
+## Glass theme materials
+
+- Build glass from a flat translucent fill, backdrop blur, a soft outer border, and diffuse depth. Directional gradients, hard inset highlights, and glowing card pseudo-elements read as polished metal.
+- Keep theme identity in the canvas palette and motion profile instead of repainting each card with theme-specific reflections.
+- On a quiet light canvas, use lower-alpha white surfaces and soft neutral shadows; an opaque white sheen hides transparency instead of making it legible.

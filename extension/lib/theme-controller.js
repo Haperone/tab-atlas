@@ -5,7 +5,8 @@ export const DARK_THEME_KEY = 'tabout-theme-dark';
 export const LIGHT_THEME_KEY = 'tabout-theme-light';
 
 const DEFAULT_DARK_THEME = 'default';
-const DEFAULT_LIGHT_THEME = 'paper';
+const DEFAULT_LIGHT_THEME = 'paperglass';
+const LEGACY_THEME_IDS = Object.freeze({ paper: 'paperglass', latte: 'lattesoft' });
 
 export function createThemeController({ document, storage, showContextMenu, showToast }) {
   function readStorage(key) {
@@ -17,7 +18,8 @@ export function createThemeController({ document, storage, showContextMenu, show
   }
 
   function themeOption(id) {
-    return THEME_OPTIONS.find(option => option.id === id) || null;
+    const normalizedId = LEGACY_THEME_IDS[id] || id;
+    return THEME_OPTIONS.find(option => option.id === normalizedId) || null;
   }
 
   function optionForGroup(id, group, fallbackId) {
@@ -27,7 +29,9 @@ export function createThemeController({ document, storage, showContextMenu, show
 
   function currentTheme() {
     const stored = readStorage(THEME_KEY) || DEFAULT_DARK_THEME;
-    return themeOption(stored)?.id || DEFAULT_DARK_THEME;
+    const current = themeOption(stored)?.id || DEFAULT_DARK_THEME;
+    if (stored !== current) writeStorage(THEME_KEY, current);
+    return current;
   }
 
   function currentThemeOption() {

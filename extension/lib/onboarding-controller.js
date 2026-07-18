@@ -77,6 +77,7 @@ export function createOnboardingController({
     if (overlay) {
       overlay.style.display = 'none';
       overlay.classList.remove('is-centered');
+      delete overlay.dataset.demo;
     }
     document.documentElement.classList.remove('onboarding-open');
     document.body.classList.remove('onboarding-open');
@@ -118,6 +119,8 @@ export function createOnboardingController({
     if (!overlay || !title || !copy || !label || !step) return;
 
     const isLast = onboardingState.index === ONBOARDING_STEPS.length - 1;
+    if (step.demo) overlay.dataset.demo = step.demo;
+    else delete overlay.dataset.demo;
     title.textContent = step.title;
     copy.textContent = step.copy;
     label.textContent = `${onboardingState.index + 1} of ${ONBOARDING_STEPS.length}`;

@@ -24,14 +24,18 @@ export const THEME_OPTIONS = [
   { id: 'mocha', label: 'Catppuccin Mocha', color: '#cba6f7', group: 'dark' },
   { id: 'monokai', label: 'Monokai', color: '#a6e22e', group: 'dark' },
   { id: 'obsidian', label: 'Obsidian', color: '#818cf8', group: 'dark' },
-  { id: 'paper', label: 'Paper (light)', color: '#9f4528', group: 'light' },
-  { id: 'latte', label: 'Catppuccin Latte', color: '#8839ef', group: 'light' },
+  { id: 'auroraglass', label: 'Aurora Glass', color: '#86dfff', group: 'dark' },
+  { id: 'smokeglass', label: 'Smoke Glass', color: '#d3c7b8', group: 'dark' },
   { id: 'papersoft', label: 'Paper Soft', color: '#93401f', group: 'light' },
   { id: 'lattesoft', label: 'Latte Soft', color: '#7326cf', group: 'light' },
+  { id: 'pearlglass', label: 'Pearl Glass', color: '#6f5ab0', group: 'light' },
+  { id: 'paperglass', label: 'Paper Glass', color: '#b98a3a', group: 'light' },
 ];
 
 export const ONBOARDING_STEPS = [
   { title: 'Open tabs', copy: 'Domain cards show what is open right now. Click a title to jump, bookmark to save, or close tabs when you are done.', targets: ['#openTabsSection'], fallback: '#dashboardColumns' },
+  { title: 'Select multiple tabs', copy: 'Hold Ctrl (⌘ on Mac) and click individual tabs to add or remove them from the selection.', demo: 'multiSelect', targets: ['#openTabsSection'], fallback: '#dashboardColumns' },
+  { title: 'Move selected tabs', copy: 'Drag any selected saved tab from Saved for later into a folder. The rest of the selection travels with it as one group.', demo: 'dragSelection', targets: ['#deferredColumn'], fallback: '#dashboardColumns' },
   { title: 'Saved for later', copy: 'Saved for later is your inbox for tabs you want to keep without leaving them open.', targets: ['#deferredColumn'], fallback: '#dashboardColumns' },
   { title: 'Folders', copy: 'Folders organize saved tabs into compact groups for projects, research, videos, and tasks.', targets: ['#foldersColumn'], fallback: '#dashboardColumns' },
   { title: 'Search', copy: 'Search open and saved tabs with free text. Press / to focus search, or narrow with domain:github and url:docs.', targets: ['.global-search-row'], fallback: '#dashboardColumns' },

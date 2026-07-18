@@ -115,10 +115,17 @@
       },
     };
 
-    // Clean, deterministic first paint: skip the onboarding tour, pick a light theme.
+    // Clean, deterministic first paint. Pass ?theme=<id> to capture any palette.
     try {
+      const validThemes = new Set([
+        'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
+        'obsidian', 'auroraglass', 'smokeglass',
+        'papersoft', 'lattesoft', 'pearlglass', 'paperglass',
+      ]);
+      const requestedTheme = new URLSearchParams(location.search).get('theme');
+      const screenshotTheme = validThemes.has(requestedTheme) ? requestedTheme : 'paperglass';
       localStorage.setItem('tabout-onboarding-v1-complete', '1');
-      localStorage.setItem('tabout-theme', 'paper');
+      localStorage.setItem('tabout-theme', screenshotTheme);
       localStorage.setItem('tabout-privacy', '0');
     } catch {}
 

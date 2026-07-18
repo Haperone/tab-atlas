@@ -257,93 +257,186 @@
   --bloom-radius: 9px;
 }
 
-/* Paper — warm cream LIGHT theme (the original Tab Out look) */
-[data-theme="paper"] {
-  color-scheme: light;
-  --text: #1f1a16;
-  --bg: #f4f0e8;
-  --neutral: #e0d8ca;
-  --muted: #6f675f;
-  --accent-primary: #9f4528;
-  --accent-success: #4f7158;
-  --accent-info: #5a6b7a;
-  --accent-danger: #b14a4a;
-  --status-active: #3d7a4a;
-  --status-cooling: #a4762a;
-  --status-abandoned: #b14a4a;
-  --status-active-rgb: 61, 122, 74;
-  --status-cooling-rgb: 164, 118, 42;
-  --status-abandoned-rgb: 177, 74, 74;
-  --card-bg: #faf6ed;
-  --surface-strong: #fdfaf3;
-  --surface-strong-hover: #f1ebdf;
-  --shadow: rgba(60, 45, 30, 0.10);
-  --accent-rgb: 159, 69, 40;
-  --neutral-rgb: 150, 138, 120;
-  --danger-rgb: 177, 74, 74;
-  --success-rgb: 79, 113, 88;
-  --checkbox-hover: #c0623a;
-  --bloom-moon: #5a6b7a;
-  --bloom-sun: #a4762a;
-  --bloom-surface: #faf6ed;
-  --bloom-cutout: #faf6ed;
-  --bloom-border: rgba(111, 103, 95, 0.34);
-  --bloom-shadow: 0 1px 2px rgba(60, 45, 30, 0.08), 0 8px 18px rgba(60, 45, 30, 0.12);
-  --bloom-radius: 50%;
-}
-
-/* Catppuccin Latte — soft pastel LIGHT theme */
-[data-theme="latte"] {
-  color-scheme: light;
-  --text: #4c4f69;
-  --bg: #eff1f5;
-  --neutral: #ccd0da;
-  --muted: #66697f;
-  --accent-primary: #8839ef;
-  --accent-success: #2f7d22;
-  --accent-info: #147487;
-  --accent-danger: #d20f39;
-  --status-active: #2f7d22;
-  --status-cooling: #df8e1d;
-  --status-abandoned: #d20f39;
-  --status-active-rgb: 47, 125, 34;
-  --status-cooling-rgb: 223, 142, 29;
-  --status-abandoned-rgb: 210, 15, 57;
-  --card-bg: #f6f7fb;
-  --surface-strong: #fbfbfd;
-  --surface-strong-hover: #e9ecf2;
-  --shadow: rgba(76, 79, 105, 0.10);
-  --accent-rgb: 136, 57, 239;
-  --neutral-rgb: 124, 127, 147;
-  --danger-rgb: 210, 15, 57;
-  --success-rgb: 47, 125, 34;
-  --checkbox-hover: #8839ef;
-  --bloom-moon: #8839ef;
-  --bloom-sun: #9b5f00;
-  --bloom-surface: #f6f7fb;
-  --bloom-cutout: #f6f7fb;
-  --bloom-border: rgba(136, 57, 239, 0.28);
-  --bloom-shadow: 0 8px 20px rgba(76, 79, 105, 0.14);
+/* Aurora Glass — deep glass over a slow, subdued field of cool light */
+[data-theme="auroraglass"] {
+  color-scheme: dark;
+  --text: #f4f7ff;
+  --bg: #060912;
+  --neutral: #26344d;
+  --muted: #a8b7d4;
+  --accent-primary: #8bb8ff;
+  --accent-success: #73e6bd;
+  --accent-info: #79d8ff;
+  --accent-danger: #ff91ab;
+  --status-active: #73e6bd;
+  --status-cooling: #ffd783;
+  --status-abandoned: #ff91ab;
+  --status-active-rgb: 115, 230, 189;
+  --status-cooling-rgb: 255, 215, 131;
+  --status-abandoned-rgb: 255, 145, 171;
+  /* Opaque colours remain the contrast-test and no-blur fallbacks. */
+  --card-bg: #111827;
+  --surface-strong: #182136;
+  --surface-strong-hover: #202c45;
+  --shadow: rgba(0, 0, 0, 0.48);
+  --accent-rgb: 139, 184, 255;
+  --neutral-rgb: 139, 159, 194;
+  --danger-rgb: 255, 145, 171;
+  --success-rgb: 115, 230, 189;
+  --checkbox-hover: #86dfff;
+  --glass-surface: rgba(8, 14, 28, 0.36);
+  --glass-surface-hover: rgba(12, 20, 39, 0.46);
+  --glass-surface-strong: rgba(10, 17, 32, 0.68);
+  --glass-control: rgba(14, 24, 43, 0.32);
+  --glass-control-hover: rgba(20, 33, 56, 0.44);
+  --glass-border: rgba(222, 235, 255, 0.16);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.26);
+  --glass-blur: 26px;
+  --glass-saturation: 1.08;
+  --glass-radius: 14px;
+  --bloom-moon: #9cc5ff;
+  --bloom-sun: #ffd783;
+  --bloom-surface: #172238;
+  --bloom-cutout: #172238;
+  --bloom-border: rgba(139, 184, 255, 0.42);
+  --bloom-shadow: 0 8px 24px rgba(0, 0, 0, 0.44), 0 0 22px rgba(121, 216, 255, 0.2);
   --bloom-radius: 14px;
 }
 
-/* ---- Light-theme element polish ----
-   Cards are only a hair lighter than the canvas (tinted, never stark white),
-   so the separation comes from a crisp hairline border + a soft shadow. */
-[data-theme="paper"] .mission-card,
-[data-theme="paper"] .folder,
-[data-theme="latte"] .mission-card,
-[data-theme="latte"] .folder {
-  background: var(--card-bg);
-  border-color: rgba(var(--neutral-rgb), 0.4);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 20px var(--shadow);
+/* Smoke Glass — quiet monochrome glass without decorative reflections */
+[data-theme="smokeglass"] {
+  color-scheme: dark;
+  --text: #f3f4f6;
+  --bg: #08090b;
+  --neutral: #2d3036;
+  --muted: #a7abb3;
+  --accent-primary: #c5c9d1;
+  --accent-success: #7fceb3;
+  --accent-info: #91b8d7;
+  --accent-danger: #f08f99;
+  --status-active: #7fceb3;
+  --status-cooling: #d8bc84;
+  --status-abandoned: #f08f99;
+  --status-active-rgb: 127, 206, 179;
+  --status-cooling-rgb: 216, 188, 132;
+  --status-abandoned-rgb: 240, 143, 153;
+  --card-bg: #15171b;
+  --surface-strong: #1d2025;
+  --surface-strong-hover: #272b31;
+  --shadow: rgba(0, 0, 0, 0.58);
+  --accent-rgb: 197, 201, 209;
+  --neutral-rgb: 151, 155, 164;
+  --danger-rgb: 240, 143, 153;
+  --success-rgb: 127, 206, 179;
+  --checkbox-hover: #d3c7b8;
+  --glass-surface: rgba(255, 255, 255, 0.05);
+  --glass-surface-hover: rgba(255, 255, 255, 0.075);
+  --glass-surface-strong: rgba(17, 18, 20, 0.7);
+  --glass-control: rgba(255, 255, 255, 0.06);
+  --glass-control-hover: rgba(255, 255, 255, 0.09);
+  --glass-border: rgba(245, 247, 250, 0.12);
+  --glass-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  --glass-blur: 24px;
+  --glass-saturation: 1;
+  --glass-radius: 12px;
+  --bloom-moon: #e0e3e8;
+  --bloom-sun: #f0c982;
+  --bloom-surface: #1d2025;
+  --bloom-cutout: #1d2025;
+  --bloom-border: rgba(224, 227, 232, 0.28);
+  --bloom-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --bloom-radius: 14px;
 }
-/* The faint dark noise texture reads as grime on light backgrounds */
-[data-theme="paper"] body::before,
-[data-theme="latte"] body::before { display: none; }
-/* Soften the heavy inset white highlight that's meant for dark cards */
-[data-theme="paper"] .mission-card::after,
-[data-theme="latte"] .mission-card::after { box-shadow: none; }
+
+/* Pearl Glass — soft cool-grey LIGHT glass without decorative background motion */
+[data-theme="pearlglass"] {
+  color-scheme: light;
+  --text: #252a33;
+  --bg: #d7dce2;
+  --neutral: #b8c0cb;
+  --muted: #535c69;
+  --accent-primary: #5a4f9e;
+  --accent-success: #326b52;
+  --accent-info: #335f7d;
+  --accent-danger: #963f52;
+  --status-active: #326b52;
+  --status-cooling: #7a581c;
+  --status-abandoned: #963f52;
+  --status-active-rgb: 50, 107, 82;
+  --status-cooling-rgb: 122, 88, 28;
+  --status-abandoned-rgb: 150, 63, 82;
+  --card-bg: #e6e9ed;
+  --surface-strong: #f0f2f4;
+  --surface-strong-hover: #f6f7f8;
+  --shadow: rgba(51, 58, 67, 0.17);
+  --accent-rgb: 90, 79, 158;
+  --neutral-rgb: 92, 102, 116;
+  --danger-rgb: 150, 63, 82;
+  --success-rgb: 50, 107, 82;
+  --checkbox-hover: #6f5ab0;
+  --glass-surface: rgba(255, 255, 255, 0.34);
+  --glass-surface-hover: rgba(255, 255, 255, 0.46);
+  --glass-surface-strong: rgba(248, 250, 252, 0.66);
+  --glass-control: rgba(255, 255, 255, 0.42);
+  --glass-control-hover: rgba(255, 255, 255, 0.56);
+  --glass-border: rgba(255, 255, 255, 0.58);
+  --glass-shadow: 0 14px 32px rgba(56, 65, 77, 0.12), 0 2px 6px rgba(56, 65, 77, 0.05);
+  --glass-blur: 24px;
+  --glass-saturation: 0.9;
+  --glass-radius: 14px;
+  --bloom-moon: #554a91;
+  --bloom-sun: #8a5b12;
+  --bloom-surface: #eef0f3;
+  --bloom-cutout: #eef0f3;
+  --bloom-border: rgba(90, 79, 158, 0.28);
+  --bloom-shadow: 0 10px 24px rgba(51, 58, 67, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --bloom-radius: 14px;
+}
+
+/* Paper Glass — Pearl's material in the warm cream palette of Paper Soft */
+[data-theme="paperglass"] {
+  color-scheme: light;
+  --text: #4a4034;
+  --bg: #e6dfd0;
+  --neutral: #d3cab6;
+  --muted: #665d50;
+  --accent-primary: #93401f;
+  --accent-success: #4b6a3e;
+  --accent-info: #465866;
+  --accent-danger: #903b37;
+  --status-active: #4b6a3e;
+  --status-cooling: #a4762a;
+  --status-abandoned: #903b37;
+  --status-active-rgb: 75, 106, 62;
+  --status-cooling-rgb: 164, 118, 42;
+  --status-abandoned-rgb: 144, 59, 55;
+  --card-bg: #eee7d9;
+  --surface-strong: #f4eddf;
+  --surface-strong-hover: #f8f2e7;
+  --shadow: rgba(120, 100, 70, 0.16);
+  --accent-rgb: 147, 64, 31;
+  --neutral-rgb: 138, 127, 109;
+  --danger-rgb: 144, 59, 55;
+  --success-rgb: 75, 106, 62;
+  --checkbox-hover: #a4762a;
+  --glass-surface: rgba(255, 250, 235, 0.36);
+  --glass-surface-hover: rgba(255, 251, 238, 0.5);
+  --glass-surface-strong: rgba(255, 250, 238, 0.68);
+  --glass-control: rgba(255, 250, 236, 0.44);
+  --glass-control-hover: rgba(255, 252, 243, 0.58);
+  --glass-border: rgba(255, 252, 242, 0.64);
+  --glass-shadow: 0 14px 32px rgba(112, 91, 57, 0.13), 0 2px 6px rgba(112, 91, 57, 0.06);
+  --glass-blur: 24px;
+  --glass-saturation: 0.92;
+  --glass-radius: 14px;
+  --bloom-moon: #465866;
+  --bloom-sun: #7a5717;
+  --bloom-surface: #eee7d9;
+  --bloom-cutout: #eee7d9;
+  --bloom-border: rgba(102, 93, 80, 0.3);
+  --bloom-shadow: 0 10px 24px rgba(112, 91, 57, 0.16);
+  --bloom-radius: 14px;
+}
 
 
 /* ============================================================
@@ -355,7 +448,7 @@
    component overrides below are scoped to just these two themes.
    ============================================================ */
 
-/* Paper Soft — warm cream soft UI (based on Paper) */
+/* Paper Soft — warm cream soft UI */
 [data-theme="papersoft"] {
   color-scheme: light;
   --text: #4a4034;
@@ -395,7 +488,7 @@
   --bloom-radius: 14px;
 }
 
-/* Latte Soft — cool pastel soft UI (based on Catppuccin Latte) */
+/* Latte Soft — cool pastel soft UI */
 [data-theme="lattesoft"] {
   color-scheme: light;
   --text: #4c4f69;
@@ -610,6 +703,307 @@
 :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .focus-sweep-panel {
   box-shadow: -6px -6px 14px var(--neu-light), 6px 6px 16px var(--neu-dark),
               0 0 0 1px rgba(var(--accent-rgb), 0.14);
+}
+
+/* ============================================================
+   GLASSMORPHIC THEMES
+   Aurora, Smoke, Pearl and Paper Glass share one material system.
+   Blur belongs to top-level surfaces only; dense nested rows and controls use
+   translucent paint without stacking additional backdrop-filter layers.
+   ============================================================ */
+
+html[data-theme$="glass"] body {
+  background: var(--bg);
+}
+
+html[data-theme="auroraglass"] body {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(86, 128, 223, 0.06), transparent 42%),
+    linear-gradient(155deg, #060912 0%, #080b15 48%, #060810 100%);
+}
+
+/* A single composited layer supplies the moving colour behind every pane. */
+html[data-theme="auroraglass"] body::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  inset: -28%;
+  pointer-events: none;
+  opacity: 0.58;
+  background:
+    radial-gradient(circle at 22% 30%, rgba(70, 190, 224, 0.22), transparent 28%),
+    radial-gradient(circle at 76% 24%, rgba(115, 91, 214, 0.2), transparent 30%),
+    radial-gradient(circle at 58% 78%, rgba(58, 151, 170, 0.14), transparent 31%);
+  filter: blur(96px) saturate(1.03);
+  transform: translate3d(-2%, -1%, 0) scale(1.02);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  animation: aurora-glass-drift 36s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-glass-drift {
+  0%   { transform: translate3d(-3%, -2%, 0) scale(1.02) rotate(-0.6deg); }
+  48%  { transform: translate3d(2%, 1%, 0) scale(1.07) rotate(0.7deg); }
+  100% { transform: translate3d(-1%, 3%, 0) scale(1.04) rotate(-0.3deg); }
+}
+
+html[data-theme="smokeglass"] body {
+  background:
+    radial-gradient(ellipse 78% 42% at 50% -14%, rgba(255, 255, 255, 0.045), transparent 72%),
+    linear-gradient(160deg, #090a0c 0%, #0c0d0f 52%, #08090b 100%);
+}
+
+html[data-theme="pearlglass"] body {
+  background: linear-gradient(145deg, #d9dde2 0%, #d1d6dc 100%);
+}
+
+html[data-theme="paperglass"] body {
+  background: linear-gradient(145deg, #e9e2d3 0%, #dfd5c1 100%);
+}
+
+:is(html[data-theme="pearlglass"], html[data-theme="paperglass"]) body::before { display: none; }
+:is(html[data-theme="auroraglass"], html[data-theme="smokeglass"]) body::before { opacity: 0.18; }
+
+/* Primary panes: cards, search and fixed dashboard surfaces. */
+html[data-theme$="glass"] :is(
+  .mission-card, .folder, .speed-tile, .global-search,
+  .selection-bar, .tab-cleanup-banner, .tab-groups-bar
+) {
+  background: var(--glass-surface);
+  border-color: var(--glass-border);
+  border-radius: var(--glass-radius);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  box-shadow: var(--glass-shadow);
+}
+
+/* Text-heavy floating panes use a denser material than dashboard cards. */
+html[data-theme$="glass"] :is(
+  .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+  .toast, .onboarding-card, .focus-sweep-panel
+) {
+  background: var(--glass-surface-strong);
+  border-color: var(--glass-border);
+  border-radius: calc(var(--glass-radius) + 2px);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  box-shadow: var(--glass-shadow);
+}
+
+/* Controls participate in the same material language without nested blur. */
+html[data-theme$="glass"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .focus-sweep-link-btn,
+  .focus-sweep-mode, .archive-launch
+) {
+  color: var(--text);
+  background: var(--glass-control);
+  border-color: var(--glass-border);
+  border-radius: 9px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow) 58%, transparent);
+}
+
+html[data-theme$="glass"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile, .speed-tile-add,
+  .selection-btn:not(.ghost), .onboarding-btn,
+  .focus-sweep-icon-btn, .focus-sweep-link-btn, .focus-sweep-mode,
+  .archive-launch
+):hover {
+  color: var(--text);
+  background: var(--glass-control-hover);
+  border-color: color-mix(in srgb, var(--accent-primary) 30%, var(--glass-border));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--shadow) 62%, transparent);
+}
+
+html[data-theme$="glass"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-mini-btn, .tab-cleanup-btn, .group-control-btn,
+  .selection-btn:not(.ghost), .onboarding-btn,
+  .focus-sweep-icon-btn, .focus-sweep-link-btn, .focus-sweep-mode,
+  .archive-launch
+):active {
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--shadow) 52%, transparent);
+}
+
+/* Semantic controls retain their meaning inside the glass system. */
+html[data-theme$="glass"] :is(
+  .action-btn.close-tabs, .dialog-btn.danger, .workspace-mini-btn.danger,
+  .workspace-delete-btn, .selection-btn.danger
+) {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.1);
+  border-color: rgba(var(--danger-rgb), 0.34);
+}
+
+html[data-theme$="glass"] :is(
+  .onboarding-btn.primary, .focus-sweep-mode[aria-pressed="true"]
+) {
+  color: var(--bg);
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+html[data-theme$="glass"] :is(
+  .action-btn.close-tabs, .dialog-btn.danger, .workspace-mini-btn.danger,
+  .workspace-delete-btn, .selection-btn.danger
+):hover {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.16);
+  border-color: rgba(var(--danger-rgb), 0.52);
+}
+
+html[data-theme$="glass"] :is(
+  .onboarding-btn.primary, .focus-sweep-mode[aria-pressed="true"]
+):hover:not(:disabled) {
+  color: var(--bg);
+  background: color-mix(in srgb, var(--accent-primary) 88%, var(--text));
+  border-color: color-mix(in srgb, var(--accent-primary) 88%, var(--text));
+}
+
+/* Inputs use the same translucent material without an inset metal edge. */
+html[data-theme$="glass"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+) {
+  color: var(--text);
+  background: var(--glass-control);
+  border-color: var(--glass-border);
+  box-shadow: none;
+}
+
+html[data-theme$="glass"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+):focus {
+  border-color: rgba(var(--accent-rgb), 0.7);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+}
+
+/* Preserve lightweight hierarchy inside panes instead of making every row a pane. */
+html[data-theme$="glass"] :is(
+  .page-chip, .deferred-item, .archive-item, .workspace-item
+) {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--glass-border) 62%, transparent);
+}
+
+html[data-theme$="glass"] :is(
+  .page-chip.clickable, .deferred-item, .archive-item
+):hover {
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+/* Status remains a quiet material cue; it never becomes a reflective edge. */
+html[data-theme$="glass"] .mission-card {
+  --glass-card-accent-rgb: var(--neutral-rgb);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+html[data-theme$="glass"] .mission-card.has-primary-bar {
+  --glass-card-accent-rgb: var(--accent-rgb);
+}
+
+html[data-theme$="glass"] .mission-card.has-active-bar {
+  --glass-card-accent-rgb: var(--status-active-rgb);
+}
+
+html[data-theme$="glass"] .mission-card::before {
+  height: 2px;
+  background: rgba(var(--glass-card-accent-rgb), 0.5);
+  box-shadow: none;
+}
+
+html[data-theme$="glass"] .mission-card::after {
+  box-shadow: none;
+}
+
+html[data-theme$="glass"] :is(.mission-card, .folder, .speed-tile):hover {
+  background: var(--glass-surface-hover);
+  border-color: color-mix(in srgb, var(--accent-primary) 24%, var(--glass-border));
+  transform: none;
+}
+
+html[data-theme$="glass"] .folder {
+  border-left-width: 1px;
+  border-left-color: var(--glass-border);
+}
+
+/* Keyboard focus must remain visible over variable translucent backgrounds. */
+html[data-theme$="glass"] :is(button, a, input):focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="auroraglass"] body::after {
+    animation: none;
+    transform: none;
+    opacity: 0.58;
+    will-change: auto;
+  }
+}
+
+/* Progressive accessibility preference: unsupported browsers safely ignore it. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html[data-theme$="glass"] :is(
+    .mission-card, .folder, .speed-tile, .global-search,
+    .selection-bar, .tab-cleanup-banner, .tab-groups-bar
+  ) {
+    background: var(--card-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html[data-theme$="glass"] :is(
+    .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+    .toast, .onboarding-card, .focus-sweep-panel
+  ) {
+    background: var(--surface-strong);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  html[data-theme$="glass"] :is(
+    .mission-card, .folder, .speed-tile, .global-search,
+    .selection-bar, .tab-cleanup-banner, .tab-groups-bar
+  ) {
+    background: var(--card-bg);
+  }
+
+  html[data-theme$="glass"] :is(
+    .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+    .toast, .onboarding-card, .focus-sweep-panel
+  ) {
+    background: var(--surface-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  html[data-theme="auroraglass"] body::after { display: none; }
+
+  html[data-theme$="glass"] :is(
+    .mission-card, .folder, .speed-tile, .global-search,
+    .selection-bar, .tab-cleanup-banner, .tab-groups-bar,
+    .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+    .toast, .onboarding-card, .focus-sweep-panel
+  ) {
+    color: CanvasText !important;
+    background: Canvas !important;
+    border-color: CanvasText !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -3119,14 +3513,6 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   backdrop-filter: blur(16px) saturate(1.12);
 }
 
-[data-theme="paper"] .onboarding-card,
-[data-theme="latte"] .onboarding-card {
-  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
-  box-shadow:
-    0 18px 52px rgba(0, 0, 0, 0.14),
-    0 0 0 1px rgba(var(--accent-rgb), 0.08);
-}
-
 .onboarding-step-label {
   color: var(--accent-primary);
   font-size: 11px;
@@ -3151,6 +3537,460 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
   font-size: 13px;
   font-weight: 500;
   line-height: 1.48;
+}
+
+.onboarding-gesture-demo {
+  display: none;
+  margin-top: 13px;
+  padding: 10px;
+  overflow: hidden;
+  background: rgba(var(--neutral-rgb), 0.07);
+  border: 1px solid rgba(var(--neutral-rgb), 0.17);
+  border-radius: 8px;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-gesture-demo,
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-gesture-demo {
+  display: block;
+}
+
+.onboarding-demo-drag-instruction {
+  display: none;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-key,
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-select-instruction {
+  display: none;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-drag-instruction {
+  display: inline;
+}
+
+.onboarding-demo-instruction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.onboarding-demo-key {
+  min-width: 34px;
+  padding: 3px 6px;
+  color: var(--text);
+  background: var(--card-bg);
+  border: 1px solid rgba(var(--neutral-rgb), 0.28);
+  border-bottom-width: 3px;
+  border-radius: 5px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 1;
+  text-align: center;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-key {
+  animation: onboarding-demo-key-press 5.2s ease-in-out infinite;
+}
+
+.onboarding-demo-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 78px;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.onboarding-demo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-stage {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-list {
+  animation: onboarding-demo-list-move 5.4s ease-in-out infinite;
+}
+
+.onboarding-demo-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 25px;
+  padding: 4px 8px;
+  color: var(--text);
+  background: rgba(var(--neutral-rgb), 0.045);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.onboarding-demo-favicon {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  background: rgba(var(--neutral-rgb), 0.28);
+  border-radius: 3px;
+}
+
+.onboarding-demo-link-one {
+  animation: none;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-link-one {
+  animation: onboarding-demo-select-one 5.2s ease-in-out infinite;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-link-two {
+  animation: onboarding-demo-select-two 5.2s ease-in-out infinite;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-link-three {
+  animation: onboarding-demo-select-three 5.2s ease-in-out infinite;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-link {
+  background: rgba(var(--accent-rgb), 0.23);
+}
+
+.onboarding-demo-folder {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 7px 5px;
+  color: var(--muted);
+  background: rgba(var(--neutral-rgb), 0.045);
+  border: 1px dashed rgba(var(--neutral-rgb), 0.25);
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-folder {
+  display: none;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-folder {
+  animation: onboarding-demo-folder-drop 5.4s ease-in-out infinite;
+}
+
+.onboarding-demo-folder svg {
+  width: 25px;
+  height: 25px;
+  fill: rgba(var(--accent-rgb), 0.16);
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.onboarding-demo-folder-count {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--bg);
+  background: var(--accent-primary);
+  border-radius: 50%;
+  font-size: 9px;
+  opacity: 0;
+  transform: scale(0.65);
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-folder-count {
+  animation: onboarding-demo-folder-count 5.4s ease-in-out infinite;
+}
+
+.onboarding-demo-cursor {
+  position: absolute;
+  top: 1px;
+  left: 17px;
+  width: 18px;
+  height: 21px;
+  z-index: 1;
+  color: var(--text);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.34));
+  pointer-events: none;
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-cursor {
+  animation: onboarding-demo-cursor-select 5.2s ease-in-out infinite;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-cursor {
+  width: 22px;
+  height: 22px;
+  animation: onboarding-demo-cursor-drag 5.4s ease-in-out infinite;
+}
+
+.onboarding-demo-cursor svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: var(--card-bg);
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+
+.onboarding-demo-grab-icon {
+  display: none !important;
+  fill: var(--card-bg) !important;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-pointer-icon {
+  display: none;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-grab-icon {
+  display: block !important;
+}
+
+.onboarding-demo-drag-ring {
+  position: absolute;
+  top: 2px;
+  left: 1px;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(var(--accent-rgb), 0.75);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.45);
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-drag-ring {
+  animation: onboarding-demo-click-ring 5.2s ease-out infinite;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-drag-ring {
+  animation: onboarding-demo-grab-ring 5.4s ease-out infinite;
+}
+
+.onboarding-demo-drag-stack {
+  position: absolute;
+  top: -5px;
+  left: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 17px;
+  color: var(--bg);
+  background: var(--accent-primary);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 75%, var(--text));
+  border-radius: 4px;
+  box-shadow: -3px 3px 0 rgba(var(--accent-rgb), 0.42), -6px 6px 0 rgba(var(--accent-rgb), 0.2);
+  font-size: 9px;
+  font-weight: 900;
+  opacity: 0;
+  transform: translate(-2px, 2px) scale(0.7);
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-drag-stack {
+  animation: onboarding-demo-drag-stack 5.4s ease-in-out infinite;
+}
+
+.onboarding-demo-result {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 19px;
+  margin-top: 7px;
+  color: var(--accent-primary);
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateY(3px);
+}
+
+.onboarding-overlay[data-demo="multiSelect"] .onboarding-demo-select-result {
+  display: flex;
+  animation: onboarding-demo-select-result-in 5.2s ease-in-out infinite;
+}
+
+.onboarding-overlay[data-demo="dragSelection"] .onboarding-demo-move-result {
+  display: flex;
+  animation: onboarding-demo-move-result-in 5.4s ease-in-out infinite;
+}
+
+.onboarding-demo-result span {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  color: var(--bg);
+  background: var(--accent-primary);
+  border-radius: 50%;
+  font-size: 9px;
+}
+
+@keyframes onboarding-demo-key-press {
+  0%, 6%, 76%, 100% {
+    color: var(--text);
+    background: var(--card-bg);
+    border-bottom-width: 3px;
+    transform: translateY(0);
+  }
+  10%, 68% {
+    color: var(--bg);
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    border-bottom-width: 1px;
+    transform: translateY(2px);
+  }
+}
+
+@keyframes onboarding-demo-cursor-select {
+  0%, 6% { top: 1px; left: 17px; opacity: 0; }
+  11%, 22% { top: 1px; left: 17px; opacity: 1; }
+  29%, 40% { top: 29px; left: 17px; opacity: 1; }
+  47%, 69% { top: 57px; left: 17px; opacity: 1; }
+  77%, 100% { top: 57px; left: 17px; opacity: 0; }
+}
+
+@keyframes onboarding-demo-cursor-drag {
+  0%, 7% { top: 55px; left: 20px; opacity: 0; transform: scale(1); }
+  13%, 25% { top: 55px; left: 20px; opacity: 1; transform: scale(0.88); }
+  31% { top: 55px; left: 34px; opacity: 1; transform: scale(0.88); }
+  65%, 82% { top: 27px; left: calc(100% - 55px); opacity: 1; transform: scale(0.88); }
+  88%, 100% { top: 27px; left: calc(100% - 55px); opacity: 0; transform: scale(1); }
+}
+
+@keyframes onboarding-demo-click-ring {
+  0%, 11% { opacity: 0; transform: scale(0.45); }
+  14% { opacity: 0.9; transform: scale(0.75); }
+  20%, 29% { opacity: 0; transform: scale(1.45); }
+  32% { opacity: 0.9; transform: scale(0.75); }
+  38%, 47% { opacity: 0; transform: scale(1.45); }
+  50% { opacity: 0.9; transform: scale(0.75); }
+  57%, 100% { opacity: 0; transform: scale(1.45); }
+}
+
+@keyframes onboarding-demo-grab-ring {
+  0%, 11%, 30%, 100% { opacity: 0; transform: scale(0.55); }
+  16% { opacity: 0.9; transform: scale(0.9); }
+  25% { opacity: 0; transform: scale(1.5); }
+}
+
+@keyframes onboarding-demo-drag-stack {
+  0%, 16%, 79%, 100% { opacity: 0; transform: translate(-2px, 2px) scale(0.7); }
+  23%, 72% { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+
+@keyframes onboarding-demo-list-move {
+  0%, 24%, 100% { opacity: 1; transform: translateX(0); }
+  53% { opacity: 0.68; transform: translateX(4px); }
+  68%, 88% { opacity: 0.3; transform: translateX(7px); }
+  95% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes onboarding-demo-folder-drop {
+  0%, 31%, 96%, 100% {
+    color: var(--muted);
+    background: rgba(var(--neutral-rgb), 0.045);
+    border-color: rgba(var(--neutral-rgb), 0.25);
+    transform: scale(1);
+  }
+  42%, 65% {
+    color: var(--accent-primary);
+    background: rgba(var(--accent-rgb), 0.16);
+    border-color: rgba(var(--accent-rgb), 0.72);
+    transform: scale(1.04);
+  }
+  71%, 89% {
+    color: var(--accent-primary);
+    background: rgba(var(--accent-rgb), 0.22);
+    border-color: var(--accent-primary);
+    transform: scale(1);
+  }
+}
+
+@keyframes onboarding-demo-folder-count {
+  0%, 66%, 94%, 100% { opacity: 0; transform: scale(0.65); }
+  72%, 89% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes onboarding-demo-select-one {
+  0%, 15%, 90%, 100% { background: rgba(var(--neutral-rgb), 0.045); }
+  19%, 84% { background: rgba(var(--accent-rgb), 0.23); }
+}
+
+@keyframes onboarding-demo-select-two {
+  0%, 33%, 90%, 100% { background: rgba(var(--neutral-rgb), 0.045); }
+  37%, 84% { background: rgba(var(--accent-rgb), 0.23); }
+}
+
+@keyframes onboarding-demo-select-three {
+  0%, 51%, 90%, 100% { background: rgba(var(--neutral-rgb), 0.045); }
+  55%, 84% { background: rgba(var(--accent-rgb), 0.23); }
+}
+
+@keyframes onboarding-demo-select-result-in {
+  0%, 55%, 92%, 100% { opacity: 0; transform: translateY(3px); }
+  62%, 86% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes onboarding-demo-move-result-in {
+  0%, 72%, 95%, 100% { opacity: 0; transform: translateY(3px); }
+  77%, 90% { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-demo-key,
+  .onboarding-demo-list,
+  .onboarding-demo-link,
+  .onboarding-demo-folder,
+  .onboarding-demo-folder-count,
+  .onboarding-demo-drag-ring,
+  .onboarding-demo-drag-stack,
+  .onboarding-demo-result {
+    animation: none !important;
+  }
+
+  .onboarding-demo-key {
+    color: var(--bg);
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    border-bottom-width: 1px;
+    transform: translateY(2px);
+  }
+
+  .onboarding-demo-link {
+    background: rgba(var(--accent-rgb), 0.23);
+  }
+
+  .onboarding-demo-folder {
+    color: var(--accent-primary);
+    background: rgba(var(--accent-rgb), 0.22);
+    border-color: var(--accent-primary);
+  }
+
+  .onboarding-demo-folder-count {
+    opacity: 1;
+    transform: none;
+  }
+
+  .onboarding-demo-cursor {
+    display: none;
+  }
+
+  .onboarding-demo-result {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .onboarding-actions {
@@ -3216,6 +4056,7 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
 }
 
 @media (max-width: 520px) {
+  header { padding-top: 52px; }
   .privacy-toggle   { right: 10px; }
   .customize-toggle { right: 50px; }
   .theme-mode-toggle { right: 174px; }
@@ -3268,15 +4109,6 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
     0 0 34px 5px rgba(var(--accent-rgb), 0.20),
     0 0 96px 12px rgba(var(--accent-rgb), 0.10);
   padding: 16px 18px 14px;
-}
-
-[data-theme="paper"] .focus-sweep-panel,
-[data-theme="latte"] .focus-sweep-panel {
-  box-shadow:
-    0 18px 56px var(--shadow),
-    0 0 0 1px rgba(var(--accent-rgb), 0.10),
-    0 0 32px 4px rgba(var(--accent-rgb), 0.14),
-    0 0 88px 10px rgba(var(--accent-rgb), 0.07);
 }
 
 .focus-sweep-top {
@@ -3920,6 +4752,18 @@ html[data-privacy="on"] .privacy-screen { display: flex !important; }
 
 :where(.page-chip, .deferred-item).selected:hover {
   --selection-bg: linear-gradient(90deg, rgba(var(--accent-rgb), 0.28), rgba(var(--accent-rgb), 0.12) 64%, transparent);
+}
+
+/* Glass row paint has deliberately high specificity; restore the existing
+   saved-selection cue after that material override so batch actions remain
+   visible without changing their JavaScript behavior. */
+html[data-theme$="glass"] .deferred-item.selected {
+  background: var(--selection-bg);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.18);
+}
+
+html[data-theme$="glass"] .deferred-item.selected:hover {
+  background: var(--selection-bg);
 }
 
 body.selection-brush-active,

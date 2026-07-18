@@ -274,7 +274,7 @@
 </div>
 
 <!-- Bloom theme-mode toggle: the crescent opens into a sun. -->
-<button class="corner-btn theme-mode-toggle" id="themeModeToggle" data-action="toggle-theme-mode" data-mode="dark" aria-label="Switch to Paper (light)" aria-pressed="false" title="Switch to Paper (light)" type="button">
+<button class="corner-btn theme-mode-toggle" id="themeModeToggle" data-action="toggle-theme-mode" data-mode="dark" aria-label="Switch to Paper Glass" aria-pressed="false" title="Switch to Paper Glass" type="button">
   <span class="theme-bloom" aria-hidden="true">
     <span class="theme-bloom-disc"></span>
     <span class="theme-bloom-cutout"></span>
@@ -419,9 +419,57 @@
 <div class="onboarding-overlay" id="onboardingOverlay" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" style="display:none">
   <div class="onboarding-highlight" id="onboardingHighlight" aria-hidden="true"></div>
   <div class="onboarding-card" id="onboardingCard">
-    <div class="onboarding-step-label" id="onboardingStepLabel">1 of 9</div>
+    <div class="onboarding-step-label" id="onboardingStepLabel">1 of 11</div>
     <h2 class="onboarding-title" id="onboardingTitle">Welcome to Tab Atlas</h2>
     <p class="onboarding-copy" id="onboardingCopy"></p>
+    <div class="onboarding-gesture-demo" id="onboardingGestureDemo" aria-hidden="true">
+      <div class="onboarding-demo-instruction">
+        <kbd class="onboarding-demo-key">Ctrl</kbd>
+        <span class="onboarding-demo-select-instruction">Click tabs to select</span>
+        <span class="onboarding-demo-drag-instruction">Grab one selected tab</span>
+      </div>
+      <div class="onboarding-demo-stage">
+        <div class="onboarding-demo-list">
+          <div class="onboarding-demo-link onboarding-demo-link-one">
+            <span class="onboarding-demo-favicon"></span>
+            <span>Project brief</span>
+          </div>
+          <div class="onboarding-demo-link onboarding-demo-link-two">
+            <span class="onboarding-demo-favicon"></span>
+            <span>Design references</span>
+          </div>
+          <div class="onboarding-demo-link onboarding-demo-link-three">
+            <span class="onboarding-demo-favicon"></span>
+            <span>Research notes</span>
+          </div>
+        </div>
+        <div class="onboarding-demo-folder">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3.75 5.75h5l1.65 2h9.85v10.5H3.75V5.75Z" />
+          </svg>
+          <span>Research</span>
+          <span class="onboarding-demo-folder-count">3</span>
+        </div>
+        <div class="onboarding-demo-cursor">
+          <svg class="onboarding-demo-pointer-icon" viewBox="0 0 24 28" aria-hidden="true">
+            <path d="M3 2.5v19.2l5.2-4.7 3.4 7.6 3.8-1.8-3.5-7.3 7-.7L3 2.5Z" />
+          </svg>
+          <svg class="onboarding-demo-grab-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7.2 12.1V8a1.45 1.45 0 0 1 2.9 0v3M10.1 11V5.5a1.45 1.45 0 0 1 2.9 0V11m0 0V5a1.45 1.45 0 0 1 2.9 0v7m0 0V7.2a1.45 1.45 0 0 1 2.9 0v6.3c0 4.2-2.5 7-6.6 7H11c-2.7 0-4.3-1.1-5.8-3.1l-2-2.7a1.6 1.6 0 0 1 2.4-2.1l1.6 1.3v-1.8Z" />
+          </svg>
+          <span class="onboarding-demo-drag-ring"></span>
+          <span class="onboarding-demo-drag-stack">3</span>
+        </div>
+      </div>
+      <div class="onboarding-demo-result onboarding-demo-select-result">
+        <span aria-hidden="true">✓</span>
+        3 tabs selected
+      </div>
+      <div class="onboarding-demo-result onboarding-demo-move-result">
+        <span aria-hidden="true">✓</span>
+        Moved 3 tabs to Research
+      </div>
+    </div>
     <div class="onboarding-actions">
       <button class="onboarding-btn ghost" data-action="onboarding-skip" type="button">Skip</button>
       <div class="onboarding-nav">

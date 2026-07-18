@@ -37,7 +37,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 - **Auto‑refresh** — the dashboard stays in sync as tabs open/close/navigate
 
 **Make it yours**
-- **11 themes** (7 dark + 4 light) — choose one dark and one light theme as a saved pair in **Customize**, then switch between them with the animated Moon → Sun Bloom control; every palette owns its Bloom colours, surface and depth, including tactile Paper Soft and Latte Soft variants
+- **13 themes** (9 dark + 4 light) — choose one dark and one light theme as a saved pair in **Customize**, then switch between them with the animated Moon → Sun Bloom control; the collection includes tactile Paper Soft and Latte Soft variants plus animated Aurora Glass, monochrome Smoke Glass, soft-grey Pearl Glass and warm Paper Glass
 - **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); show or hide the whole strip from **Customize**
 
 **Private by design**
