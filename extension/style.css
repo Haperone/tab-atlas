@@ -882,8 +882,9 @@ html[data-theme$="glass"] :is(
   .global-search, .archive-search, .new-folder-input,
   .folder-rename-input, .dialog-input
 ):focus {
-  border-color: rgba(var(--accent-rgb), 0.7);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 /* Preserve lightweight hierarchy inside panes instead of making every row a pane. */
@@ -936,8 +937,9 @@ html[data-theme$="glass"] .folder {
   border-left-color: var(--glass-border);
 }
 
-/* Keyboard focus must remain visible over variable translucent backgrounds. */
-html[data-theme$="glass"] :is(button, a, input):focus-visible {
+/* Keyboard focus must remain visible over variable translucent backgrounds.
+   Text inputs already own the same single focus ring as the regular themes. */
+html[data-theme$="glass"] :is(button, a):focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
 }

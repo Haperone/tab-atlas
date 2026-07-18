@@ -261,6 +261,12 @@ test('glass themes share one accessible material system but keep distinct motion
   assert.match(dangerHover, /background:\s*rgba\(var\(--danger-rgb\), 0\.16\)/, 'glass danger hover needs a danger-tinted surface');
   assert.match(primaryHover, /color:\s*var\(--bg\)/, 'glass primary actions must retain contrast on hover');
   assert.match(primaryHover, /background:\s*color-mix\(in srgb, var\(--accent-primary\) 88%, var\(--text\)\)/, 'glass primary hover must stay accent-filled');
+
+  const inputFocus = glassSection.match(/html\[data-theme\$="glass"\] :is\([\s\S]*?\.global-search[\s\S]*?\.dialog-input[\s\S]*?\):focus\s*\{([^}]*)\}/)?.[1] || '';
+  assert.match(inputFocus, /border-color:\s*rgba\(var\(--accent-rgb\), 0\.55\)/, 'glass inputs should match the regular focus border');
+  assert.match(inputFocus, /outline:\s*none/, 'glass inputs must not stack a second outline over their focus ring');
+  assert.match(inputFocus, /0 0 0 3px rgba\(var\(--accent-rgb\), 0\.12\)/, 'glass inputs should match the regular focus ring intensity');
+  assert.doesNotMatch(glassSection, /:is\([^)]*input[^)]*\):focus-visible/, 'glass inputs must not inherit the generic button/link outline');
 });
 
 test('Sweep stays visually secondary across regular and soft themes', async () => {
