@@ -138,15 +138,15 @@ Questions about privacy can be submitted through the project's public issue trac
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
-| Unreleased | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. Glass search fields now use the same restrained focus ring as the regular themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Working tree |
+| 1.0.1 | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. Glass search fields now use the same restrained focus ring as the regular themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Ready to upload |
 | 1.0.0 | 2026-07-12 | Initial store draft with the saved-links archive, one-click restoration, Undo, and aligned independent column scrolling. | Draft |
 
 ## Release Package
 
-- **Upload file:** `release/tab-atlas-1.0.0-chrome-web-store.zip`
-- **Package size:** 111,605 bytes
+- **Upload file:** `release/tab-atlas-1.0.1-chrome-web-store.zip`
+- **Package size:** 111,604 bytes
 - **Runtime files:** 25
-- **SHA-256:** `41075729926165e83d13c3b1ea900b398b2c670296ad9e3b76a31a8a439b4552`
+- **SHA-256:** `82c5d0406867e661e42a2d2592d5bd02eb5404c77ceae8671fd8af3bd1b62b52`
 - **Validated:** `manifest.json` is at the ZIP root; package contains no tests, repository metadata,
   development dependencies, source maps, store assets, or store documentation.
 
@@ -163,8 +163,8 @@ Questions about privacy can be submitted through the project's public issue trac
 
 - [x] **Privacy-policy URL** — page written at [`docs/privacy-policy.html`](docs/privacy-policy.html);
       the public URL returned HTTP 200 and was verified on 2026-07-13.
-- [x] **Version** — `1.0.0`. No git tags / prior uploads exist, so nothing higher is published. Keep
-      this greater than any version already uploaded before each future submission.
+- [x] **Version** — `1.0.1`. Keep this greater than any version already uploaded before each future
+      submission.
 - [x] **Publisher name and contact email** — filled in "Developer Info" (Publisher: Haperone,
       Contact: nsvyatogo26@gmail.com). Remaining action: enter them in the Developer Dashboard and
       **verify the email** there (verification can only happen in your account, not in the repo).
