@@ -26,10 +26,13 @@ export const THEME_OPTIONS = [
   { id: 'obsidian', label: 'Obsidian', color: '#818cf8', group: 'dark' },
   { id: 'auroraglass', label: 'Aurora Glass', color: '#86dfff', group: 'dark' },
   { id: 'smokeglass', label: 'Smoke Glass', color: '#d3c7b8', group: 'dark' },
+  { id: 'spaceblack', label: 'Space Black', color: '#9fb8ff', group: 'dark' },
+  { id: 'pacificblue', label: 'Pacific Blue', color: '#65c7d1', group: 'dark' },
   { id: 'papersoft', label: 'Paper Soft', color: '#93401f', group: 'light' },
   { id: 'lattesoft', label: 'Latte Soft', color: '#7326cf', group: 'light' },
   { id: 'pearlglass', label: 'Pearl Glass', color: '#6f5ab0', group: 'light' },
   { id: 'paperglass', label: 'Paper Glass', color: '#b98a3a', group: 'light' },
+  { id: 'orchidbloom', label: 'Orchid Bloom', color: '#7d5aa6', group: 'light' },
 ];
 
 export const ONBOARDING_STEPS = [

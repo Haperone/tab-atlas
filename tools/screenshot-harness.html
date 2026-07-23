@@ -119,8 +119,8 @@
     try {
       const validThemes = new Set([
         'default', 'graphite', 'solarized', 'tokyonight', 'mocha', 'monokai',
-        'obsidian', 'auroraglass', 'smokeglass',
-        'papersoft', 'lattesoft', 'pearlglass', 'paperglass',
+        'obsidian', 'auroraglass', 'smokeglass', 'spaceblack', 'pacificblue',
+        'papersoft', 'lattesoft', 'pearlglass', 'paperglass', 'orchidbloom',
       ]);
       const requestedTheme = new URLSearchParams(location.search).get('theme');
       const screenshotTheme = validThemes.has(requestedTheme) ? requestedTheme : 'paperglass';
@@ -160,6 +160,7 @@
 
   <script src="../extension/theme-init.js"></script>
   <link rel="stylesheet" href="../extension/style.css">
+  <link rel="stylesheet" href="../extension/apple-themes.css">
 </head>
 <body>
   <!-- The dashboard markup is created by app.js against these anchors, but the real

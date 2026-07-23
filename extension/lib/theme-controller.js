@@ -6,7 +6,15 @@ export const LIGHT_THEME_KEY = 'tabout-theme-light';
 
 const DEFAULT_DARK_THEME = 'default';
 const DEFAULT_LIGHT_THEME = 'paperglass';
-const LEGACY_THEME_IDS = Object.freeze({ paper: 'paperglass', latte: 'lattesoft' });
+const LEGACY_THEME_IDS = Object.freeze({
+  paper: 'paperglass',
+  latte: 'lattesoft',
+  spaceblackglass: 'spaceblack',
+  pacificglass: 'pacificblue',
+  silverglass: 'orchidbloom',
+  silverstudio: 'orchidbloom',
+  orchidglass: 'orchidbloom',
+});
 
 export function createThemeController({ document, storage, showContextMenu, showToast }) {
   function readStorage(key) {

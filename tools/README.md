@@ -40,6 +40,9 @@ Choose a theme deterministically with `?theme=<id>`, for example:
 - `http://localhost:8232/tools/screenshot-harness.html?theme=smokeglass`
 - `http://localhost:8232/tools/screenshot-harness.html?theme=pearlglass`
 - `http://localhost:8232/tools/screenshot-harness.html?theme=paperglass`
+- `http://localhost:8232/tools/screenshot-harness.html?theme=spaceblack`
+- `http://localhost:8232/tools/screenshot-harness.html?theme=pacificblue`
+- `http://localhost:8232/tools/screenshot-harness.html?theme=orchidbloom`
 
 Save PNGs into `extension/store-assets/` and attach them in the Web Store dashboard.
 

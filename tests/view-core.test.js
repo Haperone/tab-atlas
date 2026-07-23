@@ -105,7 +105,7 @@ test('theme controller exposes the current option for the Customize menu', () =>
   });
 });
 
-test('theme registry exposes two dark and two light glass variants', () => {
+test('theme registry keeps the original glass collection unchanged', () => {
   const glassThemes = Object.fromEntries(
     THEME_OPTIONS
       .filter(theme => theme.id.endsWith('glass'))
@@ -118,18 +118,43 @@ test('theme registry exposes two dark and two light glass variants', () => {
     pearlglass: { label: 'Pearl Glass', color: '#6f5ab0', group: 'light' },
     paperglass: { label: 'Paper Glass', color: '#b98a3a', group: 'light' },
   });
-  assert.equal(THEME_OPTIONS.filter(theme => theme.group === 'dark').length, 9);
-  assert.equal(THEME_OPTIONS.filter(theme => theme.group === 'light').length, 4);
+  assert.equal(THEME_OPTIONS.filter(theme => theme.group === 'dark').length, 11);
+  assert.equal(THEME_OPTIONS.filter(theme => theme.group === 'light').length, 5);
   assert.equal(THEME_OPTIONS.some(theme => theme.id === 'paper' || theme.id === 'latte'), false);
 });
 
-test('retired light themes migrate to supported replacements', () => {
-  const migrations = { paper: 'paperglass', latte: 'lattesoft' };
+test('Apple-inspired themes use independent non-glass material systems', () => {
+  const appleThemes = Object.fromEntries(
+    THEME_OPTIONS
+      .filter(theme => ['spaceblack', 'pacificblue', 'orchidbloom'].includes(theme.id))
+      .map(theme => [theme.id, { label: theme.label, color: theme.color, group: theme.group }]),
+  );
 
-  for (const [legacy, replacement] of Object.entries(migrations)) {
+  assert.deepEqual(appleThemes, {
+    spaceblack: { label: 'Space Black', color: '#9fb8ff', group: 'dark' },
+    pacificblue: { label: 'Pacific Blue', color: '#65c7d1', group: 'dark' },
+    orchidbloom: { label: 'Orchid Bloom', color: '#7d5aa6', group: 'light' },
+  });
+  assert.equal(Object.keys(appleThemes).some(id => id.endsWith('glass')), false);
+  assert.equal(THEME_OPTIONS.some(theme => theme.id === 'silverstudio'), false);
+});
+
+test('retired themes migrate to supported replacements', () => {
+  const migrations = [
+    { legacy: 'paper', replacement: 'paperglass', group: 'light' },
+    { legacy: 'latte', replacement: 'lattesoft', group: 'light' },
+    { legacy: 'spaceblackglass', replacement: 'spaceblack', group: 'dark' },
+    { legacy: 'pacificglass', replacement: 'pacificblue', group: 'dark' },
+    { legacy: 'silverglass', replacement: 'orchidbloom', group: 'light' },
+    { legacy: 'silverstudio', replacement: 'orchidbloom', group: 'light' },
+    { legacy: 'orchidglass', replacement: 'orchidbloom', group: 'light' },
+  ];
+
+  for (const { legacy, replacement, group } of migrations) {
+    const pairKey = group === 'light' ? 'tabout-theme-light' : 'tabout-theme-dark';
     const values = new Map([
       ['tabout-theme', legacy],
-      ['tabout-theme-light', legacy],
+      [pairKey, legacy],
     ]);
     const controller = createThemeController({
       document: { documentElement: { dataset: {} } },
@@ -142,9 +167,9 @@ test('retired light themes migrate to supported replacements', () => {
     });
 
     assert.equal(controller.currentTheme(), replacement);
-    assert.equal(controller.currentThemePairOptions().light.id, replacement);
+    assert.equal(controller.currentThemePairOptions()[group].id, replacement);
     assert.equal(values.get('tabout-theme'), replacement);
-    assert.equal(values.get('tabout-theme-light'), replacement);
+    assert.equal(values.get(pairKey), replacement);
   }
 });
 

@@ -1,0 +1,895 @@
+/* ============================================================
+   APPLE-INSPIRED THEMES
+   Every selector in this file names one of the three themes below.
+   The original collection stays in style.css and is never targeted here.
+
+   Each theme owns an opaque material system. None of these IDs ends in
+   "glass", so the shared glass rules in style.css cannot apply to them.
+   ============================================================ */
+
+/* Space Black — compact titanium slabs with crisp, restrained elevation. */
+html[data-theme="spaceblack"] {
+  color-scheme: dark;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --text: #f5f5f7;
+  --bg: #09090b;
+  --neutral: #3a3a40;
+  --muted: #aaaab2;
+  --accent-primary: #8ab7ff;
+  --accent-success: #76d7a0;
+  --accent-info: #7bc9e8;
+  --accent-danger: #ff8fa1;
+  --status-active: #76d7a0;
+  --status-cooling: #e8bd70;
+  --status-abandoned: #ff8fa1;
+  --status-active-rgb: 118, 215, 160;
+  --status-cooling-rgb: 232, 189, 112;
+  --status-abandoned-rgb: 255, 143, 161;
+  --card-bg: #17171a;
+  --surface-strong: #1c1c21;
+  --surface-strong-hover: #23232a;
+  --shadow: rgba(0, 0, 0, 0.62);
+  --accent-rgb: 138, 183, 255;
+  --neutral-rgb: 170, 170, 178;
+  --danger-rgb: 255, 143, 161;
+  --success-rgb: 118, 215, 160;
+  --checkbox-hover: #9fb8ff;
+  --space-panel: #17171a;
+  --space-panel-alt: #1c1c21;
+  --space-panel-hover: #202027;
+  --space-control: #232329;
+  --space-control-hover: #2b2b33;
+  --space-border: rgba(235, 235, 245, 0.14);
+  --space-border-strong: rgba(235, 235, 245, 0.23);
+  --space-shadow: 0 1px 0 rgba(255, 255, 255, 0.035), 0 16px 38px rgba(0, 0, 0, 0.3);
+  --space-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 44px rgba(0, 0, 0, 0.38);
+  --bloom-moon: #a8c6ff;
+  --bloom-sun: #ffd37a;
+  --bloom-surface: #202026;
+  --bloom-cutout: #202026;
+  --bloom-border: rgba(168, 198, 255, 0.3);
+  --bloom-shadow: 0 10px 26px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --bloom-radius: 13px;
+}
+
+/* Pacific Blue — deep solid-blue planes with a spacious layered hierarchy. */
+html[data-theme="pacificblue"] {
+  color-scheme: dark;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --text: #f2f8fb;
+  --bg: #06131d;
+  --neutral: #29495c;
+  --muted: #a9bdc9;
+  --accent-primary: #7bc9ef;
+  --accent-success: #78d6ad;
+  --accent-info: #80d4e3;
+  --accent-danger: #ff98a8;
+  --status-active: #78d6ad;
+  --status-cooling: #f0c77b;
+  --status-abandoned: #ff98a8;
+  --status-active-rgb: 120, 214, 173;
+  --status-cooling-rgb: 240, 199, 123;
+  --status-abandoned-rgb: 255, 152, 168;
+  --card-bg: #0d2738;
+  --surface-strong: #123247;
+  --surface-strong-hover: #173e56;
+  --shadow: rgba(0, 5, 12, 0.58);
+  --accent-rgb: 123, 201, 239;
+  --neutral-rgb: 142, 174, 191;
+  --danger-rgb: 255, 152, 168;
+  --success-rgb: 120, 214, 173;
+  --checkbox-hover: #65c7d1;
+  --pacific-panel: #0d2738;
+  --pacific-panel-alt: #103247;
+  --pacific-panel-hover: #123247;
+  --pacific-control: #163b50;
+  --pacific-control-hover: #1b4961;
+  --pacific-border: rgba(181, 222, 241, 0.16);
+  --pacific-border-strong: rgba(181, 222, 241, 0.26);
+  --pacific-shadow: 0 2px 0 rgba(207, 237, 250, 0.025), 0 20px 46px rgba(0, 8, 18, 0.27);
+  --pacific-shadow-hover: 0 2px 0 rgba(207, 237, 250, 0.04), 0 24px 54px rgba(0, 8, 18, 0.34);
+  --bloom-moon: #93d4f4;
+  --bloom-sun: #f2ca78;
+  --bloom-surface: #12364b;
+  --bloom-cutout: #12364b;
+  --bloom-border: rgba(147, 212, 244, 0.32);
+  --bloom-shadow: 0 12px 28px rgba(0, 7, 16, 0.43), inset 0 1px 0 rgba(215, 243, 255, 0.09);
+  --bloom-radius: 15px;
+}
+
+/* Orchid Bloom — solid pastel planes and colourful elevation. */
+html[data-theme="orchidbloom"] {
+  color-scheme: light;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --text: #2d2632;
+  --bg: #f3edf6;
+  --neutral: #cfc1d6;
+  --muted: #685d70;
+  --accent-primary: #674596;
+  --accent-success: #386a50;
+  --accent-info: #3d617e;
+  --accent-danger: #98475d;
+  --status-active: #386a50;
+  --status-cooling: #795817;
+  --status-abandoned: #98475d;
+  --status-active-rgb: 56, 106, 80;
+  --status-cooling-rgb: 121, 88, 23;
+  --status-abandoned-rgb: 152, 71, 93;
+  --card-bg: #fffaff;
+  --surface-strong: #fffaff;
+  --surface-strong-hover: #ffffff;
+  --shadow: rgba(82, 52, 99, 0.18);
+  --accent-rgb: 103, 69, 150;
+  --neutral-rgb: 112, 97, 121;
+  --danger-rgb: 152, 71, 93;
+  --success-rgb: 56, 106, 80;
+  --checkbox-hover: #7d5aa6;
+  --orchid-panel: #fffaff;
+  --orchid-panel-alt: #f5ebfa;
+  --orchid-panel-hover: #ffffff;
+  --orchid-control: rgba(103, 69, 150, 0.09);
+  --orchid-control-hover: rgba(103, 69, 150, 0.16);
+  --orchid-border: rgba(103, 69, 150, 0.15);
+  --orchid-border-strong: rgba(103, 69, 150, 0.24);
+  --orchid-sheet: #fbf4fd;
+  --orchid-sheet-group: #fffaff;
+  --orchid-sheet-alt: #f2e5f7;
+  --orchid-shadow: 0 3px 8px rgba(82, 52, 99, 0.07), 0 18px 44px rgba(82, 52, 99, 0.12);
+  --orchid-shadow-hover: 0 5px 12px rgba(82, 52, 99, 0.09), 0 22px 50px rgba(82, 52, 99, 0.15);
+  --bloom-moon: #66518a;
+  --bloom-sun: #8a570c;
+  --bloom-surface: #e2caea;
+  --bloom-cutout: #e2caea;
+  --bloom-border: rgba(103, 69, 150, 0.26);
+  --bloom-shadow: 0 3px 8px rgba(82, 52, 99, 0.1), 0 14px 30px rgba(82, 52, 99, 0.17);
+  --bloom-radius: 16px;
+}
+
+/* Static depth fields avoid decorative ambient animation. */
+html[data-theme="spaceblack"] body {
+  background:
+    radial-gradient(ellipse 70% 44% at 50% -14%, rgba(138, 183, 255, 0.075), transparent 72%),
+    linear-gradient(155deg, #09090b 0%, #0d0d10 50%, #070709 100%);
+}
+
+html[data-theme="pacificblue"] body {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(79, 174, 216, 0.12), transparent 34%),
+    radial-gradient(circle at 90% 8%, rgba(72, 105, 180, 0.08), transparent 31%),
+    linear-gradient(150deg, #071722 0%, #082130 52%, #06131d 100%);
+}
+
+html[data-theme="orchidbloom"] body {
+  background:
+    radial-gradient(circle at 9% 0%, rgba(255, 255, 255, 0.96), transparent 32%),
+    radial-gradient(circle at 92% 4%, rgba(190, 141, 218, 0.2), transparent 30%),
+    radial-gradient(circle at 56% 100%, rgba(235, 166, 188, 0.14), transparent 35%),
+    linear-gradient(145deg, #f8f3fa 0%, #eee5f2 52%, #f3e9ef 100%);
+}
+
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) body {
+  font-optical-sizing: auto;
+}
+
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) body::before {
+  display: none;
+}
+
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+) {
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(
+    html[data-theme="spaceblack"],
+    html[data-theme="pacificblue"],
+    html[data-theme="orchidbloom"]
+  ) :is(
+    .corner-btn, .action-btn, .new-folder-btn, .folders-collapse-all,
+    .header-homepage-btn, .dialog-btn, .workspace-edge-save, .workspace-mini-btn,
+    .tab-cleanup-btn, .group-control-btn, .speed-tile-add,
+    .selection-btn, .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+  ):active {
+    scale: 0.97;
+  }
+}
+
+/* ============================================================
+   SPACE BLACK
+   Dense titanium cards, subtle separators and compact controls.
+   ============================================================ */
+
+html[data-theme="spaceblack"] .section-header h2 {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+html[data-theme="spaceblack"] .section-line {
+  background: var(--space-border);
+}
+
+html[data-theme="spaceblack"] .section-count {
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+html[data-theme="spaceblack"] :is(
+  .mission-card, .folder, .speed-tile, .selection-bar,
+  .tab-cleanup-banner, .tab-groups-bar
+) {
+  background: var(--space-panel);
+  border-color: var(--space-border);
+  border-radius: 16px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--space-shadow);
+}
+
+html[data-theme="spaceblack"] .mission-card::before {
+  height: 2px;
+  opacity: 0.78;
+}
+
+html[data-theme="spaceblack"] .mission-card::after {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.018);
+}
+
+html[data-theme="spaceblack"] :is(.mission-card, .folder, .speed-tile):hover {
+  background: var(--space-panel-hover);
+  border-color: var(--space-border-strong);
+  box-shadow: var(--space-shadow-hover);
+  transform: none;
+}
+
+html[data-theme="spaceblack"] .folder {
+  background: var(--space-panel-alt);
+  border-left-width: 1px;
+}
+
+html[data-theme="spaceblack"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+) {
+  color: var(--text);
+  background: var(--space-control);
+  border-color: var(--space-border);
+  border-radius: 13px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+html[data-theme="spaceblack"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+):focus {
+  border-color: rgba(var(--accent-rgb), 0.62);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+}
+
+html[data-theme="spaceblack"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+) {
+  color: var(--text);
+  background: var(--space-control);
+  border-color: var(--space-border);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="spaceblack"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+):hover {
+  color: var(--text);
+  background: var(--space-control-hover);
+  border-color: var(--space-border-strong);
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.26);
+}
+
+html[data-theme="spaceblack"] :is(
+  .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+  .toast, .onboarding-card, .focus-sweep-panel
+) {
+  background: var(--space-panel-alt);
+  border-color: var(--space-border-strong);
+  border-radius: 18px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.48);
+}
+
+html[data-theme="spaceblack"] :is(
+  .page-chip, .deferred-item, .archive-item, .workspace-item
+) {
+  background: transparent;
+  border-color: rgba(235, 235, 245, 0.08);
+}
+
+html[data-theme="spaceblack"] :is(
+  .page-chip.clickable, .deferred-item, .archive-item
+):hover {
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+/* ============================================================
+   PACIFIC BLUE
+   Roomier ocean-blue planes; colour and stepped solids carry depth.
+   ============================================================ */
+
+html[data-theme="pacificblue"] .section-header h2 {
+  color: var(--accent-primary);
+  font-style: normal;
+  font-weight: 680;
+  letter-spacing: -0.018em;
+}
+
+html[data-theme="pacificblue"] .section-line {
+  background: linear-gradient(90deg, var(--pacific-border-strong), transparent);
+}
+
+html[data-theme="pacificblue"] .section-count {
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+html[data-theme="pacificblue"] :is(
+  .mission-card, .speed-tile, .selection-bar,
+  .tab-cleanup-banner, .tab-groups-bar
+) {
+  background: var(--pacific-panel);
+  border-color: var(--pacific-border);
+  border-radius: 22px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--pacific-shadow);
+}
+
+html[data-theme="pacificblue"] .mission-card::before {
+  height: 3px;
+  opacity: 0.86;
+}
+
+html[data-theme="pacificblue"] .mission-card::after {
+  box-shadow: inset 0 0 0 1px rgba(207, 237, 250, 0.025);
+}
+
+html[data-theme="pacificblue"] :is(.mission-card, .speed-tile):hover {
+  background: var(--pacific-panel-hover);
+  border-color: var(--pacific-border-strong);
+  box-shadow: var(--pacific-shadow-hover);
+  transform: none;
+}
+
+html[data-theme="pacificblue"] .folder {
+  background: var(--pacific-panel-alt);
+  border-color: var(--pacific-border);
+  border-left-width: 4px;
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(0, 8, 18, 0.2);
+}
+
+html[data-theme="pacificblue"] .folder:hover {
+  background: var(--pacific-panel-hover);
+  border-color: var(--pacific-border-strong);
+  box-shadow: 0 16px 38px rgba(0, 8, 18, 0.27);
+}
+
+html[data-theme="pacificblue"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+) {
+  color: var(--text);
+  background: var(--pacific-control);
+  border-color: var(--pacific-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(0, 8, 18, 0.19);
+}
+
+html[data-theme="pacificblue"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+):focus {
+  border-color: rgba(var(--accent-rgb), 0.66);
+  outline: none;
+  box-shadow: 0 8px 22px rgba(0, 8, 18, 0.22), 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+}
+
+html[data-theme="pacificblue"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+) {
+  color: var(--text);
+  background: var(--pacific-control);
+  border-color: var(--pacific-border);
+  box-shadow: 0 7px 18px rgba(0, 8, 18, 0.18);
+}
+
+html[data-theme="pacificblue"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+):hover {
+  color: var(--text);
+  background: var(--pacific-control-hover);
+  border-color: var(--pacific-border-strong);
+  box-shadow: 0 9px 22px rgba(0, 8, 18, 0.24);
+}
+
+html[data-theme="pacificblue"] :is(
+  .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+  .toast, .onboarding-card, .focus-sweep-panel
+) {
+  background: var(--pacific-panel-alt);
+  border-color: var(--pacific-border-strong);
+  border-radius: 24px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 30px 72px rgba(0, 8, 18, 0.48);
+}
+
+html[data-theme="pacificblue"] :is(
+  .page-chip, .deferred-item, .archive-item, .workspace-item
+) {
+  background: transparent;
+  border-color: rgba(181, 222, 241, 0.1);
+}
+
+html[data-theme="pacificblue"] :is(
+  .page-chip.clickable, .deferred-item, .archive-item
+):hover {
+  background: rgba(var(--accent-rgb), 0.085);
+}
+
+/* ============================================================
+   ORCHID BLOOM
+   Solid pastel planes with colour-tinted controls and soft elevation.
+   ============================================================ */
+
+html[data-theme="orchidbloom"] .section-header h2 {
+  color: var(--accent-primary);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+}
+
+html[data-theme="orchidbloom"] .section-line {
+  background: linear-gradient(90deg, var(--orchid-border), transparent);
+}
+
+html[data-theme="orchidbloom"] .section-count {
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+html[data-theme="orchidbloom"] .mission-card {
+  background: var(--orchid-panel);
+  border-color: transparent;
+  border-radius: 24px;
+  box-shadow: var(--orchid-shadow);
+}
+
+html[data-theme="orchidbloom"] .mission-card::before {
+  height: 4px;
+  opacity: 0.88;
+}
+
+html[data-theme="orchidbloom"] .mission-card::after {
+  box-shadow: inset 0 0 0 1px rgba(103, 69, 150, 0.07);
+}
+
+html[data-theme="orchidbloom"] :is(.mission-card, .speed-tile):hover {
+  background: var(--orchid-panel-hover);
+  border-color: transparent;
+  box-shadow: var(--orchid-shadow-hover);
+}
+
+html[data-theme="orchidbloom"] .folder {
+  background: var(--orchid-panel-alt);
+  border-color: rgba(103, 69, 150, 0.1);
+  border-left-width: 1px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(82, 52, 99, 0.08);
+}
+
+html[data-theme="orchidbloom"] .folder:hover {
+  background: color-mix(in srgb, var(--orchid-panel-alt) 82%, white);
+  border-color: var(--orchid-border);
+  box-shadow: 0 12px 30px rgba(82, 52, 99, 0.11);
+}
+
+html[data-theme="orchidbloom"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+) {
+  color: var(--text);
+  background: var(--orchid-panel);
+  border-color: var(--orchid-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(82, 52, 99, 0.08);
+}
+
+html[data-theme="orchidbloom"] :is(
+  .global-search, .archive-search, .new-folder-input,
+  .folder-rename-input, .dialog-input
+):focus {
+  border-color: rgba(var(--accent-rgb), 0.62);
+  outline: none;
+  box-shadow: 0 8px 24px rgba(82, 52, 99, 0.1), 0 0 0 3px rgba(var(--accent-rgb), 0.13);
+}
+
+html[data-theme="orchidbloom"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+) {
+  color: var(--accent-primary);
+  background: var(--orchid-control);
+  border-color: rgba(103, 69, 150, 0.12);
+  box-shadow: none;
+}
+
+html[data-theme="orchidbloom"] :is(
+  .corner-btn:not(.theme-mode-toggle), .action-btn, .new-folder-btn,
+  .folders-collapse-all, .header-homepage-btn, .dialog-btn,
+  .workspace-edge-save, .workspace-mini-btn, .tab-cleanup-btn,
+  .group-control-btn, .speed-tile-add, .selection-btn:not(.ghost),
+  .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+):hover {
+  color: var(--text);
+  background: var(--orchid-control-hover);
+  border-color: rgba(103, 69, 150, 0.2);
+  box-shadow: none;
+}
+
+html[data-theme="orchidbloom"] :is(
+  .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+  .toast, .onboarding-card, .focus-sweep-panel
+) {
+  background: var(--orchid-panel);
+  border-color: var(--orchid-border);
+  border-radius: 24px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 28px 70px rgba(82, 52, 99, 0.22);
+}
+
+html[data-theme="orchidbloom"] :is(
+  .page-chip, .deferred-item, .archive-item, .workspace-item
+) {
+  background: transparent;
+  border-color: rgba(103, 69, 150, 0.11);
+}
+
+html[data-theme="orchidbloom"] :is(
+  .page-chip.clickable, .deferred-item, .archive-item
+):hover {
+  background: rgba(var(--accent-rgb), 0.075);
+}
+
+/* Orchid's Bloom control is a warm celestial tile, not a generic white button. */
+html[data-theme="orchidbloom"] .theme-mode-toggle {
+  background: linear-gradient(145deg, #ead8f1 0%, #d8bce3 100%);
+  border-color: var(--bloom-border);
+  opacity: 0.96;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    var(--bloom-shadow);
+}
+
+html[data-theme="orchidbloom"] .corner-btn.theme-mode-toggle:hover {
+  background: linear-gradient(145deg, #eeddf4 0%, #dfc7e8 100%);
+  border-color: rgba(103, 69, 150, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    var(--orchid-shadow-hover),
+    0 0 0 3px rgba(var(--accent-rgb), 0.09);
+}
+
+html[data-theme="orchidbloom"] .corner-btn.theme-mode-toggle:active {
+  background: #d7b8e1;
+  box-shadow:
+    inset 0 2px 5px rgba(82, 52, 99, 0.13),
+    0 4px 12px rgba(82, 52, 99, 0.1);
+}
+
+/* Archive is a right-anchored Orchid sheet with solid grouped content. */
+html[data-theme="orchidbloom"] .global-search-row .archive-launch {
+  --archive-label: var(--accent-primary);
+  color: var(--accent-primary);
+  background: linear-gradient(135deg, #f8eefb 0%, #efe0f5 100%);
+  border-color: var(--orchid-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 7px 18px rgba(82, 52, 99, 0.09);
+}
+
+html[data-theme="orchidbloom"] .global-search-row .archive-launch:hover {
+  color: var(--text);
+  background: linear-gradient(135deg, #fffaff 0%, #ead8f3 100%);
+  border-color: var(--orchid-border-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 9px 22px rgba(82, 52, 99, 0.13);
+}
+
+html[data-theme="orchidbloom"] .archive-launch[aria-expanded="true"] {
+  color: #ffffff;
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+html[data-theme="orchidbloom"] .archive-count {
+  color: var(--accent-primary);
+  background: rgba(var(--accent-rgb), 0.11);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.08);
+}
+
+html[data-theme="orchidbloom"] .archive-launch[aria-expanded="true"] .archive-count {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+html[data-theme="orchidbloom"] .archive-drawer-overlay {
+  background: rgba(45, 30, 52, 0.31);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html[data-theme="orchidbloom"] .archive-drawer {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(213, 174, 230, 0.22), transparent 34%),
+    linear-gradient(160deg, var(--orchid-sheet) 0%, #f7edf9 100%);
+  border: 1px solid var(--orchid-border);
+  border-right: 0;
+  border-radius: 28px 0 0 28px;
+  box-shadow: -28px 0 72px rgba(53, 31, 63, 0.28);
+  transform-origin: 100% 50%;
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html[data-theme="orchidbloom"] .archive-drawer-header {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--orchid-border);
+}
+
+html[data-theme="orchidbloom"] .archive-drawer-eyebrow {
+  color: #765787;
+}
+
+html[data-theme="orchidbloom"] .archive-drawer h2 {
+  color: var(--accent-primary);
+  font-weight: 650;
+  letter-spacing: -0.026em;
+}
+
+html[data-theme="orchidbloom"] .archive-drawer-count {
+  color: var(--accent-primary);
+  background: var(--orchid-sheet-alt);
+  border: 1px solid var(--orchid-border);
+  border-radius: 999px;
+  padding: 4px 9px;
+}
+
+html[data-theme="orchidbloom"] :is(.archive-icon-btn, .archive-item-action) {
+  color: var(--accent-primary);
+  background: var(--orchid-control);
+  border: 1px solid rgba(var(--accent-rgb), 0.1);
+  border-radius: 10px;
+}
+
+html[data-theme="orchidbloom"] .archive-icon-btn:hover {
+  color: var(--text);
+  background: var(--orchid-control-hover);
+  border-color: var(--orchid-border-strong);
+}
+
+html[data-theme="orchidbloom"] .archive-search {
+  background: var(--orchid-sheet-group);
+  border-color: var(--orchid-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 7px 20px rgba(82, 52, 99, 0.08);
+}
+
+html[data-theme="orchidbloom"] .archive-clear {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.075);
+  border: 1px solid rgba(var(--danger-rgb), 0.13);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+html[data-theme="orchidbloom"] .archive-clear:hover {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.13);
+  border-color: rgba(var(--danger-rgb), 0.24);
+}
+
+html[data-theme="orchidbloom"] .archive-list {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 2px 8px 4px 0;
+}
+
+html[data-theme="orchidbloom"] .archive-item {
+  gap: 10px;
+  padding: 12px;
+  background: var(--orchid-sheet-group);
+  border: 1px solid rgba(var(--accent-rgb), 0.1);
+  border-radius: 16px;
+  box-shadow: 0 7px 20px rgba(82, 52, 99, 0.065);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+html[data-theme="orchidbloom"] .archive-item:hover {
+  background: #ffffff;
+  border-color: var(--orchid-border);
+  box-shadow: 0 10px 26px rgba(82, 52, 99, 0.1);
+}
+
+html[data-theme="orchidbloom"] .archive-item-title:hover {
+  color: var(--accent-primary);
+}
+
+html[data-theme="orchidbloom"] .archive-item-date {
+  opacity: 0.76;
+}
+
+html[data-theme="orchidbloom"] .archive-item-action:hover {
+  background: var(--orchid-control-hover);
+  border-color: var(--orchid-border);
+  transform: none;
+}
+
+html[data-theme="orchidbloom"] .archive-restore:hover {
+  color: var(--accent-success);
+  background: rgba(var(--success-rgb), 0.1);
+}
+
+html[data-theme="orchidbloom"] .archive-remove:hover {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.1);
+}
+
+html[data-theme="orchidbloom"] .archive-empty {
+  color: var(--muted);
+  background: var(--orchid-sheet-group);
+  border: 1px solid var(--orchid-border);
+  border-radius: 16px;
+}
+
+/* Semantic controls retain their meaning in every independent material. */
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) :is(
+  .action-btn.close-tabs, .dialog-btn.danger, .workspace-mini-btn.danger,
+  .workspace-delete-btn, .selection-btn.danger
+) {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.1);
+  border-color: rgba(var(--danger-rgb), 0.34);
+}
+
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) :is(
+  .action-btn.close-tabs, .dialog-btn.danger, .workspace-mini-btn.danger,
+  .workspace-delete-btn, .selection-btn.danger
+):hover {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.16);
+  border-color: rgba(var(--danger-rgb), 0.52);
+}
+
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) .onboarding-btn.primary {
+  color: var(--bg);
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) .onboarding-btn.primary:hover:not(:disabled) {
+  color: var(--bg);
+  background: color-mix(in srgb, var(--accent-primary) 88%, var(--text));
+  border-color: color-mix(in srgb, var(--accent-primary) 88%, var(--text));
+}
+
+/* Keyboard focus stays visible across every opaque and tinted surface. */
+:is(
+  html[data-theme="spaceblack"],
+  html[data-theme="pacificblue"],
+  html[data-theme="orchidbloom"]
+) :is(button, a):focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="orchidbloom"] .archive-drawer {
+    animation-duration: 0.01ms !important;
+  }
+
+  :is(
+    html[data-theme="spaceblack"],
+    html[data-theme="pacificblue"],
+    html[data-theme="orchidbloom"]
+  ) :is(
+    .corner-btn, .action-btn, .new-folder-btn, .folders-collapse-all,
+    .header-homepage-btn, .dialog-btn, .workspace-edge-save, .workspace-mini-btn,
+    .tab-cleanup-btn, .group-control-btn, .speed-tile-add,
+    .selection-btn, .onboarding-btn, .focus-sweep-icon-btn, .archive-launch
+  ) {
+    scale: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :is(
+    html[data-theme="spaceblack"],
+    html[data-theme="pacificblue"],
+    html[data-theme="orchidbloom"]
+  ) :is(
+    .mission-card, .folder, .speed-tile, .global-search,
+    .selection-bar, .tab-cleanup-banner, .tab-groups-bar,
+    .dialog, .context-menu, .workspace-drawer, .archive-drawer,
+    .toast, .onboarding-card, .focus-sweep-panel
+  ) {
+    color: CanvasText !important;
+    background: Canvas !important;
+    border-color: CanvasText !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+}

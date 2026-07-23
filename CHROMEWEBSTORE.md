@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Tab Atlas
 
-> Last Updated: 2026-07-18
+> Last Updated: 2026-07-23
 
 ## Store Listing
 
@@ -12,7 +12,7 @@
 
 Tab Atlas replaces Chrome's new-tab page with a clear dashboard of your open tabs, grouped by domain.
 
-See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Select several open or saved tabs with modifier clicks, then drag the selected group into a folder or handle it with bulk actions. Independent columns stay aligned while you scroll and release naturally when you reach an edge. Focus Sweep presents tabs as a calm card deck: swipe left to close, up to save, or right to keep, then review the batch before applying it. Choose from 13 local themes, including animated, minimalist dark, soft-grey and warm cream glass styles, then save one light and one dark favourite as a quick-switch pair. Privacy mode and editable shortcuts let the dashboard fit your workflow.
+See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Select several open or saved tabs with modifier clicks, then drag the selected group into a folder or handle it with bulk actions. Independent columns stay aligned while you scroll and release naturally when you reach an edge. Focus Sweep presents tabs as a calm card deck: swipe left to close, up to save, or right to keep, then review the batch before applying it. Choose from 16 local themes, including animated, minimalist dark, soft-grey, warm cream and three polished Apple-inspired material styles, then save one light and one dark favourite as a quick-switch pair. Privacy mode and editable shortcuts let the dashboard fit your workflow.
 
 Install the extension, open a new tab, and use the dashboard to jump to, save, group, or close tabs. The toolbar icon returns you to an existing Tab Atlas page or opens one when needed.
 
@@ -138,6 +138,7 @@ Questions about privacy can be submitted through the project's public issue trac
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
+| Unreleased | 2026-07-23 | Added three isolated Apple-inspired themes: solid titanium Space Black, layered ocean-blue Pacific Blue, and colourful elevated Orchid Bloom. Each owns an independent opaque material system and stays visibly distinct from the existing glass themes. Orchid Bloom now carries its material language through the Moon/Sun switch and the complete archive sheet. Removed Silver Studio and safely migrated previously saved Apple theme choices to supported replacements. The new styles remain in a separate stylesheet that cannot affect the original themes. | In development |
 | 1.0.1 | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. Redesigned Focus Sweep as an animated three-card deck with swipe, keyboard and button controls, a safe review summary, folder-aware saving and an optional Instant mode. Glass search fields now use the same restrained focus ring as the regular themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Ready to upload |
 | 1.0.0 | 2026-07-12 | Initial store draft with the saved-links archive, one-click restoration, Undo, and aligned independent column scrolling. | Draft |
 

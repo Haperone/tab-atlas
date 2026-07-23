@@ -13,7 +13,22 @@ import { THEME_OPTIONS } from '../extension/lib/view-config.js';
 
 const manifestPath = 'extension/manifest.json';
 const THEME_IDS = THEME_OPTIONS.map(theme => theme.id);
-const GLASS_THEME_IDS = ['auroraglass', 'smokeglass', 'pearlglass', 'paperglass'];
+const GLASS_THEME_IDS = THEME_OPTIONS
+  .filter(theme => theme.id.endsWith('glass'))
+  .map(theme => theme.id);
+const APPLE_THEME_IDS = [
+  'spaceblack',
+  'pacificblue',
+  'orchidbloom',
+];
+
+async function readThemeCss() {
+  const [baseCss, appleCss] = await Promise.all([
+    readProjectText('extension/style.css'),
+    readProjectText('extension/apple-themes.css'),
+  ]);
+  return `${baseCss}\n${appleCss}`;
+}
 
 test('manifest uses MV3 with the expected entry points', async () => {
   const manifest = await readProjectJson(manifestPath);
@@ -115,7 +130,7 @@ test('multi-select onboarding includes a motion demo and a reduced-motion fallba
 });
 
 test('Bloom owns theme-specific tokens in all themes and accessible motion fallbacks', async () => {
-  const css = await readProjectText('extension/style.css');
+  const css = await readThemeCss();
   const tokens = [
     'bloom-moon', 'bloom-sun', 'bloom-surface', 'bloom-cutout',
     'bloom-border', 'bloom-shadow', 'bloom-radius',
@@ -138,7 +153,7 @@ test('Bloom owns theme-specific tokens in all themes and accessible motion fallb
 });
 
 test('Bloom celestial states keep non-text contrast in every theme', async () => {
-  const css = await readProjectText('extension/style.css');
+  const css = await readThemeCss();
   const luminance = hex => {
     const channels = [1, 3, 5]
       .map(index => Number.parseInt(hex.slice(index, index + 2), 16) / 255)
@@ -160,7 +175,7 @@ test('Bloom celestial states keep non-text contrast in every theme', async () =>
 });
 
 test('theme text roles meet WCAG AA on page and card surfaces', async () => {
-  const css = await readProjectText('extension/style.css');
+  const css = await readThemeCss();
   const roles = ['muted', 'accent-primary', 'accent-success', 'accent-info', 'accent-danger'];
   const luminance = hex => {
     const channels = [1, 3, 5]
@@ -189,7 +204,7 @@ test('theme text roles meet WCAG AA on page and card surfaces', async () => {
 });
 
 test('theme status decoration is driven entirely by semantic tokens', async () => {
-  const css = await readProjectText('extension/style.css');
+  const css = await readThemeCss();
   for (const id of THEME_IDS) {
     const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
     for (const token of ['status-active-rgb', 'status-cooling-rgb', 'status-abandoned-rgb']) {
@@ -206,7 +221,7 @@ test('theme status decoration is driven entirely by semantic tokens', async () =
 });
 
 test('glass themes share one accessible material system but keep distinct motion profiles', async () => {
-  const css = await readProjectText('extension/style.css');
+  const css = await readThemeCss();
   const glassStart = css.indexOf('GLASSMORPHIC THEMES');
   const glassEnd = css.indexOf('* { margin: 0; padding: 0; box-sizing: border-box; }', glassStart);
   const glassSection = css.slice(glassStart, glassEnd);
@@ -429,7 +444,7 @@ test('desktop column scrolling magnetically anchors the dashboard without trappi
 });
 
 test('every theme defines a distinct checkbox hover and soft themes expose it', async () => {
-  const css = await readProjectText('extension/style.css');
+  const css = await readThemeCss();
   const colors = THEME_IDS.map(id => {
     const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
     const color = block.match(/--checkbox-hover:\s*(#[0-9a-f]{6})/i)?.[1];
@@ -536,10 +551,86 @@ test('theme initialization remains a packaged pre-paint script', async () => {
   const init = await readProjectText('extension/theme-init.js');
   const themeIndex = html.indexOf('<script src="theme-init.js"></script>');
   const stylesheetIndex = html.indexOf('<link rel="stylesheet" href="style.css">');
+  const appleStylesheetIndex = html.indexOf('<link rel="stylesheet" href="apple-themes.css">');
   const appIndex = html.search(/<script\b[^>]*\bsrc="app\.js"[^>]*><\/script>/);
   assert.ok(themeIndex >= 0 && themeIndex < stylesheetIndex);
-  assert.ok(appIndex > stylesheetIndex);
+  assert.ok(appleStylesheetIndex > stylesheetIndex);
+  assert.ok(appIndex > appleStylesheetIndex);
   assert.match(init, /lightThemes = new Set\(\[[^\]]*'pearlglass'[^\]]*'paperglass'/);
-  assert.match(init, /legacyThemes = \{ paper: 'paperglass', latte: 'lattesoft' \}/);
+  const lightSet = init.match(/lightThemes = new Set\(\[([\s\S]*?)\]\)/)?.[1] || '';
+  assert.match(lightSet, /'orchidbloom'/);
+  assert.doesNotMatch(lightSet, /'silverstudio'|'spaceblack'|'pacificblue'/);
+  assert.match(init, /spaceblackglass:\s*'spaceblack'/);
+  assert.match(init, /pacificglass:\s*'pacificblue'/);
+  assert.match(init, /silverglass:\s*'orchidbloom'/);
+  assert.match(init, /silverstudio:\s*'orchidbloom'/);
+  assert.match(init, /orchidglass:\s*'orchidbloom'/);
   assert.match(init, /dataset\.themeMode = lightThemes\.has\(theme\) \? 'light' : 'dark'/);
+});
+
+test('Apple-inspired theme CSS cannot target the original theme collection', async () => {
+  const css = await readProjectText('extension/apple-themes.css');
+  const targetedThemeIds = new Set(
+    [...css.matchAll(/data-theme="([^"]+)"/g)].map(match => match[1]),
+  );
+
+  assert.deepEqual([...targetedThemeIds].sort(), [...APPLE_THEME_IDS].sort());
+  assert.doesNotMatch(css, /\[data-theme\](?![=$])/);
+  assert.doesNotMatch(css, /\[data-theme\$/);
+  assert.doesNotMatch(css, /:root/);
+});
+
+test('Apple-inspired themes own independent non-glass material systems', async () => {
+  const css = await readProjectText('extension/apple-themes.css');
+  const expectedGroups = {
+    spaceblack: 'dark',
+    pacificblue: 'dark',
+    orchidbloom: 'light',
+  };
+
+  for (const [id, group] of Object.entries(expectedGroups)) {
+    const option = THEME_OPTIONS.find(theme => theme.id === id);
+    const block = css.match(new RegExp(`\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1] || '';
+    assert.equal(option?.group, group);
+    assert.equal(id.endsWith('glass'), false);
+    assert.doesNotMatch(block, /--glass-/, `${id} must not define the shared glass tokens`);
+    assert.match(css, new RegExp(`html\\[data-theme="${id}"\\][\\s\\S]*?\\.mission-card`));
+  }
+
+  assert.doesNotMatch(css, /blur\(/, 'independent materials must stay opaque');
+  assert.match(css, /html\[data-theme="spaceblack"\][\s\S]*?--space-panel:/);
+  assert.match(css, /html\[data-theme="pacificblue"\][\s\S]*?--pacific-panel:/);
+  assert.match(css, /html\[data-theme="orchidbloom"\][\s\S]*?--orchid-panel:/);
+});
+
+test('Orchid Bloom carries its material system through Bloom and the archive sheet', async () => {
+  const css = await readProjectText('extension/apple-themes.css');
+  const requiredSelectors = [
+    'html[data-theme="orchidbloom"] .theme-mode-toggle',
+    'html[data-theme="orchidbloom"] .corner-btn.theme-mode-toggle:hover',
+    'html[data-theme="orchidbloom"] .global-search-row .archive-launch',
+    'html[data-theme="orchidbloom"] .archive-drawer-overlay',
+    'html[data-theme="orchidbloom"] .archive-drawer',
+    'html[data-theme="orchidbloom"] .archive-search',
+    'html[data-theme="orchidbloom"] .archive-clear',
+    'html[data-theme="orchidbloom"] .archive-item',
+    'html[data-theme="orchidbloom"] .archive-empty',
+  ];
+
+  for (const selector of requiredSelectors) {
+    assert.equal(css.includes(selector), true, `${selector} should have an Orchid-specific treatment`);
+  }
+
+  const orchidBlock = css.match(/html\[data-theme="orchidbloom"\]\s*\{([^}]*)\}/)?.[1] || '';
+  const bloomControl = css.match(/html\[data-theme="orchidbloom"\] \.theme-mode-toggle\s*\{([^}]*)\}/)?.[1] || '';
+  assert.match(orchidBlock, /--orchid-sheet:/);
+  assert.match(orchidBlock, /--orchid-sheet-group:/);
+  assert.match(orchidBlock, /--bloom-moon:\s*#66518a/);
+  assert.match(orchidBlock, /--bloom-sun:\s*#8a570c/);
+  assert.match(bloomControl, /linear-gradient\(145deg,\s*#ead8f1\s+0%,\s*#d8bce3\s+100%\)/);
+  assert.doesNotMatch(bloomControl, /#fff(?:fff|aff)?/i, 'Orchid Bloom control must not read as a white tile');
+  assert.equal(css.includes('html[data-theme="orchidbloom"][data-theme-mode="light"] .theme-bloom-disc'), false);
+  assert.equal(css.includes('html[data-theme="orchidbloom"][data-theme-mode="light"] .theme-bloom-ray'), false);
+  assert.match(css, /html\[data-theme="orchidbloom"\] \.archive-drawer-overlay\s*\{[\s\S]*?backdrop-filter:\s*none/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?html\[data-theme="orchidbloom"\] \.archive-drawer[\s\S]*?animation-duration:\s*0\.01ms !important/);
 });
