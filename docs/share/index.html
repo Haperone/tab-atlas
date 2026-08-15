@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://tabatlas.app/share">
+  <meta property="og:title" content="Tab Atlas folder share">
+  <meta property="og:description" content="Open a shared Tab Atlas folder locally.">
+  <meta property="og:url" content="https://tabatlas.app/share">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; worker-src 'none'">
+  <title>Tab Atlas folder share</title>
+  <link rel="stylesheet" href="share.css">
+</head>
+<body>
+  <main class="share-shell" aria-labelledby="shareTitle">
+    <p class="share-kicker">Tab Atlas</p>
+    <h1 id="shareTitle">Shared folder</h1>
+    <p id="shareStatus" class="share-status" role="status" aria-live="polite">Checking this link locally…</p>
+    <section id="sharePreview" class="share-preview" hidden aria-live="polite"></section>
+    <div id="shareActions" class="share-actions" hidden>
+      <button id="shareAdd" type="button">Add to Tab Atlas</button>
+      <button id="shareRetry" type="button" class="secondary" hidden>Check again</button>
+      <a id="shareStore" class="secondary" hidden target="_blank" rel="noopener noreferrer">Get Tab Atlas</a>
+    </div>
+    <p class="share-note">The link contains an encrypted copy of this folder. Anyone who has the complete link can decrypt, view, and import it. Encryption prevents casual reading and detects changes; it does not restrict recipients and does not provide revocation, expiry, or server-side access control.</p>
+  </main>
+  <script type="module" src="share.js"></script>
+</body>
+</html>

@@ -375,10 +375,11 @@ test('folder locks and clear controls remain isolated from existing theme styles
     ['archiveSearch', 'Clear archive search'],
     ['speedDialLabelInput', 'Clear shortcut label'],
     ['speedDialUrlInput', 'Clear shortcut URL'],
+    ['folderShareFilter', 'Clear link filter'],
   ]) {
     assert.match(html, new RegExp(`id="${id}"[\\s\\S]*?data-action="clear-input"[\\s\\S]*?aria-label="${label}"[\\s\\S]*?<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"\\/><\\/svg>`));
   }
-  assert.equal((html.match(/class="input-clear-btn"/g) || []).length, 5);
+  assert.equal((html.match(/class="input-clear-btn"/g) || []).length, 6);
   assert.match(html, /class="input-clear-btn"[\s\S]*?<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"\/><\/svg>/);
   assert.doesNotMatch(html, /class="input-clear-btn"[^>]*>×<\/button>/);
   assert.match(html, /<div class="archive-search-wrap">/);

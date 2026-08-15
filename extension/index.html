@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="apple-themes.css">
   <link rel="stylesheet" href="interaction-controls.css">
+  <link rel="stylesheet" href="folder-share.css">
 </head>
 <body>
 <div class="container">
@@ -289,6 +290,49 @@
     </div>
   </div>
 </div>
+
+<!-- Folder sharing is isolated in a native dialog so focus and Escape work
+     consistently without changing legacy theme or overlay selectors. -->
+<dialog id="folderShareDialog" class="folder-share-dialog" aria-labelledby="folderShareTitle">
+  <form method="dialog" class="folder-share-panel">
+    <header class="folder-share-header">
+      <div><p class="folder-share-eyebrow">Tab Atlas share</p><h2 id="folderShareTitle">Share folder</h2></div>
+      <button class="folder-share-close" value="cancel" type="submit" aria-label="Close share folder">×</button>
+    </header>
+    <p id="folderShareIntro" class="folder-share-intro"></p>
+    <div class="clearable-input folder-share-filter" data-clearable-input>
+      <input id="folderShareFilter" type="text" placeholder="Filter links…" aria-label="Filter links to share">
+      <button class="input-clear-btn" data-action="clear-input" data-clear-target="folderShareFilter" type="button" aria-label="Clear link filter" title="Clear link filter" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
+    </div>
+    <div class="folder-share-toolbar">
+      <button type="button" class="folder-share-secondary" data-share-action="select-all">Select all</button>
+      <button type="button" class="folder-share-secondary" data-share-action="clear-all">Clear all</button>
+      <span id="folderShareCount" class="folder-share-count" aria-live="polite"></span>
+    </div>
+    <div id="folderShareWarning" class="folder-share-warning" hidden></div>
+    <ul id="folderShareList" class="folder-share-list" aria-label="Links to share"></ul>
+    <p id="folderShareEmpty" class="folder-share-status" hidden>No links match this filter.</p>
+    <div class="folder-share-meter"><span>Encrypted link length</span><strong id="folderShareMeter" aria-live="polite">—</strong></div>
+    <div id="folderShareStatus" class="folder-share-status" role="status" aria-live="polite"></div>
+    <textarea id="folderShareUri" class="folder-share-uri" readonly aria-label="Encrypted share link" hidden></textarea>
+    <p class="folder-share-disclosure">The link contains an encrypted copy of this folder. Anyone who has the complete link can decrypt, view, and import it. Encryption prevents casual reading and detects changes; it does not restrict recipients and does not provide revocation, expiry, or server-side access control.</p>
+    <footer class="folder-share-actions">
+      <button type="submit" value="cancel" class="folder-share-secondary">Cancel</button>
+      <button type="button" data-share-action="copy" class="folder-share-secondary">Copy link</button>
+      <button type="button" data-share-action="share" class="folder-share-primary">Share…</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog id="folderShareImportDialog" class="folder-share-dialog" aria-labelledby="folderShareImportTitle">
+  <form method="dialog" class="folder-share-panel">
+    <header class="folder-share-header"><div><p class="folder-share-eyebrow">Incoming folder</p><h2 id="folderShareImportTitle">Add shared folder</h2></div><button class="folder-share-close" value="cancel" type="submit" aria-label="Close shared folder">×</button></header>
+    <p id="folderShareImportIntro" class="folder-share-intro"></p>
+    <ul id="folderShareImportList" class="folder-share-list" aria-label="Incoming links"></ul>
+    <div id="folderShareImportStatus" class="folder-share-status" role="status" aria-live="polite"></div>
+    <footer class="folder-share-actions"><button type="submit" value="cancel" class="folder-share-secondary">Cancel</button><button id="folderShareImportConfirm" type="button" class="folder-share-primary">Add folder</button></footer>
+  </form>
+</dialog>
 
 <!-- Bloom theme-mode toggle: the crescent opens into a sun. -->
 <button class="corner-btn theme-mode-toggle" id="themeModeToggle" data-action="toggle-theme-mode" data-mode="dark" aria-label="Switch to Paper Glass" aria-pressed="false" title="Switch to Paper Glass" type="button">

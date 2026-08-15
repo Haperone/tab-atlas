@@ -2,7 +2,7 @@
 
 **Keep tabs on your tabs.**
 
-Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everything you have open — grouped by domain, searchable, themeable, organised into folders, and restorable as saved workspaces. No server, no account, no external requests. Everything lives on your machine.
+Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everything you have open — grouped by domain, searchable, themeable, organised into folders, and restorable as saved workspaces. No account or analytics; normal use stays on your machine.
 
 ---
 
@@ -43,7 +43,18 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 
 **Private by design**
 - **100% local** — saved tabs, folders and workspace states in `chrome.storage.local`; theme pair and speed dial settings in `localStorage`
-- **No server, npm install, build step or external API calls at runtime** — just load the extension
+- **No server, npm install, build step or external API calls for normal dashboard use** — just load the extension
+- **Folder shares are explicit** — a user can create an encrypted bearer link for selected saved links; the encrypted payload stays in the URL fragment and is never uploaded by Tab Atlas
+
+### Encrypted folder sharing
+
+Choose **Share folder…** from a folder’s menu to review selected links, remove tracking parameters where safe, and copy or use the system share sheet. Sensitive and local-network links start unchecked. A recipient previews the folder locally at `/share` and must confirm the final import in Tab Atlas; no link opens automatically.
+
+> The link contains an encrypted copy of this folder. Anyone who has the complete link can decrypt, view, and import it. Encryption prevents casual reading and detects changes; it does not restrict recipients and does not provide revocation, expiry, or server-side access control.
+
+Shares have no expiry or revocation. Signed URLs are left unchanged; ordinary tracker parameters may be removed. Private DNS results cannot be detected without a network lookup, so public hostnames that resolve to a private address are not identified locally.
+
+Outside that explicit sharing action there is no server, npm install, build step or external API calls at runtime.
 
 ---
 
@@ -83,6 +94,7 @@ publishing lives outside it (so it never ends up in the store ZIP):
 | `extension/` | The extension itself — this is the only folder you load unpacked or zip for the store |
 | `CHROMEWEBSTORE.md` | Source-of-truth draft for the Chrome Web Store listing: description, permission justifications, privacy answers, developer info, and a **Submission Blockers** checklist. A contract test (`tests/webstore-contract.test.js`) keeps it in sync with `manifest.json`. |
 | `docs/privacy-policy.html` | The published privacy policy. Self-contained, no external requests. Served via **GitHub Pages** (Settings → Pages → Source: `main` / `/docs`) at `https://haperone.github.io/tab-atlas/privacy-policy.html` — this is the URL the store's privacy-policy field points to. `docs/index.html` is a small landing page. |
+| `docs/share/` | Dependency-free receiver for the canonical `https://tabatlas.app/share` surface. It needs a header-capable HTTPS deployment: meta tags are included, but production must also send CSP and `Referrer-Policy: no-referrer` HTTP headers. GitHub Pages alone cannot supply those headers from this repository. |
 | `tools/screenshot-harness.html` | Renders the **real** dashboard (`extension/app.js` + `style.css`) against a mocked `chrome.*` API with seed data, so store screenshots can be captured at 1280×800 without loading the extension or arranging live tabs. |
 | `tools/serve.mjs` | Tiny static server for previewing the above locally. See [`tools/README.md`](tools/README.md). |
 

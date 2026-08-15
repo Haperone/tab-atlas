@@ -20,6 +20,10 @@ import {
   parseBackupFile,
 } from './lib/backup-data.js';
 import { createStorageRepository } from './lib/storage-repository.js';
+import { SHARE_BASE_URL } from './lib/share-config.js';
+import { createSharePackage, decodeTa1Fragment, encodeTa1Package, inspectShareUrl, sanitizeShareUrl } from './lib/ta1-codec.js';
+import { importSharedPackage } from './lib/share-import.js';
+import { SHARE_CONSUME_TYPE } from './lib/share-handoff.js';
 import {
   createUndoStore,
   deleteFolderRecords,
@@ -2330,7 +2334,7 @@ document.addEventListener('click', async (e) => {
     e.stopPropagation(); // don't also toggle the folder
     const fid  = actionEl.dataset.folderId;
     const rect = actionEl.getBoundingClientRect();
-    await openFolderContextMenu(rect.right, rect.bottom, fid);
+    await openFolderContextMenu(rect.right, rect.bottom, fid, actionEl);
     return;
   }
 
@@ -3108,7 +3112,182 @@ async function openTabContextMenu(x, y, deferredIds) {
  * Builds the right-click / "…" menu for a folder: collapse/expand,
  * rename, or delete.
  */
-async function openFolderContextMenu(x, y, folderId) {
+let folderShareState = null;
+let folderShareLastFocus = null;
+let pendingSharedImport = null;
+
+function folderShareDialog() { return document.getElementById('folderShareDialog'); }
+function folderShareSelected() { return folderShareState?.items.filter(item => item.selected) || []; }
+function folderShareSetActionsEnabled(enabled) {
+  document.querySelectorAll('[data-share-action="copy"], [data-share-action="share"]').forEach(button => { button.disabled = !enabled; });
+}
+function folderShareSetStatus(text, alert = false) {
+  const status = document.getElementById('folderShareStatus');
+  if (!status) return;
+  status.textContent = text;
+  status.setAttribute('role', alert ? 'alert' : 'status');
+}
+function folderShareRenderRows() {
+  const list = document.getElementById('folderShareList');
+  if (!list || !folderShareState) return;
+  list.replaceChildren();
+  const query = (document.getElementById('folderShareFilter')?.value || '').trim().toLowerCase();
+  const visible = folderShareState.items.filter(item => !query || `${item.title}\n${item.cleanedUrl}\n${item.hostname}`.toLowerCase().includes(query));
+  document.getElementById('folderShareEmpty').hidden = Boolean(visible.length);
+  visible.forEach(item => {
+    const row = document.createElement('li'); row.className = 'folder-share-row';
+    const check = document.createElement('input'); check.type = 'checkbox'; check.checked = item.selected; check.setAttribute('aria-label', `Share ${item.title || item.url}`);
+    check.addEventListener('change', () => { item.selected = check.checked; void folderShareUpdatePreview(); });
+    const icon = document.createElement('img'); icon.className = 'folder-share-favicon'; icon.alt = ''; icon.src = favIcon(item.url);
+    const text = document.createElement('span');
+    const title = document.createElement('span'); title.className = 'folder-share-row-title'; title.textContent = item.title || item.url;
+    const host = document.createElement('span'); host.className = 'folder-share-row-host'; host.textContent = item.hostname;
+    const url = document.createElement('span'); url.className = 'folder-share-row-url'; url.textContent = item.cleanedUrl;
+    text.append(title, host, url);
+    row.append(check, icon, text);
+    if (item.sensitive || item.local || item.removedTracking) { const flag = document.createElement('span'); flag.className = 'folder-share-row-flag'; flag.textContent = item.sensitive ? 'Sensitive' : item.local ? 'Local' : `Tracking −${item.removedTracking}`; row.append(flag); }
+    list.append(row);
+  });
+}
+async function folderShareUpdatePreview() {
+  const state = folderShareState;
+  if (!state) return;
+  const revision = ++state.revision;
+  const count = document.getElementById('folderShareCount');
+  const meter = document.getElementById('folderShareMeter');
+  const warning = document.getElementById('folderShareWarning');
+  const uri = document.getElementById('folderShareUri');
+  const selected = state.items.filter(item => item.selected);
+  folderShareSetActionsEnabled(false);
+  if (count) {
+    const domains = new Set(selected.map(item => item.hostname));
+    count.textContent = `${selected.length} selected · ${domains.size} site${domains.size === 1 ? '' : 's'}`;
+  }
+  if (!selected.length) {
+    state.uri = '';
+    if (meter) { meter.textContent = 'Select at least one link'; meter.dataset.state = 'error'; }
+    if (uri) { uri.value = ''; uri.hidden = true; }
+    folderShareSetStatus('Select one or more safe links to create a share link.');
+    return;
+  }
+  try {
+    const pkg = createSharePackage({ name: state.name, items: selected });
+    const encoded = await encodeTa1Package(pkg);
+    const value = `${SHARE_BASE_URL}${encoded.fragment}`;
+    if (folderShareState !== state || state.revision !== revision || !folderShareDialog()?.open) return;
+    state.uri = value;
+    const risky = selected.filter(item => item.sensitive || item.local).length;
+    if (warning) { warning.hidden = !risky; warning.textContent = risky ? 'Sensitive or local links are included. Copying or sharing will ask for one final confirmation.' : ''; }
+    if (meter) {
+      meter.textContent = `${value.length.toLocaleString()} characters${value.length > 4096 ? ' · compatibility warning' : ''}`;
+      meter.dataset.state = value.length > 8192 ? 'error' : value.length > 4096 ? 'warning' : 'ok';
+    }
+    if (uri) { uri.value = value; uri.hidden = value.length > 8192; }
+    folderShareSetActionsEnabled(value.length <= 8192);
+    folderShareSetStatus(value.length > 8192 ? 'This selection is too large. Remove links before sharing.' : 'Tracking parameters are cleaned where safe; signed URLs remain unchanged.');
+  } catch (error) {
+    if (folderShareState !== state || state.revision !== revision) return;
+    state.uri = '';
+    if (meter) { meter.textContent = 'Could not create a safe share link'; meter.dataset.state = 'error'; }
+    folderShareSetStatus('Remove an invalid link or reduce the selection, then try again.', true);
+  }
+}
+async function openFolderShareDialog(folderId, opener = document.activeElement) {
+  const { folders, deferred } = await storageRepository.getCollections();
+  const folder = folders.find(item => item.id === folderId);
+  const dialog = folderShareDialog();
+  if (!folder || !dialog) return;
+  folderShareLastFocus = opener?.isConnected ? opener : document.querySelector(`[data-action="folder-menu"][data-folder-id="${folderId}"]`);
+  const items = deferred.filter(item => item.folderId === folderId && !item.dismissed).flatMap(item => {
+    try {
+      const info = inspectShareUrl(item.url);
+      const sanitized = sanitizeShareUrl(item.url);
+      return [{ url: item.url, cleanedUrl: sanitized.cleanedUrl, removedTracking: sanitized.removedTracking, title: item.title || '', hostname: info.hostname, sensitive: info.sensitive, local: info.local, selected: !info.sensitive && !info.local }];
+    } catch { return []; }
+  });
+  folderShareState = { folderId, name: folder.name, items, uri: '', revision: 0 };
+  const filter = document.getElementById('folderShareFilter');
+  if (filter) { filter.value = ''; syncClearButton(filter); }
+  document.getElementById('folderShareTitle').textContent = `Share “${folder.name}”`;
+  const removed = items.reduce((total, item) => total + item.removedTracking, 0);
+  document.getElementById('folderShareIntro').textContent = items.length ? `Choose the saved links to include. ${removed ? `${removed} known tracking parameter${removed === 1 ? '' : 's'} will be removed where safe. ` : ''}Links with sensitive values or local addresses start unchecked.` : 'This folder has no shareable saved links yet.';
+  dialog.showModal();
+  folderShareSetActionsEnabled(false);
+  dialog.querySelector('[data-share-action="select-all"]')?.focus();
+  folderShareRenderRows();
+  await folderShareUpdatePreview();
+}
+function closeFolderShareDialog() {
+  const dialog = folderShareDialog();
+  if (dialog?.open) dialog.close();
+}
+async function copyFolderShareLink() {
+  const selected = folderShareSelected();
+  const value = folderShareState?.uri;
+  if (!value || value.length > 8192) return folderShareSetStatus('Reduce the selection before copying.', true);
+  if (selected.some(item => item.sensitive || item.local) && !window.confirm('This selection includes sensitive or local links. Include them in a bearer link?')) return;
+  try { await navigator.clipboard.writeText(value); folderShareSetStatus('Encrypted share link copied.'); }
+  catch {
+    const field = document.getElementById('folderShareUri');
+    field.hidden = false; field.focus(); field.select();
+    folderShareSetStatus('Clipboard access failed. The link is selected so you can copy it manually.', true);
+  }
+}
+async function shareFolderShareLink() {
+  const value = folderShareState?.uri;
+  if (!value || value.length > 8192) return folderShareSetStatus('Reduce the selection before sharing.', true);
+  if (!navigator.share) return copyFolderShareLink();
+  if (folderShareSelected().some(item => item.sensitive || item.local) && !window.confirm('This selection includes sensitive or local links. Include them in a bearer link?')) return;
+  try { await navigator.share({ title: `Tab Atlas: ${folderShareState.name}`, url: value }); folderShareSetStatus('Share sheet opened.'); }
+  catch (error) { if (error?.name !== 'AbortError') folderShareSetStatus('The share sheet was unavailable. You can copy the link instead.', true); }
+}
+function renderSharedImport(pkg) {
+  const list = document.getElementById('folderShareImportList'); list.replaceChildren();
+  pkg.items.slice(0, 12).forEach(item => {
+    const row = document.createElement('li'); row.className = 'folder-share-row';
+    const text = document.createElement('span'); const title = document.createElement('span'); title.className = 'folder-share-row-title'; title.textContent = item.title || item.url;
+    const url = document.createElement('span'); url.className = 'folder-share-row-url'; url.textContent = item.url; text.append(title, url); row.append(text); list.append(row);
+  });
+  if (pkg.items.length > 12) { const more = document.createElement('li'); more.className = 'folder-share-row-url'; more.textContent = `…and ${pkg.items.length - 12} more links`; list.append(more); }
+}
+async function openPendingSharedImport() {
+  const match = location.hash.match(/^#share-import=([a-f0-9]{32})$/u);
+  if (!match) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  const pending = await requestSharedHandoff(match[1]);
+  if (pending.code !== 'OK') { showToast('This shared-folder request expired. Open the link again.'); return; }
+  try {
+    const pkg = await decodeTa1Fragment(pending.fragment);
+    pendingSharedImport = { ...pending, pkg };
+    document.getElementById('folderShareImportTitle').textContent = `Add “${pkg.name}”`;
+    document.getElementById('folderShareImportIntro').textContent = `${pkg.items.length} link${pkg.items.length === 1 ? '' : 's'} from ${new Set(pkg.items.map(item => item.hostname)).size} domain${new Set(pkg.items.map(item => item.hostname)).size === 1 ? '' : 's'} will be copied into a new folder. Nothing opens automatically.`;
+    document.getElementById('folderShareImportStatus').textContent = pkg.items.some(item => item.sensitive || item.local) ? 'This folder includes sensitive or local links. Review before adding.' : '';
+    renderSharedImport(pkg);
+    const dialog = document.getElementById('folderShareImportDialog'); dialog.showModal(); document.getElementById('folderShareImportConfirm').focus();
+  } catch { showToast('This shared link is damaged or cannot be opened safely.'); }
+}
+function requestSharedHandoff(token) {
+  return new Promise(resolve => {
+    try { chrome.runtime.sendMessage({ type: SHARE_CONSUME_TYPE, token }, response => resolve(chrome.runtime.lastError ? { code: 'HANDOFF_EXPIRED' } : response || { code: 'HANDOFF_EXPIRED' })); }
+    catch { resolve({ code: 'HANDOFF_EXPIRED' }); }
+  });
+}
+async function confirmSharedImport() {
+  if (!pendingSharedImport) return;
+  const button = document.getElementById('folderShareImportConfirm'); button.disabled = true;
+  const result = await importSharedPackage(storageRepository, pendingSharedImport.fragment);
+  button.disabled = false;
+  if (result.code === 'OK') {
+    pendingSharedImport = null;
+    document.getElementById('folderShareImportDialog').close(); await refreshSavedAndFolders();
+    showToast(`Folder added: ${result.added} links · ${result.skipped} already saved links skipped`);
+  } else {
+    document.getElementById('folderShareImportStatus').textContent = result.code === 'NO_NEW_LINKS' ? 'Every link is already saved. No folder was added.' : 'The folder could not be saved. Try again.';
+    document.getElementById('folderShareImportStatus').setAttribute('role', 'alert');
+  }
+}
+
+async function openFolderContextMenu(x, y, folderId, opener = document.activeElement) {
   const folders = await getFolders();
   const f = folders.find(ff => ff.id === folderId);
   if (!f) return;
@@ -3119,6 +3298,7 @@ async function openFolderContextMenu(x, y, folderId) {
       await renderFoldersColumn();
     }},
     { label: 'Rename', onClick: () => startFolderRename(folderId) },
+    { label: 'Share folder…', onClick: () => openFolderShareDialog(folderId, opener) },
     { label: f.locked ? 'Unlock folder' : 'Lock folder', onClick: async () => {
       await setFolderLocked(folderId, !f.locked);
       await refreshSavedAndFolders();
@@ -3398,7 +3578,7 @@ document.addEventListener('contextmenu', async (e) => {
     await openTabContextMenu(e.clientX, e.clientY, [...selectedSavedIds]);
   } else if (folder) {
     e.preventDefault();
-    await openFolderContextMenu(e.clientX, e.clientY, folder.dataset.folderId);
+    await openFolderContextMenu(e.clientX, e.clientY, folder.dataset.folderId, folder.querySelector('[data-action="folder-menu"]') || document.activeElement);
   } else {
     closeContextMenu();
   }
@@ -3496,6 +3676,10 @@ document.addEventListener('keydown', (e) => {
   if (cd && cd.style.display !== 'none') { closeCloseAllDialog(); closed = true; }
   const sd = document.getElementById('speedDialDialog');
   if (sd && sd.style.display !== 'none') { closeSpeedDialDialog(); closed = true; }
+  const share = folderShareDialog();
+  if (share?.open) { closeFolderShareDialog(); closed = true; }
+  const sharedImport = document.getElementById('folderShareImportDialog');
+  if (sharedImport?.open) { sharedImport.close(); closed = true; }
   const drawer = document.getElementById('workspaceDrawer');
   if (drawer && drawer.style.display !== 'none') { setWorkspaceDrawerOpen(false); closed = true; }
   if (!closed && (selectedTabUrls.size || selectedSavedIds.size)) {
@@ -4934,9 +5118,9 @@ function autoRefreshBlocked() {
   if (isOnboardingActive()) return true;
   const menu    = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') return true;
-  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'speedDialDialog']) {
+  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'speedDialDialog', 'folderShareDialog', 'folderShareImportDialog']) {
     const d = document.getElementById(id);
-    if (d && d.style.display !== 'none') return true;
+    if (d && (d.open || (d.style.display && d.style.display !== 'none'))) return true;
   }
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return true;
@@ -5036,6 +5220,29 @@ try {
   applyTheme(t);
 } catch {}
 
+document.addEventListener('click', event => {
+  const action = event.target.closest?.('[data-share-action]')?.dataset.shareAction;
+  if (!action) return;
+  event.preventDefault();
+  if (action === 'select-all' && folderShareState) { folderShareState.items.forEach(item => { item.selected = true; }); folderShareRenderRows(); void folderShareUpdatePreview(); }
+  if (action === 'clear-all' && folderShareState) { folderShareState.items.forEach(item => { item.selected = false; }); folderShareRenderRows(); void folderShareUpdatePreview(); }
+  if (action === 'copy') void copyFolderShareLink();
+  if (action === 'share') void shareFolderShareLink();
+});
+document.getElementById('folderShareFilter')?.addEventListener('input', () => folderShareRenderRows());
+folderShareDialog()?.addEventListener('close', () => {
+  if (folderShareState) folderShareState.revision += 1;
+  folderShareState = null;
+  folderShareSetActionsEnabled(false);
+  const field = document.getElementById('folderShareUri'); if (field) { field.value = ''; field.hidden = true; }
+  if (folderShareLastFocus?.isConnected) { try { folderShareLastFocus.focus(); } catch {} }
+  folderShareLastFocus = null;
+});
+document.getElementById('folderShareImportDialog')?.addEventListener('close', () => {
+  pendingSharedImport = null;
+});
+document.getElementById('folderShareImportConfirm')?.addEventListener('click', () => { void confirmSharedImport(); });
+
 // Paint initial UI after all helpers are registered.
 (async function initializeTabAtlas() {
   try {
@@ -5055,6 +5262,7 @@ try {
     try { if (localStorage.getItem('tabout-privacy') === '1') setPrivacy(true); } catch {}
 
     await renderDashboard();
+    await openPendingSharedImport();
     showArchiveCleanupResult(archiveCleanup);
     maybeStartOnboarding();
   } catch (err) {

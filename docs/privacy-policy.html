@@ -66,15 +66,17 @@
     </header>
 
     <p>
-      <strong>Tab Atlas does not collect, transmit, sell, or share personal data or
-      browsing information.</strong> It processes open-tab information locally, on your
+      <strong>Tab Atlas does not collect, sell, or transmit browsing information to its
+      developer or third parties.</strong> It processes open-tab information locally, on your
       own device, to provide its tab-organization features.
     </p>
+    <p>Tab Atlas does not collect, transmit, sell, or share personal data or browsing information with its developer or third parties.</p>
 
     <div class="card">
       <p style="margin-top:0"><strong>The short version:</strong> everything stays on your
-      computer. There is no account, no server, no analytics, no advertising, and no
-      automatic third-party requests. Nothing about your tabs ever leaves your device.</p>
+      computer during normal use. There is no account, no server-side tab storage, no analytics,
+      no advertising, and no automatic third-party requests. Folder sharing is an explicit
+      action that creates a link you choose whether to send.</p>
     </div>
 
     <h2>What Tab Atlas stores locally</h2>
@@ -91,8 +93,7 @@
       <li>Your theme choice, privacy-mode state, and editable shortcuts</li>
     </ul>
     <p>
-      All of this remains on your device. It is never sent to the developer or any third
-      party.
+      All of this remains on your device and is never sent to the developer or any third party.
     </p>
 
     <h2>What Tab Atlas does <em>not</em> do</h2>
@@ -101,9 +102,23 @@
       <li>No advertising</li>
       <li>No accounts or sign-in</li>
       <li>No cookies</li>
-      <li>No remote APIs or servers</li>
+      <li>No remote APIs, analytics, or server-side storage of your tabs</li>
       <li>No automatic external resource requests (fonts, icons, and scripts are all packaged locally)</li>
     </ul>
+
+    <h2>Optional folder sharing</h2>
+    <p>
+      When you explicitly choose to share a folder, Tab Atlas creates a compressed encrypted
+      copy in the link's fragment (the part after <code>#</code>). It does not upload that copy
+      or retain it on a server. It may remove known tracking parameters where safe and excludes
+      sensitive and local-network links by default; signed URLs are left unchanged.
+    </p>
+    <p>
+      The link contains an encrypted copy of this folder. Anyone who has the complete link can
+      decrypt, view, and import it. Encryption prevents casual reading and detects changes; it
+      does not restrict recipients and does not provide revocation, expiry, or server-side access
+      control.
+    </p>
 
     <h2>Site icons (favicons)</h2>
     <p>

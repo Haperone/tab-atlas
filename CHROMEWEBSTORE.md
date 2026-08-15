@@ -16,7 +16,7 @@ See tabs across windows, search by title or URL, spot duplicates, close clutter,
 
 Install the extension, open a new tab, and use the dashboard to jump to, save, group, or close tabs. The toolbar icon returns you to an existing Tab Atlas page or opens one when needed.
 
-All tab information, saved pages, folders, workspaces, themes, and shortcuts stay on your device. Tab Atlas has no account, analytics, advertising, server, or automatic third-party requests.
+All tab information, saved pages, folders, workspaces, themes, and shortcuts stay on your device during normal use. Tab Atlas has no account, analytics, advertising, server-side tab storage, or automatic third-party requests. Folder sharing is initiated explicitly by the user and creates an encrypted bearer link.
 
 Support and source: https://github.com/Haperone/tab-atlas
 
@@ -83,9 +83,9 @@ Optional promo tile (440×280): a cropped dashboard hero with the "Tab Atlas" na
 
 ## Privacy & Data Use
 
-**Does the extension collect user data?** No. It processes current tab information locally to provide its features, but does not transmit or make that information available to the developer or any third party.
+**Does the extension collect user data?** No. It processes current tab information locally and does not transmit it to the developer or any third party. If a user explicitly creates and sends a folder-share link, that user has chosen to share its encrypted URL with the recipient.
 
-The extension may store URLs, page titles, folder names, workspace layouts, and user preferences locally when the user uses save, folder, workspace, theme, or shortcut features. `chrome.storage.local` and `localStorage` remain on the user's device. There is no analytics, telemetry, advertising, account, cookie, remote API, or automatic external resource request.
+The extension may store URLs, page titles, folder names, workspace layouts, and user preferences locally when the user uses save, folder, workspace, theme, or shortcut features. `chrome.storage.local` and `localStorage` remain on the user's device. Folder shares carry a compressed encrypted copy in the user-copied URL fragment; Tab Atlas does not upload or retain that copy. There is no analytics, telemetry, advertising, account, cookie, remote API, or automatic external resource request.
 
 ### Data Use Certification
 
@@ -113,6 +113,8 @@ Last updated: July 13, 2026
 
 Tab Atlas does not collect, transmit, sell, or share personal data or browsing information. It processes open-tab information locally to provide tab organization features. URLs, titles, saved tabs, folders, workspace snapshots, themes, and shortcuts are stored only on the user's device when relevant features are used.
 
+Folder sharing is an explicit user action. The link contains an encrypted copy of this folder. Anyone who has the complete link can decrypt, view, and import it. Encryption prevents casual reading and detects changes; it does not restrict recipients and does not provide revocation, expiry, or server-side access control. The extension does not upload or store shared-folder data on a server.
+
 Tab Atlas does not use analytics, advertising, cookies, accounts, remote APIs, or third-party services. Users can remove saved data in the extension, clear the extension's local storage, or uninstall the extension. Backup files are exported and imported only at the user's explicit request.
 
 Questions about privacy can be submitted through the project's public issue tracker: https://github.com/Haperone/tab-atlas/issues
@@ -138,7 +140,7 @@ Questions about privacy can be submitted through the project's public issue trac
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
-| Unreleased | 2026-08-15 | Added three distinct Apple-inspired material themes: Space Black, Pacific Blue and Orchid Bloom; retired Silver Studio and safely migrated saved Apple-theme choices to supported replacements. Added folder locks that protect saved and archived links from destructive actions and moves out, while allowing new links in, plus accessible clear buttons for search, naming and shortcut fields. | In development |
+| Unreleased | 2026-08-15 | Added three distinct Apple-inspired material themes: Space Black, Pacific Blue and Orchid Bloom; retired Silver Studio and safely migrated saved Apple-theme choices to supported replacements. Added folder locks that protect saved and archived links from destructive actions and moves out, while allowing new links in, plus accessible clear buttons for search, naming and shortcut fields. Added explicit encrypted folder sharing with local preview, recipient confirmation and no server-side storage. | In development |
 | 1.0.1 | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. Redesigned Focus Sweep as an animated three-card deck with swipe, keyboard and button controls, a safe review summary, folder-aware saving and an optional Instant mode. Glass search fields now use the same restrained focus ring as the regular themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Ready to upload |
 | 1.0.0 | 2026-07-12 | Initial store draft with the saved-links archive, one-click restoration, Undo, and aligned independent column scrolling. | Draft |
 

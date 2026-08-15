@@ -2,10 +2,14 @@
   "manifest_version": 3,
   "name": "Tab Atlas",
   "version": "1.0.1",
+  "minimum_chrome_version": "102",
   "description": "A calm new-tab dashboard: your open tabs grouped by domain, searchable, themeable, and organised into folders.",
   "permissions": ["tabs", "storage", "favicon", "tabGroups"],
   "chrome_url_overrides": { "newtab": "index.html" },
   "background": { "service_worker": "background.js", "type": "module" },
+  "externally_connectable": {
+    "matches": ["https://tabatlas.app/*"]
+  },
   "action": {
     "default_title": "Tab Atlas",
     "default_icon": {
