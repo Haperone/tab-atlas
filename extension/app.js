@@ -3145,7 +3145,7 @@ function folderShareRenderRows() {
     const url = document.createElement('span'); url.className = 'folder-share-row-url'; url.textContent = item.cleanedUrl;
     text.append(title, host, url);
     row.append(check, icon, text);
-    if (item.sensitive || item.local || item.removedTracking) { const flag = document.createElement('span'); flag.className = 'folder-share-row-flag'; flag.textContent = item.sensitive ? 'Sensitive' : item.local ? 'Local' : `Tracking −${item.removedTracking}`; row.append(flag); }
+    if (item.sensitive || item.local || item.removedTracking) { const flag = document.createElement('span'); flag.className = 'folder-share-row-flag'; flag.textContent = item.sensitive ? 'Sensitive' : item.local ? 'Local' : `${item.removedTracking} tracking parameter${item.removedTracking === 1 ? '' : 's'} removed`; row.append(flag); }
     list.append(row);
   });
 }

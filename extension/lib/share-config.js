@@ -3,6 +3,7 @@ export const SHARE_PUBLIC_CONFIG = Object.freeze({
   shareOrigin: 'https://tab-atlas.pages.dev',
   sharePath: '/share',
   extensionId: 'bnclgfhbebombghodiibgmllbaeonadm',
+  developmentExtensionId: 'falgldcenllafhjplogcabochjkokbcf',
   chromeWebStoreUrl: 'https://chromewebstore.google.com/detail/tab-atlas/bnclgfhbebombghodiibgmllbaeonadm',
 });
 
