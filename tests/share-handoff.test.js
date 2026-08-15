@@ -24,7 +24,7 @@ test('external handoff accepts only configured origin and stages a raw fragment 
   const encoded = await encodeTa1Package(createSharePackage({ name: 'Shared', items: [{ url: 'https://example.com', title: 'Example' }] }));
   const denied = await handoff.handleExternalShareMessage({ type: 'tab-atlas/share/import-request', protocol: 'ta1', fragment: encoded.fragment }, { origin: 'https://evil.example', url: 'https://evil.example/share' });
   assert.deepEqual(denied, { ok: false, error: 'EXTERNAL_ORIGIN_DENIED' });
-  const accepted = await handoff.handleExternalShareMessage({ type: 'tab-atlas/share/import-request', protocol: 'ta1', fragment: encoded.fragment }, { origin: 'https://tabatlas.app', url: 'https://tabatlas.app/share' });
+  const accepted = await handoff.handleExternalShareMessage({ type: 'tab-atlas/share/import-request', protocol: 'ta1', fragment: encoded.fragment }, { origin: 'https://tab-atlas.pages.dev', url: 'https://tab-atlas.pages.dev/share' });
   assert.deepEqual(accepted, { ok: true });
   const key = Object.keys(chromeApi.session)[0];
   assert.match(key, /03030303030303030303030303030303$/);
@@ -40,14 +40,14 @@ test('external handoff requires a complete exact public share URL and exact enve
   const handoff = createShareHandoff({ chromeApi: mockChrome() });
   const ping = { type: 'tab-atlas/share/ping', protocol: 'ta1' };
   for (const sender of [
-    { origin: 'https://tabatlas.app' },
-    { url: 'https://tabatlas.app/share' },
-    { origin: 'https://tabatlas.app', url: 'http://tabatlas.app/share' },
-    { origin: 'https://tabatlas.app', url: 'https://tabatlas.app/share?x=1' },
-    { origin: 'https://wrong.example', url: 'https://tabatlas.app/share' },
-    { origin: 'https://tabatlas.app', url: 'https://tabatlas.app/other' },
+    { origin: 'https://tab-atlas.pages.dev' },
+    { url: 'https://tab-atlas.pages.dev/share' },
+    { origin: 'https://tab-atlas.pages.dev', url: 'http://tab-atlas.pages.dev/share' },
+    { origin: 'https://tab-atlas.pages.dev', url: 'https://tab-atlas.pages.dev/share?x=1' },
+    { origin: 'https://wrong.example', url: 'https://tab-atlas.pages.dev/share' },
+    { origin: 'https://tab-atlas.pages.dev', url: 'https://tab-atlas.pages.dev/other' },
   ]) assert.equal((await handoff.handleExternalShareMessage(ping, sender)).error, 'EXTERNAL_ORIGIN_DENIED');
-  const sender = { origin: 'https://tabatlas.app', url: 'https://tabatlas.app/share/' };
+  const sender = { origin: 'https://tab-atlas.pages.dev', url: 'https://tab-atlas.pages.dev/share/' };
   assert.deepEqual(await handoff.handleExternalShareMessage({ ...ping, extra: true }, sender), { ok: false, error: 'INVALID_EXTERNAL_MESSAGE' });
   assert.deepEqual(await handoff.handleExternalShareMessage(ping, sender), { ok: true });
 });

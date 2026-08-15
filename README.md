@@ -94,7 +94,7 @@ publishing lives outside it (so it never ends up in the store ZIP):
 | `extension/` | The extension itself — this is the only folder you load unpacked or zip for the store |
 | `CHROMEWEBSTORE.md` | Source-of-truth draft for the Chrome Web Store listing: description, permission justifications, privacy answers, developer info, and a **Submission Blockers** checklist. A contract test (`tests/webstore-contract.test.js`) keeps it in sync with `manifest.json`. |
 | `docs/privacy-policy.html` | The published privacy policy. Self-contained, no external requests. Served via **GitHub Pages** (Settings → Pages → Source: `main` / `/docs`) at `https://haperone.github.io/tab-atlas/privacy-policy.html` — this is the URL the store's privacy-policy field points to. `docs/index.html` is a small landing page. |
-| `docs/share/` | Dependency-free receiver for the canonical `https://tabatlas.app/share` surface. It needs a header-capable HTTPS deployment: meta tags are included, but production must also send CSP and `Referrer-Policy: no-referrer` HTTP headers. GitHub Pages alone cannot supply those headers from this repository. |
+| `docs/share/` | Dependency-free receiver for the canonical `https://tab-atlas.pages.dev/share` surface. Cloudflare Pages serves the required CSP and `Referrer-Policy: no-referrer` response headers from `docs/_headers`. |
 | `tools/screenshot-harness.html` | Renders the **real** dashboard (`extension/app.js` + `style.css`) against a mocked `chrome.*` API with seed data, so store screenshots can be captured at 1280×800 without loading the extension or arranging live tabs. |
 | `tools/serve.mjs` | Tiny static server for previewing the above locally. See [`tools/README.md`](tools/README.md). |
 

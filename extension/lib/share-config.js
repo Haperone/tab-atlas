@@ -1,6 +1,6 @@
 /** Public share deployment values. Keep both packaged copies byte-identical. */
 export const SHARE_PUBLIC_CONFIG = Object.freeze({
-  shareOrigin: 'https://tabatlas.app',
+  shareOrigin: 'https://tab-atlas.pages.dev',
   sharePath: '/share',
   extensionId: 'bnclgfhbebombghodiibgmllbaeonadm',
   chromeWebStoreUrl: 'https://chromewebstore.google.com/detail/tab-atlas/bnclgfhbebombghodiibgmllbaeonadm',

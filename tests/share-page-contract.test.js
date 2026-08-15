@@ -7,21 +7,24 @@ import { SHARE_PUBLIC_CONFIG as publicConfigValues } from '../docs/share/share-c
 test('share deployment keeps the external boundary narrowly scoped', async () => {
   const manifest = await readProjectJson('extension/manifest.json');
   assert.equal(manifest.minimum_chrome_version, '102');
-  assert.deepEqual(manifest.externally_connectable, { matches: ['https://tabatlas.app/*'] });
+  assert.deepEqual(manifest.externally_connectable, { matches: ['https://tab-atlas.pages.dev/*'] });
   assert.equal('host_permissions' in manifest, false);
 });
 
 test('share page has local-only assets, no index metadata and defense-in-depth CSP', async () => {
-  const [page, script, css] = await Promise.all([
-    readProjectText('docs/share/index.html'), readProjectText('docs/share/share.js'), readProjectText('docs/share/share.css'),
+  const [page, script, css, headers] = await Promise.all([
+    readProjectText('docs/share/index.html'), readProjectText('docs/share/share.js'), readProjectText('docs/share/share.css'), readProjectText('docs/_headers'),
   ]);
   assert.match(page, /noindex,nofollow,noarchive,nosnippet/);
   assert.match(page, /connect-src 'none'/);
   assert.match(page, /name="referrer" content="no-referrer"/);
-  assert.doesNotMatch(page, /https?:\/\/(?!tabatlas\.app\/share)/i);
+  assert.doesNotMatch(page, /https?:\/\/(?!tab-atlas\.pages\.dev\/share)/i);
   assert.doesNotMatch(script, /\b(fetch|XMLHttpRequest|sendBeacon|innerHTML)\b/);
   assert.match(script, /textContent/);
   assert.match(css, /prefers-reduced-motion/);
+  assert.match(headers, /\/share/);
+  assert.match(headers, /Content-Security-Policy: default-src 'none'/);
+  assert.match(headers, /Referrer-Policy: no-referrer/);
 });
 
 test('share UI is isolated and both public configuration values agree', async () => {
@@ -33,8 +36,8 @@ test('share UI is isolated and both public configuration values agree', async ()
   assert.match(css, /\.folder-share-dialog/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /forced-colors/);
-  assert.match(extensionConfig, /shareOrigin: 'https:\/\/tabatlas\.app'/);
-  assert.match(publicConfig, /shareOrigin: 'https:\/\/tabatlas\.app'/);
+  assert.match(extensionConfig, /shareOrigin: 'https:\/\/tab-atlas\.pages\.dev'/);
+  assert.match(publicConfig, /shareOrigin: 'https:\/\/tab-atlas\.pages\.dev'/);
   assert.match(extensionConfig, /bnclgfhbebombghodiibgmllbaeonadm/);
   assert.match(publicConfig, /bnclgfhbebombghodiibgmllbaeonadm/);
   assert.match(harness, /extension\/folder-share\.css/);

@@ -79,7 +79,7 @@ test('20 and 30 representative links remain below the URI compatibility ceiling'
     const items = urls.slice(0, count).map((url, index) => ({ url, title: `Reference ${index + 1}` }));
     const pkg = createSharePackage({ name: 'Share benchmark', items });
     const encoded = await encodeTa1Package(pkg);
-    const uriLength = 'https://tabatlas.app/share'.length + encoded.fragment.length;
+    const uriLength = 'https://tab-atlas.pages.dev/share'.length + encoded.fragment.length;
     assert.ok(uriLength <= 8192, `${count} links should be copyable (${uriLength})`);
   }
 });

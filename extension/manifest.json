@@ -8,7 +8,7 @@
   "chrome_url_overrides": { "newtab": "index.html" },
   "background": { "service_worker": "background.js", "type": "module" },
   "externally_connectable": {
-    "matches": ["https://tabatlas.app/*"]
+    "matches": ["https://tab-atlas.pages.dev/*"]
   },
   "action": {
     "default_title": "Tab Atlas",
