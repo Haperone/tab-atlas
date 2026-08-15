@@ -17,6 +17,7 @@ export const ICONS = {
 export const ICON_FOLDER_CHEVRON = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>`;
 export const ICON_DOTS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM12 20.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>`;
 export const ICON_GRIP = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>`;
+export const ICON_LOCK = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><rect x="5.5" y="10" width="13" height="10" rx="2"/><path stroke-linecap="round" d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/></svg>`;
 
 export function renderTabChip(tab, groupDomain, urlCounts = {}) {
   let label = cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), groupDomain || '');
@@ -121,15 +122,15 @@ export function renderDomainCard(group, expandedCards = new Set()) {
     </div>`;
 }
 
-export function renderDeferredItem(item, timeAgo) {
+export function renderDeferredItem(item, timeAgo, { locked = false } = {}) {
   let domain = '';
   try { domain = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
   const faviconUrl = favIcon(item.url, 16);
   const safeUrl = escapeHtml(item.url || '');
   const safeTitle = escapeHtml(item.title || item.url || '');
   return `
-    <div class="deferred-item" data-deferred-id="${item.id}" draggable="true">
-      <input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">
+    <div class="deferred-item${locked ? ' deferred-item-locked' : ''}" data-deferred-id="${item.id}" draggable="${locked ? 'false' : 'true'}">
+      ${locked ? '' : `<input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">`}
       <div class="deferred-info">
         <a href="${safeUrl}" target="_blank" rel="noopener" class="deferred-title" title="${safeTitle}">
           ${faviconUrl ? `<img src="${faviconUrl}" alt="" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px">` : ''}${safeTitle}
@@ -139,13 +140,13 @@ export function renderDeferredItem(item, timeAgo) {
           <span>${timeAgo(item.savedAt)}</span>
         </div>
       </div>
-      <button class="deferred-dismiss" data-action="dismiss-deferred" data-deferred-id="${item.id}" title="Dismiss" aria-label="Dismiss ${safeTitle}">
+      ${locked ? '' : `<button class="deferred-dismiss" data-action="dismiss-deferred" data-deferred-id="${item.id}" title="Dismiss" aria-label="Dismiss ${safeTitle}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-      </button>
+      </button>`}
     </div>`;
 }
 
-export function renderArchiveItem(item, timeAgo) {
+export function renderArchiveItem(item, timeAgo, { locked = false } = {}) {
   const safeId = escapeHtml(item.id || '');
   const safeUrl = escapeHtml(item.url || '');
   const safeTitle = escapeHtml(item.title || item.url || '');
@@ -160,9 +161,9 @@ export function renderArchiveItem(item, timeAgo) {
         <button class="archive-item-action archive-restore" data-action="restore-archive-item" data-deferred-id="${safeId}" type="button" title="Restore to Saved for later" aria-label="Restore ${safeTitle} to Saved for later">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25 4.5 9.75m0 0L9 5.25m-4.5 4.5h10.125a4.875 4.875 0 0 1 0 9.75H12" /></svg>
         </button>
-        <button class="archive-item-action archive-remove" data-action="remove-archive-item" data-deferred-id="${safeId}" type="button" title="Remove from archive" aria-label="Remove ${safeTitle} from archive">
+        ${locked ? '' : `<button class="archive-item-action archive-remove" data-action="remove-archive-item" data-deferred-id="${safeId}" type="button" title="Remove from archive" aria-label="Remove ${safeTitle} from archive">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m10.23-3.21c.35.05.7.1 1.04.16m-1.04-.16-.95 12.35a2.25 2.25 0 0 1-2.24 2.08H7.7a2.25 2.25 0 0 1-2.24-2.08L4.5 5.79m14.99 0a48.1 48.1 0 0 0-3.48-.4m-12.04.56c.34-.06.69-.11 1.04-.16m0 0a48.1 48.1 0 0 1 3.48-.4m7.52 0V4.48c0-1.18-.91-2.16-2.09-2.2a52.1 52.1 0 0 0-3.84 0C8.91 2.32 8 3.3 8 4.48v.91m8.01 0a48.7 48.7 0 0 0-8.01 0" /></svg>
-        </button>
+        </button>`}
       </div>
     </div>`;
 }

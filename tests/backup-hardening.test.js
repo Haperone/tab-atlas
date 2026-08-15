@@ -72,6 +72,17 @@ test('valid schema-v1 fixture receives fresh IDs and recomputed counts', async (
   assert.equal('unknownRoot' in normalized, false);
 });
 
+test('folder protection survives backup normalization and defaults safely for legacy exports', () => {
+  const protectedBackup = normalizeBackupDocument(emptyBackup({
+    folders: [{ id: 'locked-folder', name: 'Private', locked: true }],
+  }), deterministicOptions());
+  const legacyBackup = normalizeBackupDocument(emptyBackup({
+    folders: [{ id: 'legacy-folder', name: 'Legacy' }],
+  }), deterministicOptions());
+  assert.equal(protectedBackup.data.folders[0].locked, true);
+  assert.equal(legacyBackup.data.folders[0].locked, false);
+});
+
 test('malicious fixture drops unsafe protocols, supplied IDs, counts, and unknown fields', async () => {
   const source = await readProjectJson('tests/fixtures/backup-malicious-v1.json');
   const normalized = normalizeBackupDocument(source, deterministicOptions());

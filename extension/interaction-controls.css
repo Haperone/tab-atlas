@@ -1,0 +1,166 @@
+/* Shared controls added after every theme stylesheet. They consume existing theme tokens
+   and only target the new lock and clear-input components. */
+.clearable-input {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.clearable-input > input {
+  box-sizing: border-box;
+  padding-right: 2.5rem;
+}
+
+.clearable-input-global {
+  min-width: 0;
+}
+
+.clearable-input-global > input {
+  display: block;
+}
+
+.archive-search-wrap > .clearable-input {
+  display: block;
+  width: 100%;
+}
+
+.folder-header > .clearable-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.folder-header .folder-rename-input {
+  width: 100%;
+}
+
+.input-clear-btn {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 0.45rem;
+  display: inline-grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(var(--neutral-rgb), 0.16);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color 140ms ease, background-color 140ms ease, transform 140ms ease;
+}
+
+.input-clear-btn[hidden] {
+  display: none !important;
+}
+
+.input-clear-btn svg {
+  display: block;
+  width: 0.84rem;
+  height: 0.84rem;
+  stroke-width: 2;
+}
+
+.input-clear-btn:hover {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.13);
+}
+
+.input-clear-btn:active {
+  color: var(--accent-danger);
+  background: rgba(var(--danger-rgb), 0.19);
+  transform: translateY(-50%) scale(0.92);
+}
+
+.input-clear-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  color: var(--text);
+}
+
+.folder[data-folder-locked="true"] .folder-header {
+  padding-right: 0.55rem;
+}
+
+.folder-lock-indicator {
+  display: inline-flex;
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.folder-lock-indicator svg {
+  width: 100%;
+  height: 100%;
+}
+
+.folder[data-folder-locked="true"] .folder-count {
+  background: rgba(var(--accent-rgb), 0.14);
+}
+
+/* Clear is a small same-material control inside the inset soft-theme inputs.
+   Tight dual shadows preserve the shared top-left light direction without
+   turning the control into another floating card. */
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .input-clear-btn {
+  color: var(--muted);
+  background: var(--bg);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--muted) 12%, transparent),
+    -2px -2px 4px var(--neu-light),
+    2px 2px 4px var(--neu-dark);
+}
+
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .input-clear-btn:hover {
+  color: var(--accent-danger);
+  background: color-mix(in srgb, var(--bg) 90%, var(--accent-danger));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent-danger) 24%, transparent),
+    -1px -1px 3px var(--neu-light),
+    1px 1px 3px var(--neu-dark);
+}
+
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .input-clear-btn:active {
+  color: var(--accent-danger);
+  background: var(--bg);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent-danger) 28%, transparent),
+    inset 2px 2px 4px var(--neu-dark),
+    inset -2px -2px 4px var(--neu-light);
+}
+
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .input-clear-btn:focus-visible {
+  color: var(--accent-danger);
+  background: var(--bg);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent-danger) 24%, transparent),
+    -2px -2px 4px var(--neu-light),
+    2px 2px 4px var(--neu-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input-clear-btn {
+    transition: color 80ms linear, background-color 80ms linear;
+  }
+
+  .input-clear-btn:active {
+    transform: translateY(-50%);
+  }
+}
+
+@media (forced-colors: active) {
+  .input-clear-btn,
+  .folder-lock-indicator {
+    color: ButtonText;
+    background: ButtonFace;
+    border: 1px solid ButtonText;
+  }
+
+  .input-clear-btn:focus-visible {
+    outline-color: Highlight;
+  }
+}

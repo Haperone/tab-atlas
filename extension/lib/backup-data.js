@@ -244,6 +244,7 @@ export function normalizeBackupDocument(parsed, options = {}) {
       id,
       name,
       collapsed: !!source.collapsed,
+      locked: !!source.locked,
       color: boundedString(source.color, 'Folder color', BACKUP_LIMITS.colorLength) || null,
       createdAt: normalizedDate(source.createdAt, now()),
     });

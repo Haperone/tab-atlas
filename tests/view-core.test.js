@@ -295,6 +295,14 @@ test('saved-item renderers retain saved and archive markup', () => {
   assert.match(archived, /data-action="remove-archive-item"/);
   assert.match(archived, /aria-label="Restore Example to Saved for later"/);
   assert.match(archived, /ago:done/);
+
+  const lockedDeferred = renderDeferredItem(item, value => `ago:${value}`, { locked: true });
+  const lockedArchived = renderArchiveItem({ ...item, completedAt: 'done' }, value => `ago:${value}`, { locked: true });
+  assert.doesNotMatch(lockedDeferred, /data-action="check-deferred"/);
+  assert.doesNotMatch(lockedDeferred, /data-action="dismiss-deferred"/);
+  assert.match(lockedDeferred, /draggable="false"/);
+  assert.match(lockedArchived, /data-action="restore-archive-item"/);
+  assert.doesNotMatch(lockedArchived, /data-action="remove-archive-item"/);
 });
 
 test('speed-dial markup retains open and add actions', () => {

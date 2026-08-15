@@ -35,9 +35,73 @@ export function purgeDismissedRecords(records) {
   };
 }
 
+export function moveSavedRecords(records, folders, ids, targetFolderId) {
+  const source = Array.isArray(records) ? records : [];
+  const folderList = Array.isArray(folders) ? folders : [];
+  const targetId = targetFolderId || null;
+  const requestedIds = [...new Set((Array.isArray(ids) ? ids : [ids]).filter(Boolean))];
+  const requestedRecords = requestedIds
+    .map(id => source.find(record => record?.id === id))
+    .filter(Boolean);
+  const blockedIds = requestedRecords
+    .filter(record => {
+      const sourceFolderId = record.folderId || null;
+      return sourceFolderId !== targetId
+        && folderList.some(folder => folder?.id === sourceFolderId && folder.locked === true);
+    })
+    .map(record => record.id);
+
+  if (blockedIds.length) {
+    return {
+      records: source,
+      movedIds: [],
+      blockedIds,
+      unchangedIds: requestedIds,
+      changed: false,
+    };
+  }
+
+  const movedIds = requestedRecords
+    .filter(record => (record.folderId || null) !== targetId)
+    .map(record => record.id);
+  const moved = new Set(movedIds);
+  return {
+    records: moved.size
+      ? source.map(record => moved.has(record?.id) ? { ...record, folderId: targetId } : record)
+      : source,
+    movedIds,
+    blockedIds: [],
+    unchangedIds: requestedIds.filter(id => !moved.has(id)),
+    changed: moved.size > 0,
+  };
+}
+
+export function setSavedRecordCompletion(records, folders, id, completed, {
+  allowLocked = false,
+  completedAt = new Date().toISOString(),
+} = {}) {
+  const source = Array.isArray(records) ? records : [];
+  const index = source.findIndex(record => record?.id === id);
+  if (index < 0) return { records: source, updated: false };
+
+  const record = source[index];
+  const locked = (folders || []).some(folder => folder?.id === record.folderId && folder.locked === true);
+  if (completed && locked && !allowLocked) return { records: source, updated: false };
+
+  const nextRecords = [...source];
+  if (completed) {
+    nextRecords[index] = { ...record, completed: true, completedAt };
+  } else {
+    const { completedAt: _completedAt, ...activeRecord } = record;
+    nextRecords[index] = { ...activeRecord, completed: false };
+  }
+  return { records: nextRecords, updated: true };
+}
+
 export function deleteFolderRecords(folders, records, folderId, mode = 'inbox') {
   const folderIndex = folders.findIndex(folder => folder?.id === folderId);
   if (folderIndex < 0) return { folders, records, snapshot: null };
+  if (folders[folderIndex]?.locked) return { folders, records, snapshot: null };
   const folder = structuredClone(folders[folderIndex]);
   const nextFolders = folders.filter(folderRecord => folderRecord?.id !== folderId);
   const members = [];

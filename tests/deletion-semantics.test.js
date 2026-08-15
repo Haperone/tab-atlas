@@ -6,10 +6,12 @@ import { createBackupEnvelope } from '../extension/lib/backup-data.js';
 import {
   createUndoStore,
   deleteFolderRecords,
+  moveSavedRecords,
   purgeDismissedRecords,
   removeSavedRecords,
   restoreFolderRecords,
   restoreSavedRecords,
+  setSavedRecordCompletion,
 } from '../extension/lib/saved-records.js';
 import { createStorageRepository } from '../extension/lib/storage-repository.js';
 
@@ -93,6 +95,80 @@ test('delete-folder modes and Undo restore membership, records, and positions ex
   });
 });
 
+test('locked folders cannot be removed through the shared folder deletion helper', () => {
+  const folders = [{ id: 'f1', name: 'Reading', locked: true }];
+  const source = records();
+  const result = deleteFolderRecords(folders, source, 'f1', 'delete');
+  assert.equal(result.snapshot, null);
+  assert.equal(result.folders, folders);
+  assert.equal(result.records, source);
+});
+
+test('locked folders are one-way move boundaries with atomic mixed-selection handling', () => {
+  const folders = [
+    { id: 'locked', locked: true },
+    { id: 'other', locked: false },
+  ];
+  const source = [
+    { id: 'locked-link', folderId: 'locked' },
+    { id: 'other-link', folderId: 'other' },
+    { id: 'inbox-link', folderId: null },
+  ];
+
+  for (const target of [null, 'other']) {
+    const result = moveSavedRecords(source, folders, ['locked-link'], target);
+    assert.equal(result.changed, false);
+    assert.deepEqual(result.blockedIds, ['locked-link']);
+    assert.equal(result.records, source);
+  }
+
+  const sameLocked = moveSavedRecords(source, folders, ['locked-link'], 'locked');
+  assert.equal(sameLocked.changed, false);
+  assert.deepEqual(sameLocked.unchangedIds, ['locked-link']);
+
+  const inbound = moveSavedRecords(source, folders, ['inbox-link'], 'locked');
+  assert.equal(inbound.changed, true);
+  assert.deepEqual(inbound.movedIds, ['inbox-link']);
+  assert.equal(inbound.records.find(record => record.id === 'inbox-link').folderId, 'locked');
+
+  const mixedEgress = moveSavedRecords(source, folders, ['locked-link', 'other-link'], null);
+  assert.equal(mixedEgress.changed, false);
+  assert.deepEqual(mixedEgress.blockedIds, ['locked-link']);
+  assert.equal(mixedEgress.records, source);
+
+  const mixedInbound = moveSavedRecords(source, folders, ['locked-link', 'other-link'], 'locked');
+  assert.equal(mixedInbound.changed, true);
+  assert.deepEqual(mixedInbound.movedIds, ['other-link']);
+  assert.deepEqual(mixedInbound.unchangedIds, ['locked-link']);
+  assert.equal(mixedInbound.records.find(record => record.id === 'other-link').folderId, 'locked');
+});
+
+test('locked archived links restore and Undo back to archive without enabling manual check-off', () => {
+  const folders = [{ id: 'f1', name: 'Reading', locked: true }];
+  const archived = [{ id: 'archived', folderId: 'f1', completed: true, completedAt: '2026-08-15T10:00:00.000Z' }];
+
+  const restored = setSavedRecordCompletion(archived, folders, 'archived', false);
+  assert.equal(restored.updated, true);
+  assert.equal(restored.records[0].completed, false);
+  assert.equal('completedAt' in restored.records[0], false);
+
+  const manualCheck = setSavedRecordCompletion(restored.records, folders, 'archived', true);
+  assert.equal(manualCheck.updated, false);
+  assert.equal(manualCheck.records[0].completed, false);
+
+  const undoRestore = setSavedRecordCompletion(restored.records, folders, 'archived', true, {
+    allowLocked: true,
+    completedAt: '2026-08-15T10:05:00.000Z',
+  });
+  assert.equal(undoRestore.updated, true);
+  assert.deepEqual(undoRestore.records[0], {
+    id: 'archived',
+    folderId: 'f1',
+    completed: true,
+    completedAt: '2026-08-15T10:05:00.000Z',
+  });
+});
+
 test('archive single removal and clear use the same reversible physical snapshots', () => {
   const source = records();
   const single = removeSavedRecords(source, 'c');
@@ -114,15 +190,27 @@ test('backup export excludes legacy dismissed tombstones defensively', () => {
 });
 
 test('application routes single, bulk, folder, archive, and Focus Sweep cleanup through physical deletion', async () => {
-  const source = await fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8');
+  const [source, recordsSource] = await Promise.all([
+    fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../extension/lib/saved-records.js', import.meta.url), 'utf8'),
+  ]);
   assert.match(source, /const removed = await dismissSavedTab\(id\)/);
-  assert.match(source, /const removed = await dismissSavedTabs\(tabIds\)/);
+  assert.match(source, /const removed = await dismissSavedTabs\(removableTabIds\)/);
   assert.match(source, /deleteFolderRecords\(folders, deferred, id, mode\)/);
   assert.match(source, /action === 'remove-archive-item'/);
   assert.match(source, /action === 'restore-archive-item'/);
   assert.match(source, /showToast\('Restored to Saved for later'/);
   assert.match(source, /action === 'clear-archive'/);
   assert.match(source, /for \(const id of savedIds\).*dismissSavedTab\(id\)/s);
+  assert.match(source, /function folderIsLocked\(folderId, folders\)/);
+  assert.match(source, /folderIsLocked\(tab\.folderId, folders\)/);
+  assert.match(source, /checkOffSavedTab\(id, \{ internalUndo: true \}\)/);
+  assert.match(source, /async function moveTabsToFolder\(deferredIds, folderId\)/);
+  assert.match(source, /moveSavedRecords\(deferred, folders, deferredIds, folderId\)/);
+  assert.match(source, /moveTabsToFolder\(tabIds, folderId\)/);
+  assert.match(source, /const result = await moveTabToFolder\(data\.id, targetFolderId\)/);
+  assert.match(source, /item\.draggable === false \|\| item\.closest\('\.folder\[data-folder-locked="true"\]'\)/);
+  assert.match(recordsSource, /if \(folders\[folderIndex\]\?\.locked\) return \{ folders, records, snapshot: null \}/);
   assert.doesNotMatch(source, /\.dismissed\s*=\s*true/);
 });
 
@@ -132,6 +220,16 @@ test('automatic archive retention uses physical deletion and exposes Undo restor
   assert.match(source, /expiredArchiveRecordIds\(deferred, days\)/);
   assert.match(source, /expiredIds\.length \? await dismissSavedTabs\(expiredIds\) : \[\]/);
   assert.match(source, /showArchiveCleanupResult[\s\S]*restoreRemovedSavedTabs\(removed\)/);
+});
+
+test('archive clear does not offer Undo when every archived item is locked or absent', async () => {
+  const source = await fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8');
+  const actionBlock = source.match(/if \(action === 'clear-archive'\) \{([\s\S]*?)\n  \}/)?.[1] || '';
+
+  assert.match(actionBlock, /if \(!removed\.length\) \{[\s\S]*?showToast\([\s\S]*?return;/);
+  assert.match(actionBlock, /Kept \$\{keptLocked\} locked archived item/);
+  assert.match(actionBlock, /Archive is already empty/);
+  assert.match(actionBlock, /showToast\(keptLocked[\s\S]*?async \(\) => \{/);
 });
 
 test('direct saved-data deletion actions play the same close sound as the first column', async () => {
@@ -149,6 +247,6 @@ test('direct saved-data deletion actions play the same close sound as the first 
   );
   assert.match(
     source,
-    /async function removeSavedSelection\(\) \{[\s\S]*dismissSavedTabs\(tabIds\)[\s\S]*playCloseSound\(\)/,
+    /async function removeSavedSelection\(\) \{[\s\S]*dismissSavedTabs\(removableTabIds\)[\s\S]*playCloseSound\(\)/,
   );
 });

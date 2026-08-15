@@ -17,7 +17,7 @@ export function renderSpeedDialMarkup(items, escapeHtml, favIcon) {
   return `<div class="speed-dial-tiles">${tiles}${addTile}</div>`;
 }
 
-export function createSpeedDialController({ document, storage, escapeHtml, favIcon, showToast }) {
+export function createSpeedDialController({ document, storage, escapeHtml, favIcon, showToast, syncClearButtons = () => {} }) {
   let pendingId = null;
 
   function getSpeedDialItems() {
@@ -60,6 +60,7 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
     if (title) title.textContent = item ? 'Edit shortcut' : 'Add shortcut';
     if (labelInput) labelInput.value = item ? item.label : '';
     if (urlInput) urlInput.value = item ? item.url : '';
+    syncClearButtons(document.getElementById('speedDialDialog'));
     const dialog = document.getElementById('speedDialDialog');
     if (dialog) dialog.style.display = 'flex';
     if (labelInput) {

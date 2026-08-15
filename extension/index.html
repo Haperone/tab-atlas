@@ -12,6 +12,7 @@
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="apple-themes.css">
+  <link rel="stylesheet" href="interaction-controls.css">
 </head>
 <body>
 <div class="container">
@@ -83,7 +84,10 @@
        Focus with "/". Supports domain: and url: operators + free text. -->
   <div class="global-search-row">
     <svg class="global-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-    <input type="text" class="global-search" id="globalSearch" aria-label="Search open tabs, saved tabs and folders" placeholder="Search everything…  press /  —  try domain:github or url:docs">
+    <div class="clearable-input clearable-input-global" data-clearable-input>
+      <input type="text" class="global-search" id="globalSearch" aria-label="Search open tabs, saved tabs and folders" placeholder="Search everything…  press /  —  try domain:github or url:docs">
+      <button class="input-clear-btn" data-action="clear-input" data-clear-target="globalSearch" type="button" aria-label="Clear search" title="Clear search" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
+    </div>
     <button class="archive-launch" id="archiveLaunch" data-action="open-archive" type="button" aria-haspopup="dialog" aria-controls="archiveDrawerOverlay" aria-expanded="false" style="display:none">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5h16.5m-15 0 .62 10.54a2.25 2.25 0 0 0 2.25 2.12h7.76a2.25 2.25 0 0 0 2.25-2.12L18.75 7.5m-9 4.5h4.5M5.25 7.5l.78-2.34a2.25 2.25 0 0 1 2.14-1.54h7.66a2.25 2.25 0 0 1 2.14 1.54l.78 2.34" />
@@ -146,7 +150,10 @@
 
         <!-- Inline "new folder" name input — toggled by JS -->
         <div class="new-folder-input-row" id="newFolderInputRow" style="display:none">
-          <input type="text" class="new-folder-input" id="newFolderInput" placeholder="Folder name…" maxlength="60">
+          <div class="clearable-input" data-clearable-input>
+            <input type="text" class="new-folder-input" id="newFolderInput" placeholder="Folder name…" maxlength="60">
+            <button class="input-clear-btn" data-action="clear-input" data-clear-target="newFolderInput" type="button" aria-label="Clear folder name" title="Clear folder name" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
+          </div>
         </div>
 
         <div class="column-scroll column-scroll-folders" id="foldersScroll" role="region" aria-labelledby="foldersColumnTitle" tabindex="0">
@@ -203,12 +210,15 @@
       </div>
     </div>
     <div class="archive-drawer-tools">
-      <label class="archive-search-wrap" for="archiveSearch">
+      <div class="archive-search-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.2-5.2m0 0A7.5 7.5 0 1 0 5.2 5.2a7.5 7.5 0 0 0 10.6 10.6Z" />
         </svg>
-        <input type="text" class="archive-search" id="archiveSearch" aria-label="Search archived tabs" placeholder="Search archived tabs…">
-      </label>
+        <span class="clearable-input" data-clearable-input>
+          <input type="text" class="archive-search" id="archiveSearch" aria-label="Search archived tabs" placeholder="Search archived tabs…">
+          <button class="input-clear-btn" data-action="clear-input" data-clear-target="archiveSearch" type="button" aria-label="Clear archive search" title="Clear archive search" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
+        </span>
+      </div>
       <button type="button" class="archive-clear" data-action="clear-archive">Clear archive</button>
     </div>
     <div class="archive-list" id="archiveList"></div>
@@ -230,11 +240,17 @@
     <div class="dialog-title" id="speedDialDialogTitle">Add shortcut</div>
     <div class="dialog-field">
       <label for="speedDialLabelInput">Label</label>
-      <input type="text" id="speedDialLabelInput" class="dialog-input" maxlength="24" placeholder="GitHub">
+      <div class="clearable-input" data-clearable-input>
+        <input type="text" id="speedDialLabelInput" class="dialog-input" maxlength="24" placeholder="GitHub">
+        <button class="input-clear-btn" data-action="clear-input" data-clear-target="speedDialLabelInput" type="button" aria-label="Clear shortcut label" title="Clear shortcut label" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
+      </div>
     </div>
     <div class="dialog-field">
       <label for="speedDialUrlInput">URL</label>
-      <input type="text" id="speedDialUrlInput" class="dialog-input" placeholder="https://github.com">
+      <div class="clearable-input" data-clearable-input>
+        <input type="text" id="speedDialUrlInput" class="dialog-input" placeholder="https://github.com">
+        <button class="input-clear-btn" data-action="clear-input" data-clear-target="speedDialUrlInput" type="button" aria-label="Clear shortcut URL" title="Clear shortcut URL" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
+      </div>
     </div>
     <div class="dialog-actions">
       <button class="dialog-btn" data-action="speeddial-cancel" type="button">Cancel</button>

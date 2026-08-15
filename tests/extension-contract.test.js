@@ -346,7 +346,7 @@ test('archive access sits beside global search and stays raised in soft themes',
   const html = await readProjectText('extension/index.html');
   const css = await readProjectText('extension/style.css');
   const searchRowStart = html.indexOf('<div class="global-search-row">');
-  const searchRowEnd = html.indexOf('</div>', searchRowStart);
+  const searchRowEnd = html.indexOf('</div>\n\n  <div class="dashboard-columns"', searchRowStart);
   const archiveLaunch = html.indexOf('id="archiveLaunch"');
   const archiveRule = [...css.matchAll(/\.archive-launch\s*\{([^}]*)\}/g)]
     .map(match => match[1])
@@ -358,6 +358,51 @@ test('archive access sits beside global search and stays raised in soft themes',
   assert.match(css, /html\[data-theme="papersoft"\].*html\[data-theme="lattesoft"\][\s\S]*?\.archive-launch[\s\S]*?box-shadow:\s*-3px -3px 6px var\(--neu-light\), 3px 3px 6px var\(--neu-dark\)/);
   assert.match(css, /\.archive-launch[\s\S]*?:active\s*\{[\s\S]*?box-shadow:\s*inset 2px 2px 5px var\(--neu-dark\), inset -2px -2px 5px var\(--neu-light\)/);
   assert.match(css, /\.archive-count\s*\{[\s\S]*?box-shadow:\s*inset 1px 1px 2px var\(--neu-dark\), inset -1px -1px 2px var\(--neu-light\)/);
+});
+
+test('folder locks and clear controls remain isolated from existing theme styles', async () => {
+  const [html, app, renderers, backup, controls] = await Promise.all([
+    readProjectText('extension/index.html'),
+    readProjectText('extension/app.js'),
+    readProjectText('extension/lib/renderers.js'),
+    readProjectText('extension/lib/backup-data.js'),
+    readProjectText('extension/interaction-controls.css'),
+  ]);
+
+  for (const [id, label] of [
+    ['globalSearch', 'Clear search'],
+    ['newFolderInput', 'Clear folder name'],
+    ['archiveSearch', 'Clear archive search'],
+    ['speedDialLabelInput', 'Clear shortcut label'],
+    ['speedDialUrlInput', 'Clear shortcut URL'],
+  ]) {
+    assert.match(html, new RegExp(`id="${id}"[\\s\\S]*?data-action="clear-input"[\\s\\S]*?aria-label="${label}"[\\s\\S]*?<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"\\/><\\/svg>`));
+  }
+  assert.equal((html.match(/class="input-clear-btn"/g) || []).length, 5);
+  assert.match(html, /class="input-clear-btn"[\s\S]*?<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"\/><\/svg>/);
+  assert.doesNotMatch(html, /class="input-clear-btn"[^>]*>×<\/button>/);
+  assert.match(html, /<div class="archive-search-wrap">/);
+  assert.doesNotMatch(html, /<label class="archive-search-wrap"/);
+  assert.match(html, /interaction-controls\.css/);
+  assert.match(app, /function makeClearableInput\(input, label\)/);
+  assert.match(app, /button\.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"\/><\/svg>'/);
+  assert.match(app, /target\.dispatchEvent\(new Event\('input', \{ bubbles: true \}\)\)/);
+  assert.match(app, /input = makeClearableInput\(input, 'folder name'\)/);
+  assert.match(app, /label: f\.locked \? 'Unlock folder' : 'Lock folder'/);
+  assert.match(app, /data-folder-locked=/);
+  assert.match(app, /Folder locked/);
+  assert.match(renderers, /renderDeferredItem\(item, timeAgo, \{ locked = false \} = \{\}\)/);
+  assert.match(renderers, /renderArchiveItem\(item, timeAgo, \{ locked = false \} = \{\}\)/);
+  assert.match(backup, /locked: !!source\.locked/);
+  assert.match(controls, /\.input-clear-btn:focus-visible/);
+  assert.match(controls, /\.input-clear-btn\[hidden\]\s*\{\s*display:\s*none !important;/);
+  assert.match(controls, /\.input-clear-btn svg\s*\{[\s\S]*?display:\s*block;[\s\S]*?width:\s*0\.84rem;[\s\S]*?stroke-width:\s*2;/);
+  assert.match(controls, /\.input-clear-btn:hover\s*\{[\s\S]*?color:\s*var\(--accent-danger\);[\s\S]*?background:\s*rgba\(var\(--danger-rgb\), 0\.13\);/);
+  assert.match(controls, /:is\(html\[data-theme="papersoft"\], html\[data-theme="lattesoft"\]\) \.input-clear-btn\s*\{[\s\S]*?background:\s*var\(--bg\);[\s\S]*?var\(--neu-light\)[\s\S]*?var\(--neu-dark\)/);
+  assert.match(controls, /:is\(html\[data-theme="papersoft"\], html\[data-theme="lattesoft"\]\) \.input-clear-btn:hover\s*\{[\s\S]*?color:\s*var\(--accent-danger\);/);
+  assert.match(controls, /:is\(html\[data-theme="papersoft"\], html\[data-theme="lattesoft"\]\) \.input-clear-btn:active\s*\{[\s\S]*?inset 2px 2px 4px var\(--neu-dark\)/);
+  assert.match(controls, /@media \(forced-colors: active\)/);
+  assert.match(controls, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
 test('dashboard columns use accessible inner scroll viewports with boundary chaining', async () => {

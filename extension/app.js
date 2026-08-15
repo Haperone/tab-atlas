@@ -23,16 +23,19 @@ import { createStorageRepository } from './lib/storage-repository.js';
 import {
   createUndoStore,
   deleteFolderRecords,
+  moveSavedRecords,
   purgeDismissedRecords,
   removeSavedRecords,
   restoreFolderRecords,
   restoreSavedRecords,
+  setSavedRecordCompletion,
 } from './lib/saved-records.js';
 import {
   ICONS,
   ICON_DOTS,
   ICON_FOLDER_CHEVRON,
   ICON_GRIP,
+  ICON_LOCK,
   renderArchiveItem,
   renderDeferredItem,
   renderDomainCard,
@@ -70,6 +73,33 @@ import {
 
 'use strict';
 
+function syncClearButton(input) {
+  if (!input) return;
+  const button = input.closest('[data-clearable-input]')?.querySelector('[data-action="clear-input"]');
+  if (button) button.hidden = input.value.length === 0;
+}
+
+function syncClearButtons(root = document) {
+  root?.querySelectorAll?.('[data-clearable-input] input[type="text"]').forEach(syncClearButton);
+}
+
+function makeClearableInput(input, label) {
+  const wrapper = document.createElement('span');
+  wrapper.className = 'clearable-input';
+  wrapper.dataset.clearableInput = '';
+  const button = document.createElement('button');
+  button.className = 'input-clear-btn';
+  button.type = 'button';
+  button.dataset.action = 'clear-input';
+  button.setAttribute('aria-label', `Clear ${label}`);
+  button.title = `Clear ${label}`;
+  button.hidden = input.value.length === 0;
+  button.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg>';
+  input.replaceWith(wrapper);
+  wrapper.append(input, button);
+  return input;
+}
+
 const storageRepository = createStorageRepository(chrome.storage.local);
 const undoStore = createUndoStore();
 const speedDialController = createSpeedDialController({
@@ -78,6 +108,7 @@ const speedDialController = createSpeedDialController({
   escapeHtml,
   favIcon,
   showToast,
+  syncClearButtons,
 });
 const {
   closeSpeedDialDialog,
@@ -698,14 +729,17 @@ async function getSavedTabs() {
  *
  * Marks a saved tab as completed (checked off). It moves to the archive.
  */
-async function checkOffSavedTab(id) {
-  const deferred = await storageRepository.getDeferred();
-  const tab = deferred.find(t => t.id === id);
-  if (tab) {
-    tab.completed = true;
-    tab.completedAt = new Date().toISOString();
-    await storageRepository.setDeferred(deferred);
-  }
+async function checkOffSavedTab(id, { internalUndo = false } = {}) {
+  const [deferred, folders] = await Promise.all([
+    storageRepository.getDeferred(),
+    getFolders(),
+  ]);
+  const result = setSavedRecordCompletion(deferred, folders, id, true, {
+    allowLocked: internalUndo,
+  });
+  if (!result.updated) return false;
+  await storageRepository.setDeferred(result.records);
+  return true;
 }
 
 /**
@@ -715,12 +749,8 @@ async function checkOffSavedTab(id) {
  */
 async function uncheckSavedTab(id) {
   const deferred = await storageRepository.getDeferred();
-  const tab = deferred.find(t => t.id === id);
-  if (tab) {
-    tab.completed = false;
-    delete tab.completedAt;
-    await storageRepository.setDeferred(deferred);
-  }
+  const result = setSavedRecordCompletion(deferred, [], id, false);
+  if (result.updated) await storageRepository.setDeferred(result.records);
 }
 
 /**
@@ -729,15 +759,20 @@ async function uncheckSavedTab(id) {
  * Physically removes a saved tab and returns its Undo snapshot.
  */
 async function dismissSavedTab(id) {
-  const deferred = await storageRepository.getDeferred();
-  const result = removeSavedRecords(deferred, id);
-  if (result.removed.length) await storageRepository.setDeferred(result.records);
-  return result.removed;
+  return dismissSavedTabs([id]);
 }
 
 async function dismissSavedTabs(ids) {
-  const deferred = await storageRepository.getDeferred();
-  const result = removeSavedRecords(deferred, ids);
+  const [deferred, folders] = await Promise.all([
+    storageRepository.getDeferred(),
+    getFolders(),
+  ]);
+  const requested = new Set((Array.isArray(ids) ? ids : [ids]).filter(Boolean));
+  const removableIds = [...requested].filter(id => {
+    const tab = deferred.find(record => record.id === id);
+    return tab && !folderIsLocked(tab.folderId, folders);
+  });
+  const result = removeSavedRecords(deferred, removableIds);
   if (result.removed.length) await storageRepository.setDeferred(result.records);
   return result.removed;
 }
@@ -788,6 +823,10 @@ function folderColor(folder) {
   return folder.color || null;
 }
 
+function folderIsLocked(folderId, folders) {
+  return !!folderId && folders.some(folder => folder?.id === folderId && folder.locked === true);
+}
+
 /**
  * createFolder(name)
  *
@@ -801,6 +840,7 @@ async function createFolder(name) {
     id:        Date.now().toString() + Math.random().toString(36).slice(2, 6),
     name:      clean,
     collapsed: false,
+    locked:    false,
     color:     null, // no colour by default — the user sets one from the menu
     createdAt: new Date().toISOString(),
   };
@@ -821,6 +861,15 @@ async function setFolderColor(id, color) {
     folder.color = color || null;
     await storageRepository.setFolders(folders);
   }
+}
+
+async function setFolderLocked(id, locked) {
+  const folders = await getFolders();
+  const folder = folders.find(f => f.id === id);
+  if (!folder) return false;
+  folder.locked = !!locked;
+  await storageRepository.setFolders(folders);
+  return true;
 }
 
 /**
@@ -916,13 +965,18 @@ async function restoreDeletedFolder(snapshot) {
  * Moves a saved tab into a folder, or back to the inbox when folderId
  * is null/empty. Only the single record is touched.
  */
+async function moveTabsToFolder(deferredIds, folderId) {
+  const [deferred, folders] = await Promise.all([
+    storageRepository.getDeferred(),
+    getFolders(),
+  ]);
+  const result = moveSavedRecords(deferred, folders, deferredIds, folderId);
+  if (result.changed) await storageRepository.setDeferred(result.records);
+  return result;
+}
+
 async function moveTabToFolder(deferredId, folderId) {
-  const deferred = await storageRepository.getDeferred();
-  const tab = deferred.find(t => t.id === deferredId);
-  if (tab) {
-    tab.folderId = folderId || null;
-    await storageRepository.setDeferred(deferred);
-  }
+  return moveTabsToFolder([deferredId], folderId);
 }
 
 
@@ -1120,6 +1174,10 @@ async function folderToGroup(folderId) {
   const folders = await getFolders();
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return;
+  if (folder.locked) {
+    showToast('Unlock this folder before opening it as a tab group');
+    return;
+  }
 
   const { active } = await getSavedTabs();
   const items = active.filter(t => t.folderId === folderId);
@@ -1722,7 +1780,7 @@ function savedMatches(item) {
   return recordMatches(item.url, item.title, parseSearch(savedQuery));
 }
 
-function renderArchiveResults(archived) {
+function renderArchiveResults(archived, folders = []) {
   const list = document.getElementById('archiveList');
   const empty = document.getElementById('archiveEmpty');
   if (!list || !empty) return;
@@ -1735,7 +1793,9 @@ function renderArchiveResults(archived) {
         (item.url || '').toLowerCase().includes(query)
       );
 
-  list.innerHTML = results.map(item => renderArchiveItem(item, timeAgo)).join('');
+  list.innerHTML = results.map(item => renderArchiveItem(item, timeAgo, {
+    locked: folderIsLocked(item.folderId, folders),
+  })).join('');
   list.style.display = results.length ? 'block' : 'none';
   empty.textContent = archived.length ? 'No archived links found.' : 'The archive is empty.';
   empty.style.display = results.length ? 'none' : 'block';
@@ -1765,7 +1825,7 @@ async function renderDeferredColumn() {
       archiveCountEl.textContent = String(archived.length);
       drawerCountEl.textContent = `${archived.length} item${archived.length !== 1 ? 's' : ''}`;
       archiveLaunch.style.display = 'flex';
-      renderArchiveResults(archived);
+      renderArchiveResults(archived, folders);
     } else {
       archiveCountEl.textContent = '';
       drawerCountEl.textContent = '0 items';
@@ -1866,15 +1926,16 @@ async function renderFoldersColumn() {
         const accentStyle = color ? ` style="--folder-accent:${color}"` : '';
         const safeName = escapeHtml(f.name);
         const bodyInner = items.length
-          ? items.map(item => renderDeferredItem(item, timeAgo)).join('')
+          ? items.map(item => renderDeferredItem(item, timeAgo, { locked: !!f.locked })).join('')
           : `<div class="folder-empty-hint">Empty — drag tabs here</div>`;
         return `
-          <div class="folder" data-folder-id="${f.id}" data-droppable="folder"${accentStyle}>
+          <div class="folder" data-folder-id="${f.id}" data-folder-locked="${f.locked ? 'true' : 'false'}" data-droppable="folder"${accentStyle}>
             <div class="folder-header" data-action="toggle-folder" data-folder-id="${f.id}">
               <span class="folder-drag-handle" draggable="true" title="Drag to reorder">${ICON_GRIP}</span>
               <span class="folder-dot"></span>
               <span class="folder-chevron ${expanded ? 'open' : ''}">${ICON_FOLDER_CHEVRON}</span>
               <span class="folder-name" title="${safeName}">${safeName}</span>
+              ${f.locked ? `<span class="folder-lock-indicator" role="img" aria-label="Folder locked" title="Folder locked">${ICON_LOCK}</span>` : ''}
               <span class="folder-count">${allItems.length}</span>
               <button class="folder-menu-btn" data-action="folder-menu" data-folder-id="${f.id}" title="Folder options" type="button">${ICON_DOTS}</button>
             </div>
@@ -2197,6 +2258,7 @@ document.addEventListener('click', async (e) => {
     if (row && input) {
       row.style.display = 'block';
       input.value = '';
+      syncClearButton(input);
       input.focus();
     }
     return;
@@ -2281,6 +2343,11 @@ document.addEventListener('click', async (e) => {
     const mode = action === 'folder-delete-all' ? 'delete' : 'inbox';
     let snapshot = null;
     if (pendingDeleteFolderId) snapshot = await deleteFolder(pendingDeleteFolderId, mode);
+    if (!snapshot) {
+      closeFolderDeleteDialog();
+      showToast('This folder is locked');
+      return;
+    }
     if (snapshot) playCloseSound();
     closeFolderDeleteDialog();
     await refreshSavedAndFolders();
@@ -2428,7 +2495,10 @@ document.addEventListener('click', async (e) => {
     const id = actionEl.dataset.deferredId;
     if (!id) return;
 
-    await checkOffSavedTab(id);
+    if (!await checkOffSavedTab(id)) {
+      showToast('This folder is locked');
+      return;
+    }
 
     // Animate: strikethrough first, then slide out
     const item = actionEl.closest('.deferred-item');
@@ -2456,6 +2526,10 @@ document.addEventListener('click', async (e) => {
     if (!id) return;
 
     const removed = await dismissSavedTab(id);
+    if (!removed.length) {
+      showToast('This folder is locked');
+      return;
+    }
     if (removed.length) playCloseSound();
 
     const item = actionEl.closest('.deferred-item');
@@ -2478,6 +2552,10 @@ document.addEventListener('click', async (e) => {
     const id = actionEl.dataset.deferredId;
     if (!id) return;
     const removed = await dismissSavedTab(id);
+    if (!removed.length) {
+      showToast('This folder is locked');
+      return;
+    }
     if (removed.length) playCloseSound();
     await refreshSavedAndFolders();
     showToast('Removed from archive', async () => {
@@ -2493,7 +2571,7 @@ document.addEventListener('click', async (e) => {
     await uncheckSavedTab(id);
     await refreshSavedAndFolders();
     showToast('Restored to Saved for later', async () => {
-      await checkOffSavedTab(id);
+      await checkOffSavedTab(id, { internalUndo: true });
       await refreshSavedAndFolders();
     });
     flashItem(id);
@@ -2503,12 +2581,33 @@ document.addEventListener('click', async (e) => {
   if (action === 'clear-archive') {
     const { archived } = await getSavedTabs();
     const removed = await dismissSavedTabs(archived.map(item => item.id));
+    const keptLocked = archived.length - removed.length;
     if (removed.length) playCloseSound();
     await refreshSavedAndFolders();
-    showToast(`Cleared ${removed.length} archived item${removed.length !== 1 ? 's' : ''}`, async () => {
+    if (!removed.length) {
+      showToast(keptLocked
+        ? `Kept ${keptLocked} locked archived item${keptLocked !== 1 ? 's' : ''}`
+        : 'Archive is already empty');
+      return;
+    }
+    showToast(keptLocked
+      ? `Cleared ${removed.length}; kept ${keptLocked} locked item${keptLocked !== 1 ? 's' : ''}`
+      : `Cleared ${removed.length} archived item${removed.length !== 1 ? 's' : ''}`, async () => {
       await restoreRemovedSavedTabs(removed);
       await refreshSavedAndFolders();
     });
+    return;
+  }
+
+  if (action === 'clear-input') {
+    const target = actionEl.dataset.clearTarget
+      ? document.getElementById(actionEl.dataset.clearTarget)
+      : actionEl.closest('[data-clearable-input]')?.querySelector('input[type="text"]');
+    if (!target) return;
+    target.value = '';
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    syncClearButton(target);
+    target.focus();
     return;
   }
 
@@ -2785,13 +2884,17 @@ document.addEventListener('input', async (e) => {
   archiveQuery = e.target.value;
 
   try {
-    const { archived } = await getSavedTabs();
-    renderArchiveResults(archived);
+    const [{ archived }, folders] = await Promise.all([getSavedTabs(), getFolders()]);
+    renderArchiveResults(archived, folders);
   } catch (err) {
     console.warn('[tab-out] Archive search failed:', err);
   }
 });
 
+
+document.addEventListener('input', (e) => {
+  if (e.target.matches?.('[data-clearable-input] input[type="text"]')) syncClearButton(e.target);
+});
 
 /* ----------------------------------------------------------------
    FOLDERS — Interactions (drag & drop, context menus, dialogs)
@@ -2919,9 +3022,17 @@ async function openTabContextMenu(x, y, deferredIds) {
   const single = tabs.length === 1;
   const first = tabs[0];
   const tabIds = tabs.map(tab => tab.id);
+  const removableTabIds = tabs
+    .filter(tab => !folderIsLocked(tab.folderId, folders))
+    .map(tab => tab.id);
 
   async function moveSavedSelection(folderId, label) {
-    for (const id of tabIds) await moveTabToFolder(id, folderId);
+    const result = await moveTabsToFolder(tabIds, folderId);
+    if (result.blockedIds.length) {
+      showToast('Unlock the source folder before moving saved links');
+      return;
+    }
+    if (!result.changed) return;
     await refreshSavedAndFolders();
     clearSavedSelection();
     if (single) flashItem(first.id);
@@ -2929,11 +3040,11 @@ async function openTabContextMenu(x, y, deferredIds) {
   }
 
   async function removeSavedSelection() {
-    const removed = await dismissSavedTabs(tabIds);
+    const removed = await dismissSavedTabs(removableTabIds);
     if (removed.length) playCloseSound();
     await refreshSavedAndFolders();
     clearSavedSelection();
-    showToast(single ? 'Removed' : `Removed ${tabIds.length}`, async () => {
+    showToast(single ? 'Removed' : `Removed ${removableTabIds.length}`, async () => {
       await restoreRemovedSavedTabs(removed);
       await refreshSavedAndFolders();
       flashItem(first.id);
@@ -2968,6 +3079,10 @@ async function openTabContextMenu(x, y, deferredIds) {
     }});
   }
   items.push({ label: '＋  New folder…', onClick: async () => {
+    if (tabs.some(tab => folderIsLocked(tab.folderId, folders))) {
+      showToast('Unlock the source folder before moving saved links');
+      return;
+    }
     const name = (window.prompt('New folder name:') || '').trim();
     if (!name) return;
     const folder = await createFolder(name);
@@ -2975,8 +3090,14 @@ async function openTabContextMenu(x, y, deferredIds) {
       await moveSavedSelection(folder.id, single ? `Moved to “${folder.name}”` : `Moved ${tabs.length} to “${folder.name}”`);
     }
   }});
-  items.push({ separator: true });
-  items.push({ label: single ? 'Remove' : `Remove ${tabs.length}`, danger: true, onClick: removeSavedSelection });
+  if (removableTabIds.length) {
+    items.push({ separator: true });
+    items.push({
+      label: single ? 'Remove' : `Remove ${removableTabIds.length}`,
+      danger: true,
+      onClick: removeSavedSelection,
+    });
+  }
 
   showContextMenu(x, y, items);
 }
@@ -2998,15 +3119,22 @@ async function openFolderContextMenu(x, y, folderId) {
       await renderFoldersColumn();
     }},
     { label: 'Rename', onClick: () => startFolderRename(folderId) },
-    { label: 'Open as tab group', onClick: () => folderToGroup(folderId) },
+    { label: f.locked ? 'Unlock folder' : 'Lock folder', onClick: async () => {
+      await setFolderLocked(folderId, !f.locked);
+      await refreshSavedAndFolders();
+      showToast(f.locked ? 'Folder unlocked' : 'Folder locked');
+    }},
+    ...(f.locked ? [] : [{ label: 'Open as tab group', onClick: () => folderToGroup(folderId) }]),
     { separator: true },
     { heading: true, label: 'Color' },
     { swatches: true, current: f.color || null, onPick: async (color) => {
       await setFolderColor(folderId, color);
       await renderFoldersColumn();
     }},
-    { separator: true },
-    { label: 'Delete folder', danger: true, onClick: () => openFolderDeleteDialog(folderId) },
+    ...(f.locked ? [] : [
+      { separator: true },
+      { label: 'Delete folder', danger: true, onClick: () => openFolderDeleteDialog(folderId) },
+    ]),
   ]);
 }
 
@@ -3022,12 +3150,13 @@ function startFolderRename(folderId) {
   const nameSpan = header.querySelector('.folder-name');
   if (!nameSpan) return;
 
-  const input = document.createElement('input');
+  let input = document.createElement('input');
   input.type = 'text';
   input.className = 'folder-rename-input';
   input.value = nameSpan.textContent;
   input.maxLength = 60;
   nameSpan.replaceWith(input);
+  input = makeClearableInput(input, 'folder name');
   input.focus();
   input.select();
 
@@ -3056,6 +3185,10 @@ async function openFolderDeleteDialog(folderId) {
   const folders = await getFolders();
   const f = folders.find(ff => ff.id === folderId);
   if (!f) return;
+  if (f.locked) {
+    showToast('Unlock this folder before deleting it');
+    return;
+  }
 
   const { active } = await getSavedTabs();
   const count = active.filter(t => t.folderId === folderId).length;
@@ -3106,6 +3239,10 @@ document.addEventListener('focusout', (e) => {
   }
 });
 
+document.addEventListener('mousedown', (e) => {
+  if (e.target.closest('[data-action="clear-input"]')) e.preventDefault();
+});
+
 // ─── Drag & drop ───────────────────────────────────────────────────────────────
 // Handles three kinds of drags:
 //   { kind:'saved',  id }          — a saved tab → into a folder or the inbox
@@ -3118,6 +3255,11 @@ document.addEventListener('dragstart', (e) => {
   const chip   = e.target.closest('.page-chip[data-action="focus-tab"]');
   const header = e.target.closest('.folder-header');
   if (item) {
+    if (item.draggable === false || item.closest('.folder[data-folder-locked="true"]')) {
+      e.preventDefault();
+      showToast('Unlock the source folder before moving saved links');
+      return;
+    }
     dragData = { kind: 'saved', id: item.dataset.deferredId };
     item.classList.add('dragging');
   } else if (chip) {
@@ -3203,13 +3345,12 @@ document.addEventListener('drop', async (e) => {
     : 'inbox';
 
   if (data.kind === 'saved') {
-    // No-op if dropped back into the same place — avoids a needless re-render
-    const deferred = await storageRepository.getDeferred();
-    const tab = deferred.find(t => t.id === data.id);
-    const current = tab ? (tab.folderId || null) : null;
-    if (current === targetFolderId) return;
-
-    await moveTabToFolder(data.id, targetFolderId);
+    const result = await moveTabToFolder(data.id, targetFolderId);
+    if (result.blockedIds.length) {
+      showToast('Unlock the source folder before moving saved links');
+      return;
+    }
+    if (!result.changed) return;
     await refreshSavedAndFolders();
     flashItem(data.id);
     showToast(targetFolderId ? `Moved to “${tname}”` : 'Moved to inbox');
@@ -4903,6 +5044,7 @@ try {
 
     // Paint the speed-dial shortcut strip; its visibility is managed in Customize.
     renderSpeedDial();
+    syncClearButtons();
 
     // Paint saved workspace snapshots.
     await renderWorkspacePanel();

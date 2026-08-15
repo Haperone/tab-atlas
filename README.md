@@ -23,13 +23,14 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 - **Save for later** — stash tabs into an inbox before closing them, with archive support for dismissed items
 - **Archive retention** — automatically remove archived links after 180 days by default; choose 30, 90 or 180 days, or turn cleanup off; automatic removals can be undone
 - **Bulk actions for saved tabs** — `Ctrl/⌘`, `Shift`, or drag-select saved items, then right-click the selection to open, move, or remove them together
-- **Folders** — create, rename, recolour, collapse, reorder and delete folders
+- **Folders** — create, rename, recolour, collapse, reorder and delete folders; lock a folder from its menu to protect its saved links from removal, archiving or being moved out
 - **Folder ↔ tab group conversion** — open a saved folder as a named Chrome tab group, or save an open Chrome tab group back into a folder
 - **Workspace states** — save the current browser workspace, rename/delete saved states, and restore windows, tabs, pinned tabs and tab groups later
 - **Drag & drop** — drop open tabs or saved tabs into folders / the inbox; reorder folders by a grip handle
 - **Right‑click menus** for moving, opening and removing items
 
 **Find & focus**
+- **Clearable text fields** — search, naming and shortcut fields reveal a compact clear button as soon as you type
 - **One search bar** over open tabs, the inbox and folders — press `/` to focus it
 - Search **operators**: `domain:github`, `url:docs`, plus free text
 - **Undo** for destructive actions (closing tabs, removing saved items, deleting folders)
