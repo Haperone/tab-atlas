@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Tab Atlas
 
-> Last Updated: 2026-08-15
+> Last Updated: 2026-09-30
 
 ## Store Listing
 
@@ -14,7 +14,7 @@ Tab Atlas replaces Chrome's new-tab page with a clear dashboard of your open tab
 
 See tabs across windows, search by title or URL, spot duplicates, close clutter, save pages for later, restore links from a searchable archive, organize saved pages into folders, and capture whole workspaces for later restoration. Lock any folder from its menu to protect its saved links from accidental removal, archiving or being moved out, while still allowing new links to be added. Select several open or saved tabs with modifier clicks, then drag the selected group into a folder or handle it with bulk actions. Independent columns stay aligned while you scroll and release naturally when you reach an edge. Focus Sweep presents tabs as a calm card deck: swipe left to close, up to save, or right to keep, then review the batch before applying it. Choose from 16 local themes, including animated, minimalist dark, soft-grey, warm cream and three polished Apple-inspired material styles, then save one light and one dark favourite as a quick-switch pair. Privacy mode and editable shortcuts let the dashboard fit your workflow.
 
-Install the extension, open a new tab, and use the dashboard to jump to, save, group, or close tabs. The toolbar icon returns you to an existing Tab Atlas page or opens one when needed.
+Install the extension, open a new tab, and use the dashboard to jump to, save, group, or close tabs. On a website, click the toolbar icon to save the current page directly into a folder, search folders, or create one. You can also right-click a page and choose Save page to Tab Atlas. Your tab stays open, repeated saves reuse the existing page, and Undo remains available when you reopen the popup. The popup follows your chosen theme and includes a shortcut to the dashboard.
 
 All tab information, saved pages, folders, workspaces, themes, and shortcuts stay on your device during normal use. Tab Atlas has no account, analytics, advertising, server-side tab storage, or automatic third-party requests. Folder sharing is initiated explicitly by the user and creates an encrypted bearer link.
 
@@ -31,14 +31,14 @@ Support and source: https://github.com/Haperone/tab-atlas
 | Asset | Dimensions | Status | Filename |
 |-------|-----------:|--------|----------|
 | Store Icon | 128×128 PNG | ✅ Ready | `extension/icons/icon128.png` |
-| Screenshot 1 | 1280×800 or 640×400 | ⬜ Not created | Dashboard overview |
-| Screenshot 2 | 1280×800 or 640×400 | ⬜ Not created | Saved tabs and folders |
-| Screenshot 3 | 1280×800 or 640×400 | ⬜ Refresh required | Focus Sweep card deck and workspace drawer |
-| Small Promo Tile | 440×280 | ⬜ Not created | |
+| Screenshot 1 | 1280×800 or 640×400 | ✅ Existing in listing | Managed in Developer Dashboard |
+| Screenshot 2 | 1280×800 or 640×400 | ✅ Existing in listing | Managed in Developer Dashboard |
+| Screenshot 3 | 1280×800 or 640×400 | ✅ Existing in listing | Managed in Developer Dashboard |
+| Small Promo Tile | 440×280 | Optional for this update | Managed in Developer Dashboard |
 
 ### Screenshot Notes
 
-Use real extension UI with representative, non-sensitive example tabs. Show domain grouping and search first, saved tabs/folders second, and the Focus Sweep card deck or workspace restoration third. Screenshot 3 must be refreshed for the card-deck redesign.
+Use real extension UI with representative, non-sensitive example tabs. Show domain grouping and search first, saved tabs/folders second, and the Focus Sweep card deck or workspace restoration third. Screenshot 3 must be refreshed for the card-deck redesign. Add or refresh a screenshot showing the themed quick-save popup and the page context menu before publishing the quick-save update.
 
 ### Screenshot capture procedure
 
@@ -78,14 +78,26 @@ Optional promo tile (440×280): a cropped dashboard hero with the "Tab Atlas" na
 | `storage` | permissions | Stores saved tabs, folders, workspace snapshots, and related extension state locally on the user's device. |
 | `favicon` | permissions | Displays site icons from Chrome's local favicon cache without contacting the sites or a third-party icon service. |
 | `tabGroups` | permissions | Shows existing Chrome tab groups and lets the user rename, recolor, collapse, save, and recreate groups. |
+| `contextMenus` | permissions | Adds a user-invoked Save page to Tab Atlas submenu on websites, with destinations matching the user's locally saved folders. It saves the selected page title and URL locally. |
+| `activeTab` | permissions | Grants temporary access when the user invokes the toolbar popup or page context menu, only to show save-result feedback on that tab. No persistent access to websites is requested. |
+| `scripting` | permissions | Injects a packaged, temporary save-result notification after the user confirms a popup save or invokes the page context menu. It does not extract website content, alter the site's application, or make network requests. |
+| `offscreen` | permissions | Plays brief locally packaged sounds after a successful save or Undo, even when the toolbar popup closes. Respects the user's Sound setting and makes no network requests. |
 
 **Host permissions:** None.
+
+Choose a folder in the popup and confirm to save and close it. Successful saves
+from either entry point show a small green confirmation rising from the bottom
+center, accompanied by a short sound when Sound is enabled. The notification uses
+the selected theme and respects reduced motion. Undo also has a brief sound,
+including in Focus Sweep, and the popup has a single surface. Restricted pages retain toolbar
+feedback and the persisted save result. The native toolbar popup keeps its
+360px width rather than shrinking with its initial viewport.
 
 ## Privacy & Data Use
 
 **Does the extension collect user data?** No. It processes current tab information locally and does not transmit it to the developer or any third party. If a user explicitly creates and sends a folder-share link, that user has chosen to share its encrypted URL with the recipient.
 
-The extension may store URLs, page titles, folder names, workspace layouts, and user preferences locally when the user uses save, folder, workspace, theme, or shortcut features. `chrome.storage.local` and `localStorage` remain on the user's device. Folder shares carry a compressed encrypted copy in the user-copied URL fragment; Tab Atlas does not upload or retain that copy. There is no analytics, telemetry, advertising, account, cookie, remote API, or automatic external resource request.
+The extension may store URLs, page titles, folder names, workspace layouts, and user preferences locally when the user uses save, folder, workspace, theme, or shortcut features. The latest quick-save result and one Undo record are stored locally so recovery survives closing the popup. `chrome.storage.local` and `localStorage` remain on the user's device. Folder shares carry a compressed encrypted copy in the user-copied URL fragment; Tab Atlas does not upload or retain that copy. There is no analytics, telemetry, advertising, account, cookie, remote API, or automatic external resource request.
 
 ### Data Use Certification
 
@@ -109,7 +121,7 @@ Locally saved data remains until the user removes it, clears extension data, or 
 ### Publishable Privacy Policy Copy
 
 **Privacy Policy for Tab Atlas**
-Last updated: July 13, 2026
+Last updated: August 15, 2026
 
 Tab Atlas does not collect, transmit, sell, or share personal data or browsing information. It processes open-tab information locally to provide tab organization features. URLs, titles, saved tabs, folders, workspace snapshots, themes, and shortcuts are stored only on the user's device when relevant features are used.
 
@@ -140,16 +152,20 @@ Questions about privacy can be submitted through the project's public issue trac
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
-| Unreleased | 2026-08-15 | Added three distinct Apple-inspired material themes: Space Black, Pacific Blue and Orchid Bloom; retired Silver Studio and safely migrated saved Apple-theme choices to supported replacements. Added folder locks that protect saved and archived links from destructive actions and moves out, while allowing new links in, plus accessible clear buttons for search, naming and shortcut fields. Added explicit encrypted folder sharing with local preview, recipient confirmation and no server-side storage, including a clearer status when tracking parameters are removed, local unpacked-build detection during development and a reliable Chrome Web Store install link. | In development |
+| 1.2.0 | 2026-09-30 | Added a themed toolbar popup with explicit destination confirmation and a Save page to Tab Atlas page context menu. Saves keep the page open and show a compact green bottom-center receipt with a paused-on-hover countdown, matching Undo arrow and local save/Undo sounds. Added contextMenus, activeTab, scripting and offscreen permissions. Improved drag scrolling, keyboard organization, loading/error recovery, full share/import previews, partial-operation handling and retryable Undo that restores tab windows, positions and native groups. Polished all 16 themes while retaining their distinct materials and minimalist controls. | Package prepared locally; not uploaded |
+| 1.1.0 | 2026-08-15 | Added three distinct Apple-inspired material themes: Space Black, Pacific Blue and Orchid Bloom; retired Silver Studio and safely migrated saved Apple-theme choices to supported replacements. Added folder locks that protect saved and archived links from destructive actions and moves out, while allowing new links in, plus accessible clear buttons for search, naming and shortcut fields. Added explicit encrypted folder sharing with local preview, recipient confirmation and no server-side storage, including a clearer status when tracking parameters are removed, local unpacked-build detection during development and a reliable Chrome Web Store install link. | Ready to upload |
 | 1.0.1 | 2026-07-18 | Added Aurora Glass, Smoke Glass, Pearl Glass and warm Paper Glass; retired the regular Paper and Catppuccin Latte themes, leaving 13 themes. Redesigned Focus Sweep as an animated three-card deck with swipe, keyboard and button controls, a safe review summary, folder-aware saving and an optional Instant mode. Glass search fields now use the same restrained focus ring as the regular themes. The guided tour also uses separate animated steps for modifier-click selection and dragging a selected group from Saved for later into a folder, including a grab cursor and group ghost. | Ready to upload |
 | 1.0.0 | 2026-07-12 | Initial store draft with the saved-links archive, one-click restoration, Undo, and aligned independent column scrolling. | Draft |
 
 ## Release Package
 
-- **Upload file:** `release/tab-atlas-1.0.1-chrome-web-store.zip`
-- **Package size:** 111,604 bytes
-- **Runtime files:** 25
-- **SHA-256:** `82c5d0406867e661e42a2d2592d5bd02eb5404c77ceae8671fd8af3bd1b62b52`
+Built from the current `extension/` sources for version 1.2.0. Previous release ZIPs are retained. The package is prepared locally; uploading and publishing remain manual actions in the publisher's account.
+
+- **Upload file:** `release/tab-atlas-1.2.0-chrome-web-store.zip`
+- **Package size:** 224,970 bytes
+- **Runtime files:** 53
+- **SHA-256:** `c177bf39bd2b2c4dd4e52b5496e7bd28ee854857a1666de452f9c371b0169b12`
+- **Package verification:** `release/tab-atlas-1.2.0-package-report.json` records size, SHA-256, every file hash and dependency checks.
 - **Validated:** `manifest.json` is at the ZIP root; package contains no tests, repository metadata,
   development dependencies, source maps, store assets, or store documentation.
 
@@ -158,19 +174,19 @@ Questions about privacy can be submitted through the project's public issue trac
 - Manifest V3; packaged JavaScript only; no remotely hosted code.
 - New-tab override: `index.html`.
 - Background service worker: `background.js` as an ES module.
-- No content scripts, host permissions, external network services, analytics, telemetry, or ads.
+- No automatic content scripts or persistent host permissions, external network services, analytics, telemetry, or ads. A packaged notification is injected only after the user saves from the context menu or confirms a popup save and removes itself afterward.
+- External messaging is limited to `https://tab-atlas.pages.dev/*` and accepts only the folder-share ping and explicit import handoff envelopes.
 - The two GitHub links in the dashboard are user-clicked credits and are not requested automatically.
 - The extension package itself has no build step or runtime dependencies.
 
 ### Submission Blockers
 
 - [x] **Privacy-policy URL** — page written at [`docs/privacy-policy.html`](docs/privacy-policy.html);
-      the public URL returned HTTP 200 and was verified on 2026-07-13.
-- [x] **Version** — `1.0.1`. Keep this greater than any version already uploaded before each future
+      the public URL returned HTTP 200 and was verified on 2026-08-15.
+- [x] **Version** — `1.2.0`, greater than the previous local release 1.1.0. Keep this greater than any version already uploaded before each future
       submission.
 - [x] **Publisher name and contact email** — filled in "Developer Info" (Publisher: Haperone,
       Contact: nsvyatogo26@gmail.com). Remaining action: enter them in the Developer Dashboard and
       **verify the email** there (verification can only happen in your account, not in the repo).
-- [ ] **At least one 1280×800 or 640×400 screenshot** — a seeded demo harness that renders the real
-      dashboard UI is at [`tools/screenshot-harness.html`](tools/screenshot-harness.html); open it and
-      capture. See "Screenshot capture procedure" below.
+- [x] **Store listing assets** — the existing screenshots and listing will be retained for this update,
+      as confirmed by the publisher on 2026-08-15. The demo harness remains available for future refreshes.

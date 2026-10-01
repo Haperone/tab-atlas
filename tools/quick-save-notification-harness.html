@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Tab Atlas · Quick save feedback</title>
+<link rel="stylesheet" href="../extension/style.css"><link rel="stylesheet" href="../extension/apple-themes.css"><link rel="stylesheet" href="../extension/dashboard-controls.css">
+<style>
+body { margin:0; padding:32px; min-height:100vh; }
+main { max-width:1000px; margin:auto; }
+.preview { display:flex; gap:40px; align-items:flex-start; margin-top:28px; }
+iframe { flex:none; width:360px; height:600px; border:0; border-radius:16px; }
+article { flex:1; padding:28px; border:1px solid var(--view-panel-border); border-radius:var(--view-panel-radius); background:var(--view-panel-bg); }
+article h2 { margin:0 0 12px; font-size:22px; } article p { color:var(--view-secondary-text); }
+article button { margin:12px 8px 0 0; padding:10px 14px; background:var(--view-control-bg); color:var(--text); border:1px solid var(--view-panel-border); border-radius:var(--view-control-radius); cursor:pointer; }
+article button:focus-visible { outline:2px solid var(--accent-primary); outline-offset:2px; }
+</style><script type="module" src="quick-save-notification-harness.js"></script></head>
+<body><main><p>Tab Atlas · Quick save preview</p><div class="preview">
+<iframe title="Toolbar popup" src="quick-save-harness.html?theme=spaceblack&amp;context=1"></iframe>
+<article><h2>Designing calm interfaces</h2><p>A sample website for checking page feedback. These buttons invoke the same save handler as Chrome's context menu.</p>
+<button id="save">Save to Reading</button><button id="error">Try removed folder</button><button id="reduced">Toggle reduced motion</button>
+</article></div><pre id="notificationResults" hidden></pre></main></body></html>

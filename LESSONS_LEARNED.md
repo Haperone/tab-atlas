@@ -15,3 +15,11 @@
 - Build glass from a flat translucent fill, backdrop blur, a soft outer border, and diffuse depth. Directional gradients, hard inset highlights, and glowing card pseudo-elements read as polished metal.
 - Keep theme identity in the canvas palette and motion profile instead of repainting each card with theme-specific reflections.
 - On a quiet light canvas, use lower-alpha white surfaces and soft neutral shadows; an opaque white sheen hides transparency instead of making it legible.
+
+## Dragging through long columns
+
+- Native HTML drag suppresses pointermove. Track dragover coordinates and continue scrolling with requestAnimationFrame so a stationary pointer at the edge still works.
+- Scroll the hovered destination column, including its header; fall back to page scrolling at screen edges when the column cannot move. Stop the loop on drop, dragend, window blur and visibility changes.
+- Floating controls can intercept dragover at a column edge. Use column geometry as a fallback instead of relying only on event.target.closest().
+- Keep wheel handling during drag separate from normal column anchoring. Consume available column distance first and forward only the remainder to the page.
+- Verify crowded layouts with a source link at the bottom of the inbox and the destination folder initially offscreen, including persisted drop results and cancellation.

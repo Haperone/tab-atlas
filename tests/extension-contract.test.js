@@ -35,21 +35,22 @@ test('manifest uses MV3 with the expected entry points', async () => {
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.chrome_url_overrides?.newtab, 'index.html');
   assert.equal(manifest.background?.service_worker, 'background.js');
+  assert.equal(manifest.minimum_chrome_version, '109');
 });
 
 test('manifest keeps the minimal declared Chrome permissions', async () => {
   const manifest = await readProjectJson(manifestPath);
   assert.deepEqual(
     [...manifest.permissions].sort(),
-    ['favicon', 'storage', 'tabGroups', 'tabs'].sort(),
+    ['activeTab', 'contextMenus', 'favicon', 'offscreen', 'scripting', 'storage', 'tabGroups', 'tabs'].sort(),
   );
   assert.equal('host_permissions' in manifest, false);
 });
 
-test('manifest declares a toolbar action without a popup', async () => {
+test('manifest declares the quick-save toolbar popup', async () => {
   const manifest = await readProjectJson(manifestPath);
   assert.equal(manifest.action?.default_title, 'Tab Atlas');
-  assert.equal('default_popup' in manifest.action, false);
+  assert.equal(manifest.action.default_popup, 'popup.html');
 });
 
 test('every manifest entry-point file exists', async () => {
@@ -57,6 +58,7 @@ test('every manifest entry-point file exists', async () => {
   const files = [
     manifest.chrome_url_overrides.newtab,
     manifest.background.service_worker,
+    manifest.action.default_popup,
     ...Object.values(manifest.action.default_icon),
     ...Object.values(manifest.icons),
   ];
@@ -346,7 +348,7 @@ test('archive access sits beside global search and stays raised in soft themes',
   const html = await readProjectText('extension/index.html');
   const css = await readProjectText('extension/style.css');
   const searchRowStart = html.indexOf('<div class="global-search-row">');
-  const searchRowEnd = html.indexOf('</div>\n\n  <div class="dashboard-columns"', searchRowStart);
+  const searchRowEnd = html.indexOf('id="dashboardColumns"', searchRowStart);
   const archiveLaunch = html.indexOf('id="archiveLaunch"');
   const archiveRule = [...css.matchAll(/\.archive-launch\s*\{([^}]*)\}/g)]
     .map(match => match[1])

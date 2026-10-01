@@ -6,7 +6,7 @@ import { SHARE_PUBLIC_CONFIG as publicConfigValues } from '../docs/share/share-c
 
 test('share deployment keeps the external boundary narrowly scoped', async () => {
   const manifest = await readProjectJson('extension/manifest.json');
-  assert.equal(manifest.minimum_chrome_version, '102');
+  assert.equal(manifest.minimum_chrome_version, '109');
   assert.deepEqual(manifest.externally_connectable, { matches: ['https://tab-atlas.pages.dev/*'] });
   assert.equal('host_permissions' in manifest, false);
 });

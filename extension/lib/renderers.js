@@ -32,14 +32,16 @@ export function renderTabChip(tab, groupDomain, urlCounts = {}) {
     : '';
   const safeTitle = escapeHtml(label);
   const faviconUrl = favIcon(tab.url, 16);
-  return `<div class="page-chip clickable${count > 1 ? ' chip-has-dupes' : ''}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
+  return `<div class="page-chip clickable${count > 1 ? ' chip-has-dupes' : ''}" data-action="focus-tab" data-tab-id="${Number.isInteger(tab.id) ? tab.id : ''}" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" draggable="true" title="${safeTitle}">
     ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" draggable="false">` : ''}
-    <span class="chip-text">${safeTitle}</span>${duplicate}
+    <button type="button" class="chip-text chip-focus" data-action="focus-tab" data-tab-id="${Number.isInteger(tab.id) ? tab.id : ''}" data-tab-url="${safeUrl}" title="${safeTitle}" aria-label="Switch to ${safeTitle}" aria-keyshortcuts="Control+Space Meta+Space" aria-describedby="selectionKeyboardHint">${safeTitle}</button>${duplicate}
+    ${tab.pinned ? '<span class="chip-status" title="Pinned tab" aria-label="Pinned tab">◆</span>' : ''}
+    ${tab.audible ? '<span class="chip-status" title="Playing audio" aria-label="Playing audio">♪</span>' : ''}
     <div class="chip-actions">
-      <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
+      <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-id="${Number.isInteger(tab.id) ? tab.id : ''}" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later" aria-label="Save ${safeTitle} for later">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
       </button>
-      <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
+      <button class="chip-action chip-close" data-action="close-single-tab" data-tab-id="${Number.isInteger(tab.id) ? tab.id : ''}" data-tab-url="${safeUrl}" title="Close this tab" aria-label="Close ${safeTitle}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
       </button>
     </div>
@@ -50,9 +52,9 @@ export function buildOverflowChips(hiddenTabs, urlCounts = {}, expanded = false)
   const hiddenChips = hiddenTabs.map(tab => renderTabChip(tab, '', urlCounts)).join('');
   return `
     <div class="page-chips-overflow" style="display:${expanded ? 'contents' : 'none'}">${hiddenChips}</div>
-    ${expanded ? '' : `<div class="page-chip page-chip-overflow clickable" data-action="expand-chips">
+    ${expanded ? '' : `<button type="button" class="page-chip page-chip-overflow clickable" data-action="expand-chips">
       <span class="chip-text">+${hiddenTabs.length} more</span>
-    </div>`}`;
+    </button>`}`;
 }
 
 export function renderDomainCard(group, expandedCards = new Set()) {
@@ -130,9 +132,9 @@ export function renderDeferredItem(item, timeAgo, { locked = false } = {}) {
   const safeTitle = escapeHtml(item.title || item.url || '');
   return `
     <div class="deferred-item${locked ? ' deferred-item-locked' : ''}" data-deferred-id="${item.id}" draggable="${locked ? 'false' : 'true'}">
-      ${locked ? '' : `<input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">`}
+      ${locked ? '' : `<input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}" aria-label="Archive ${safeTitle}">`}
       <div class="deferred-info">
-        <a href="${safeUrl}" target="_blank" rel="noopener" class="deferred-title" title="${safeTitle}">
+        <a href="${safeUrl}" target="_blank" rel="noopener" class="deferred-title" title="${safeTitle}" aria-keyshortcuts="Control+Space Meta+Space" aria-describedby="selectionKeyboardHint">
           ${faviconUrl ? `<img src="${faviconUrl}" alt="" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px">` : ''}${safeTitle}
         </a>
         <div class="deferred-meta">

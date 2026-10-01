@@ -1,0 +1,60 @@
+/* Chrome measures the popup before assigning its viewport: vw would clamp that measurement. */
+html { width: 360px; min-width: 360px; max-height: 600px; overflow-y: auto; }
+body.quick-save-popup { box-sizing: border-box; width: 360px; min-width: 360px; margin: 0; padding: 0; min-height: 0; background:var(--view-panel-bg); font-size: 13px; line-height: 1.5; }
+body.quick-save-popup::before, body.quick-save-popup::after { display:none; }
+html[data-theme] body.quick-save-popup { background:var(--view-panel-bg); }
+[hidden] { display: none !important; }
+.quick-save-panel { position: relative; z-index: 1; padding: 20px; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.quick-save-header { margin: 0 0 16px; padding: 0; display: flex; flex-direction: row; gap: 12px; justify-content: space-between; align-items: center; text-align: start; border: 0; animation: none; }
+.quick-save-brand { font-size: 12px; color: var(--view-secondary-text); margin: 0 0 2px; }
+.quick-save-header h1 { font-family: var(--font-serif); font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -.4px; margin: 0; }
+.quick-save-page { margin-bottom: 12px; }
+#pageTitle { font-weight: 500; overflow-wrap: anywhere; margin: 0 0 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.quick-save-secondary { color: var(--view-secondary-text); font-size: 12px; margin: 0; overflow-wrap: anywhere; }
+#savedLocation { margin: 0 0 12px; }
+button, input { font: inherit; color: var(--text); }
+button { cursor: pointer; }
+button:disabled { cursor: wait; }
+.quick-save-icon { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: var(--view-control-radius); background: transparent; flex-shrink: 0; }
+.quick-save-icon svg { width: 18px; height: 18px; }
+.quick-save-search { position: relative; margin-bottom: 8px; }
+.quick-save-search svg { width: 16px; height: 16px; position: absolute; top: 12px; inset-inline-start: 12px; color: var(--view-secondary-text); pointer-events: none; }
+.quick-save-search input, #folderName { width: 100%; min-height: 40px; padding: 9px 12px; border: 1px solid var(--view-panel-border); border-radius: var(--view-control-radius); background: var(--view-control-bg); }
+.quick-save-search input { padding-inline-start: 36px; }
+input::placeholder { color: var(--view-secondary-text); opacity: 1; }
+.quick-save-folders { max-height: 190px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.quick-save-destination { width: 100%; min-height: 42px; display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid transparent; border-radius: var(--view-control-radius); background: transparent; text-align: start; }
+.quick-save-destination:hover, .quick-save-icon:hover, .quick-save-new:hover { background: var(--view-control-bg); }
+.quick-save-destination[aria-pressed="true"] { background: var(--view-control-bg); border-color: var(--view-panel-border); }
+.quick-save-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--folder-color, var(--accent-primary)); flex-shrink: 0; }
+.quick-save-destination .destination-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.destination-mark { width: 16px; height: 16px; flex-shrink: 0; color:var(--accent-success); }
+.destination-lock { width: 14px; height: 14px; color: var(--view-secondary-text); flex-shrink: 0; }
+.quick-save-new { margin-top: 8px; min-height: 36px; padding: 6px 10px; border: 0; border-radius: var(--view-control-radius); background: transparent; text-align: start; width: 100%; }
+#folderEmpty { margin: 12px 10px; }
+#folderForm { margin-top: 12px; }
+#folderForm label { display: block; font-size: 12px; margin-bottom: 6px; }
+.quick-save-form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+.quick-save-text { border: 0; border-radius: 6px; background: transparent; padding: 6px 8px; min-height: 32px; }
+.quick-save-text:hover { background: var(--view-control-bg); }
+.quick-save-create { border: 1px solid var(--view-panel-border); border-radius: var(--view-control-radius); padding: 7px 12px; background: var(--view-control-bg); }
+.quick-save-confirm { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:40px; margin-top:12px; padding:8px 12px; border:1px solid color-mix(in srgb,var(--accent-success) 55%,var(--view-panel-border)); border-radius:var(--view-control-radius); background:color-mix(in srgb,var(--accent-success) var(--quick-save-success-tint,28%),var(--view-control-bg)); font-weight:500; }
+:is(html[data-theme="papersoft"],html[data-theme="lattesoft"],html[data-theme="pearlglass"],html[data-theme="paperglass"],html[data-theme="orchidbloom"]) { --quick-save-success-tint:14%; }
+.quick-save-confirm svg { width:18px; height:18px; flex:none; color:var(--accent-success); }
+.quick-save-confirm span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.quick-save-confirm:disabled { opacity:.5; cursor:default; }
+.quick-save-confirm:not(:disabled):hover { background:color-mix(in srgb,var(--accent-success) var(--quick-save-success-tint,28%),var(--view-control-bg)); border-color:var(--accent-success); }
+.quick-save-feedback { margin-top:8px; display:flex; justify-content:center; }
+.quick-save-error { margin: 12px 0 0; color: var(--view-danger-text); font-size: 12px; overflow-wrap: anywhere; }
+.quick-save-hint { color: var(--view-secondary-text); text-align: center; font-size: 12px; margin: 12px 0 0; }
+:is(button, input):focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.quick-save-destination:focus-visible { outline-offset: -2px; }
+button { transition: transform 100ms ease-out; }
+button:active { transform: scale(.96); }
+html[data-theme$="glass"] body.quick-save-popup { backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)); -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)); }
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.quick-save-search input, #folderName, .quick-save-destination[aria-pressed="true"]) { box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light); }
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) :is(.quick-save-create,.quick-save-confirm) { box-shadow: -3px -3px 6px var(--neu-light), 3px 3px 6px var(--neu-dark); }
+@media (prefers-reduced-motion: reduce) { button { transition: none; } button:active { transform: none; } }
+html[data-motion="reduced"] button { transition: none; }
+html[data-motion="reduced"] button:active { transform: none; }
+@media (forced-colors: active) { .quick-save-panel, .quick-save-feedback, .quick-save-create { border: 1px solid CanvasText; } :is(button, input):focus-visible { outline-color: Highlight; } .quick-save-dot { background: CanvasText; } }

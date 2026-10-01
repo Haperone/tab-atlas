@@ -17,6 +17,7 @@ const LEGACY_THEME_IDS = Object.freeze({
 });
 
 export function createThemeController({ document, storage, showContextMenu, showToast }) {
+  let materialSwap = 0;
   function readStorage(key) {
     try { return storage.getItem(key); } catch { return null; }
   }
@@ -77,6 +78,18 @@ export function createThemeController({ document, storage, showContextMenu, show
 
   function applyTheme(id) {
     const option = themeOption(id) || themeOption(DEFAULT_DARK_THEME);
+    const root = document.documentElement;
+    const frame = document.defaultView?.requestAnimationFrame?.bind(document.defaultView);
+    if (root.dataset.theme !== option.id && root.classList && frame) {
+      const swap = ++materialSwap;
+      root.classList.add('theme-switching');
+      root.dataset.theme = option.id;
+      // Commit the material swap together before restoring hover transitions.
+      void root.offsetHeight;
+      frame(() => frame(() => {
+        if (swap === materialSwap) root.classList.remove('theme-switching');
+      }));
+    }
     document.documentElement.dataset.theme = option.id;
     writeStorage(THEME_KEY, option.id);
     syncThemeToggle();

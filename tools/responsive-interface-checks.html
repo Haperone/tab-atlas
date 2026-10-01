@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Responsive interface checks · Tab Atlas</title>
+<style>body{margin:16px;font:14px/1.5 system-ui;background:#eee;color:#222}.frames{display:flex;gap:16px;align-items:start;overflow:auto}iframe{border:1px solid #888;flex:none}pre{white-space:pre-wrap}</style></head>
+<body><h1>Responsive interface checks</h1><div class="frames">
+<iframe title="Responsive surface under review" id="responsiveSurface" width="320" height="700"></iframe>
+</div><pre id="responsiveInterfaceResults">Running…</pre>
+<script type="module">
+const frame=document.getElementById('responsiveSurface');
+const cases=[
+  {name:'Dashboard 320 pixels',width:320,height:700,url:'screenshot-harness.html?theme=spaceblack&audit=1&load-failure=1'},
+  {name:'Compact viewport and enlarged text spacing',width:640,height:400,url:'screenshot-harness.html?theme=spaceblack&audit=1&spacing=1'},
+  {name:'Dialogs and drawers 320 pixels',width:320,height:700,url:'screenshot-harness.html?theme=spaceblack&deep=1'},
+  {name:'Public pages 320 pixels',width:320,height:700,url:'public-interface-checks.html'},
+];
+const results=[];
+for(const fixture of cases){
+  frame.width=fixture.width;frame.height=fixture.height;frame.focus();frame.src=fixture.url;
+  await new Promise(resolve=>{frame.onload=resolve});
+  let completed=false;
+  for(let i=0;i<1600;i++){
+    const result=frame.contentDocument?.querySelector('#interfaceAuditResults,#interfaceDeepResults,#publicInterfaceResults');
+    if(result?.textContent && result.textContent!=='Running…'){results.push({name:fixture.name,...JSON.parse(result.textContent)});completed=true;break;}
+    await new Promise(resolve=>setTimeout(resolve,25));
+  }
+  if(!completed)results.push({name:fixture.name,failed:true,error:'Responsive suite did not complete'});
+}
+document.getElementById('responsiveInterfaceResults').textContent=JSON.stringify(results);
+</script></body></html>

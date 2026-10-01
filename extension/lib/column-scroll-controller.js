@@ -124,7 +124,7 @@ export function createColumnScrollController({
     anchorViewport = viewport;
     const startY = window.scrollY;
     const targetY = anchorTop();
-    const duration = reducedMotionQuery?.matches ? 0 : anchorDuration;
+    const duration = (reducedMotionQuery?.matches || document.documentElement?.dataset?.motion === 'reduced') ? 0 : anchorDuration;
 
     if (duration <= 0 || Math.abs(startY - targetY) <= DEFAULT_ANCHOR_TOLERANCE) {
       finishAnchor(viewport);
@@ -181,7 +181,7 @@ export function createColumnScrollController({
   }
 
   function applyWheelDelta(viewport, delta, event) {
-    const reducedMotion = reducedMotionQuery?.matches;
+    const reducedMotion = reducedMotionQuery?.matches || document.documentElement?.dataset?.motion === 'reduced';
     const existingDistance = scrollViewport === viewport
       ? scrollTarget - viewport.scrollTop
       : 0;

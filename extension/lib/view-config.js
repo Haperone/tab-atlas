@@ -37,12 +37,12 @@ export const THEME_OPTIONS = [
 
 export const ONBOARDING_STEPS = [
   { title: 'Open tabs', copy: 'Domain cards show what is open right now. Click a title to jump, bookmark to save, or close tabs when you are done.', targets: ['#openTabsSection'], fallback: '#dashboardColumns' },
-  { title: 'Select multiple tabs', copy: 'Hold Ctrl (⌘ on Mac) and click individual tabs to add or remove them from the selection.', demo: 'multiSelect', targets: ['#openTabsSection'], fallback: '#dashboardColumns' },
+  { title: 'Select multiple tabs', copy: 'Hold Ctrl (⌘ on Mac) and click tabs to select them. With a title focused, use Ctrl or ⌘ plus Space; Shift plus Space selects a range.', demo: 'multiSelect', targets: ['#openTabsSection'], fallback: '#dashboardColumns' },
   { title: 'Move selected tabs', copy: 'Drag any selected saved tab from Saved for later into a folder. The rest of the selection travels with it as one group.', demo: 'dragSelection', targets: ['#deferredColumn'], fallback: '#dashboardColumns' },
   { title: 'Saved for later', copy: 'Saved for later is your inbox for tabs you want to keep without leaving them open.', targets: ['#deferredColumn'], fallback: '#dashboardColumns' },
   { title: 'Folders', copy: 'Folders organize saved tabs into compact groups for projects, research, videos, and tasks.', targets: ['#foldersColumn'], fallback: '#dashboardColumns' },
   { title: 'Search', copy: 'Search open and saved tabs with free text. Press / to focus search, or narrow with domain:github and url:docs.', targets: ['.global-search-row'], fallback: '#dashboardColumns' },
-  { title: 'Sweep', copy: 'Sweep turns open tabs into a focused card deck. Swipe left to close, up to save, or right to keep, then review the batch before applying it.', targets: ['[data-action="start-focus-sweep-all"]'], fallback: '#openTabsSection' },
+  { title: 'Sweep', copy: 'Swipe left to close, up to save, or right to keep; the buttons and arrow keys do the same. Review mode stages decisions until Apply. Instant mode applies each decision immediately.', targets: ['[data-action="start-focus-sweep-all"]'], fallback: '#openTabsSection' },
   { title: 'Save workspace', copy: 'Use Save workspace when the whole browser setup is worth keeping as one restorable state.', targets: ['.workspace-edge-save', '[data-action="toggle-workspace-drawer"]'], fallback: '#workspacePanel', spotlightPadding: { top: 18, right: 8, bottom: 8, left: 8 } },
   { title: 'Workspaces', copy: 'Saved states let you restore windows and tabs later, then rename or remove old snapshots as needed.', targets: ['#workspacePanel'], fallback: '#dashboardColumns' },
   { title: 'Top-right controls', copy: 'Bloom switches between your saved light and dark themes. Open Customize to choose both sides of that pair, manage shortcuts and backup, or restart this tour. Privacy stays separate for screen sharing.', virtualTarget: 'cornerControls', spotlightPadding: { top: 8, right: 8, bottom: 8, left: 8 } },

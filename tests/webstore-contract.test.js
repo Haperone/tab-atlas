@@ -28,8 +28,8 @@ test('store privacy draft describes local processing and flags submission inputs
   assert.match(store, /\*\*Publisher Name:\*\* \S+/);
   assert.match(store, /\*\*Contact Email:\*\* \S+@\S+/);
   assert.doesNotMatch(store, /(?:Publisher Name|Contact Email).*REQUIRED BEFORE SUBMISSION/);
-  // The one blocker that genuinely cannot be resolved from the repo: real screenshots.
-  assert.match(store, /Screenshot 1.*Not created/);
+  // New submissions need an asset; updates may retain a publisher-confirmed existing listing screenshot.
+  assert.match(store, /Screenshot 1.*(?:Ready|Existing in listing)/);
 });
 
 test('published privacy policy page exists and makes no external requests', async () => {

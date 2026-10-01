@@ -44,6 +44,7 @@ export function tabsSignature(list) {
     Number.isFinite(tab.groupId) ? tab.groupId : -1,
     Number.isFinite(tab.windowId) ? tab.windowId : -1,
     Number.isFinite(tab.index) ? tab.index : -1,
+    Number.isFinite(tab.lastAccessed) ? tab.lastAccessed : 0,
   ])).join('§');
 }
 

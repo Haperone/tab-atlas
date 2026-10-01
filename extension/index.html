@@ -14,8 +14,11 @@
   <link rel="stylesheet" href="apple-themes.css">
   <link rel="stylesheet" href="interaction-controls.css">
   <link rel="stylesheet" href="folder-share.css">
+  <link rel="stylesheet" href="dashboard-controls.css">
 </head>
 <body>
+<p class="visually-hidden" id="selectionKeyboardHint">Control or Command plus Space selects a link. Shift plus Space selects a range.</p>
+<a class="dashboard-skip-link" href="#dashboardColumns">Skip to tabs</a>
 <div class="container">
 
 
@@ -86,8 +89,9 @@
   <div class="global-search-row">
     <svg class="global-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
     <div class="clearable-input clearable-input-global" data-clearable-input>
-      <input type="text" class="global-search" id="globalSearch" aria-label="Search open tabs, saved tabs and folders" placeholder="Search everything…  press /  —  try domain:github or url:docs">
+      <input type="text" class="global-search" id="globalSearch" aria-label="Search open tabs, saved tabs and folders" placeholder="Search tabs and saved links…" autocomplete="off" spellcheck="false" aria-describedby="searchHint">
       <button class="input-clear-btn" data-action="clear-input" data-clear-target="globalSearch" type="button" aria-label="Clear search" title="Clear search" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
+      <span id="searchHint" class="visually-hidden">Press / or Ctrl or Command K to search. Use domain:github, url:docs, quoted phrases, or -word to exclude a term. Arrow Down moves to results.</span>
     </div>
     <button class="archive-launch" id="archiveLaunch" data-action="open-archive" type="button" aria-haspopup="dialog" aria-controls="archiveDrawerOverlay" aria-expanded="false" style="display:none">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
@@ -98,7 +102,11 @@
     </button>
   </div>
 
-  <div class="dashboard-columns" id="dashboardColumns">
+  <div class="dashboard-load-state" id="dashboardLoadState" role="status" hidden>
+    <p id="dashboardLoadMessage"></p>
+    <button type="button" data-action="retry-dashboard" hidden>Retry loading</button>
+  </div>
+  <main class="dashboard-columns" id="dashboardColumns" tabindex="-1" aria-label="Tabs and saved links">
 
     <!-- LEFT COLUMN: Open tabs -->
     <div class="active-section" id="openTabsSection" style="display:none">
@@ -110,6 +118,11 @@
       </div>
       <div class="column-scroll column-scroll-open" id="openTabsScroll" role="region" aria-labelledby="openTabsSectionTitle" tabindex="0">
         <div class="missions" id="openTabsMissions"></div>
+        <div class="tab-view-empty" id="tabViewEmpty" hidden>
+          <strong>No tabs match this view</strong>
+          <span>Try a different search or filter.</span>
+          <button type="button" id="resetTabView">Reset view</button>
+        </div>
       </div>
     </div>
 
@@ -152,7 +165,7 @@
         <!-- Inline "new folder" name input — toggled by JS -->
         <div class="new-folder-input-row" id="newFolderInputRow" style="display:none">
           <div class="clearable-input" data-clearable-input>
-            <input type="text" class="new-folder-input" id="newFolderInput" placeholder="Folder name…" maxlength="60">
+            <input type="text" class="new-folder-input" id="newFolderInput" aria-label="Folder name" placeholder="Folder name…" maxlength="60">
             <button class="input-clear-btn" data-action="clear-input" data-clear-target="newFolderInput" type="button" aria-label="Clear folder name" title="Clear folder name" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
           </div>
         </div>
@@ -174,7 +187,7 @@
       <div class="tab-groups-bar-chips" id="tabGroupsBarChips"></div>
     </div>
 
-  </div><!-- end .dashboard-columns -->
+  </main><!-- end .dashboard-columns -->
 
   <!-- ================================================================
        FOOTER — global stats + refresh control
@@ -194,7 +207,7 @@
 </div><!-- end .container -->
 
 <!-- Archive drawer — opened from the Saved for later header -->
-<div class="archive-drawer-overlay" id="archiveDrawerOverlay" role="dialog" aria-modal="true" aria-labelledby="archiveDrawerTitle" style="display:none">
+<dialog class="archive-drawer-overlay" id="archiveDrawerOverlay" aria-labelledby="archiveDrawerTitle" style="display:none">
   <aside class="archive-drawer" id="archiveDrawer">
     <div class="archive-drawer-header">
       <div>
@@ -225,18 +238,18 @@
     <div class="archive-list" id="archiveList"></div>
     <div class="archive-empty" id="archiveEmpty" style="display:none">No archived links found.</div>
   </aside>
-</div>
+</dialog>
 
 <!-- ================================================================
      CONTEXT MENU — custom right-click menu for saved tabs & folders.
      Contents + position are set by app.js; hidden by default.
      ================================================================ -->
-<div class="context-menu" id="contextMenu" style="display:none"></div>
+<div class="context-menu" id="contextMenu" role="menu" aria-label="Actions" style="display:none"></div>
 
 <!-- ================================================================
      SPEED-DIAL SHORTCUT EDITOR — add or edit a shortcut tile.
      ================================================================ -->
-<div class="dialog-overlay" id="speedDialDialog" style="display:none">
+<dialog class="dialog-overlay" id="speedDialDialog" aria-labelledby="speedDialDialogTitle" style="display:none">
   <div class="dialog">
     <div class="dialog-title" id="speedDialDialogTitle">Add shortcut</div>
     <div class="dialog-field">
@@ -249,39 +262,40 @@
     <div class="dialog-field">
       <label for="speedDialUrlInput">URL</label>
       <div class="clearable-input" data-clearable-input>
-        <input type="text" id="speedDialUrlInput" class="dialog-input" placeholder="https://github.com">
+        <input type="text" id="speedDialUrlInput" class="dialog-input" inputmode="url" autocomplete="url" aria-describedby="speedDialUrlError" placeholder="https://github.com">
         <button class="input-clear-btn" data-action="clear-input" data-clear-target="speedDialUrlInput" type="button" aria-label="Clear shortcut URL" title="Clear shortcut URL" hidden><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M3 3 9 9M9 3 3 9"/></svg></button>
       </div>
+      <p class="dialog-error" id="speedDialUrlError" role="alert" hidden></p>
     </div>
     <div class="dialog-actions">
       <button class="dialog-btn" data-action="speeddial-cancel" type="button">Cancel</button>
       <button class="dialog-btn" data-action="speeddial-save" type="button">Save</button>
     </div>
   </div>
-</div>
+</dialog>
 
 <!-- ================================================================
      FOLDER DELETE DIALOG — asks whether to keep tabs (move to inbox)
      or delete them along with the folder. Hidden by default.
      ================================================================ -->
-<div class="dialog-overlay" id="folderDeleteDialog" style="display:none">
+<dialog class="dialog-overlay" id="folderDeleteDialog" aria-labelledby="folderDeleteTitle" aria-describedby="folderDeleteText" style="display:none">
   <div class="dialog">
     <div class="dialog-title" id="folderDeleteTitle">Delete folder?</div>
     <div class="dialog-text" id="folderDeleteText"></div>
     <div class="dialog-actions">
       <button class="dialog-btn" data-action="folder-delete-cancel" type="button">Cancel</button>
-      <button class="dialog-btn" data-action="folder-delete-keep" type="button">Keep tabs (move to inbox)</button>
+      <button class="dialog-btn" data-action="folder-delete-keep" type="button">Move tabs to inbox</button>
       <button class="dialog-btn danger" data-action="folder-delete-all" type="button">Delete tabs too</button>
     </div>
   </div>
-</div>
+</dialog>
 
 <!-- ================================================================
      CLOSE-ALL DIALOG — asks whether pinned tabs should be closed too.
      ================================================================ -->
-<div class="dialog-overlay" id="closeAllDialog" style="display:none">
+<dialog class="dialog-overlay" id="closeAllDialog" aria-labelledby="closeAllTitle" aria-describedby="closeAllText" style="display:none">
   <div class="dialog">
-    <div class="dialog-title">Close all tabs?</div>
+    <div class="dialog-title" id="closeAllTitle">Close all tabs?</div>
     <div class="dialog-text" id="closeAllText"></div>
     <div class="dialog-actions">
       <button class="dialog-btn" data-action="close-all-cancel" type="button">Cancel</button>
@@ -289,7 +303,7 @@
       <button class="dialog-btn danger" data-action="close-all-with-pinned" type="button">Close pinned too</button>
     </div>
   </div>
-</div>
+</dialog>
 
 <!-- Folder sharing is isolated in a native dialog so focus and Escape work
      consistently without changing legacy theme or overlay selectors. -->
@@ -364,10 +378,10 @@
      PRIVACY SCREEN — a clock that hides the dashboard for screen sharing.
      Toggle with Esc (or the header button). Hidden by default.
      ================================================================ -->
-<div class="privacy-screen" id="privacyScreen" data-action="toggle-privacy" style="display:none">
+<div class="privacy-screen" id="privacyScreen" role="dialog" aria-modal="true" aria-label="Privacy mode" data-action="toggle-privacy" style="display:none">
   <div class="privacy-clock" id="privacyClock">--:--</div>
   <div class="privacy-date" id="privacyDate"></div>
-  <div class="privacy-hint">Press Esc to return</div>
+  <button class="privacy-hint" type="button" data-action="toggle-privacy">Return to tabs · Esc</button>
 </div>
 
 <!-- ================================================================
@@ -593,6 +607,31 @@
   </svg>
   <span id="toastText"></span>
 </div>
+
+<!-- Secondary view controls stay behind the left edge arrow. -->
+<button type="button" class="tab-view-toggle" id="tabViewToggle" aria-label="Open tab view settings" aria-expanded="false" aria-controls="tabViewDrawer" title="Tab view" hidden>
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 4-4 4 4 4"/></svg>
+  <span class="tab-view-active-dot" aria-hidden="true"></span>
+</button>
+<aside class="tab-view-drawer" id="tabViewDrawer" role="dialog" aria-modal="false" aria-labelledby="tabViewDrawerTitle" aria-hidden="true" inert>
+  <h2 id="tabViewDrawerTitle">Tab view</h2>
+  <div class="dashboard-toolbar" aria-label="Open tab view">
+    <div class="tab-view-filters" role="group" aria-label="Filter open tabs">
+      <button type="button" data-tab-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-tab-filter="duplicates" aria-pressed="false">Duplicates</button>
+      <button type="button" data-tab-filter="pinned" aria-pressed="false">Pinned</button>
+      <button type="button" data-tab-filter="audio" aria-pressed="false">Playing audio</button>
+    </div>
+    <div class="tab-view-options">
+      <label for="tabWindowScope">Window</label>
+      <select id="tabWindowScope" aria-label="Window scope"><option value="all">All windows</option><option value="current">This window</option></select>
+      <label for="tabSort">Sort</label>
+      <select id="tabSort" aria-label="Sort open tab groups"><option value="count">Most tabs</option><option value="name">A–Z</option><option value="recent">Recently used</option></select>
+      <button type="button" id="densityToggle" aria-label="Compact view" aria-pressed="false">Compact view</button>
+    </div>
+  </div>
+  <div class="tab-view-status" id="tabViewStatus" role="status" aria-live="polite"></div>
+</aside>
 
 <!-- Main dashboard logic — loads last so the DOM is ready -->
 <script type="module" src="app.js"></script>

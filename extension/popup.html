@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Save page · Tab Atlas</title>
+  <script src="theme-init.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="apple-themes.css">
+  <link rel="stylesheet" href="dashboard-controls.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="quick-save-popup">
+  <main class="quick-save-panel" aria-labelledby="saveTitle">
+    <header class="quick-save-header">
+      <div>
+        <p class="quick-save-brand">Tab Atlas</p>
+        <h1 id="saveTitle">Save page</h1>
+      </div>
+      <button id="openDashboard" class="quick-save-icon" title="Open Tab Atlas" aria-label="Open Tab Atlas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+      </button>
+    </header>
+    <div class="quick-save-page">
+      <p id="pageTitle">Loading page…</p>
+      <p id="pageHost" class="quick-save-secondary"></p>
+    </div>
+    <p id="savedLocation" class="quick-save-secondary" hidden></p>
+    <section id="saveControls" aria-label="Choose where to save" aria-busy="true">
+      <div class="quick-save-search" id="folderSearchWrap" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <input id="folderSearch" type="search" aria-label="Find a folder" placeholder="Find a folder…" autocomplete="off">
+      </div>
+      <div id="folderList" class="quick-save-folders" role="group" aria-label="Save destinations"></div>
+      <p id="folderEmpty" class="quick-save-secondary" hidden>No matching folders.</p>
+      <button id="newFolder" class="quick-save-new" hidden><span aria-hidden="true">＋</span> New folder</button>
+      <form id="folderForm" hidden>
+        <label for="folderName">Folder name</label>
+        <input id="folderName" type="text" maxlength="120" autocomplete="off" placeholder="e.g. Reading">
+        <div class="quick-save-form-actions">
+          <button type="button" id="cancelFolder" class="quick-save-text">Cancel</button>
+          <button type="submit" class="quick-save-create">Create and save</button>
+        </div>
+      </form>
+      <button type="button" id="confirmSave" class="quick-save-confirm" hidden disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>
+        <span>Save page</span>
+      </button>
+    </section>
+    <div id="saveFeedback" class="quick-save-feedback" hidden>
+      <button id="undoSave" class="quick-save-text" hidden>Undo last save</button>
+    </div>
+    <p id="saveError" class="quick-save-error" role="alert" hidden></p>
+    <button id="retrySave" class="quick-save-text" hidden>Try again</button>
+    <p class="quick-save-hint" id="saveHint" hidden>Your tab stays open.</p>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

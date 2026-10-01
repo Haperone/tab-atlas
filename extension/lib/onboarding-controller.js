@@ -1,4 +1,5 @@
 import { ONBOARDING_STEPS } from './view-config.js';
+import { isolateOverlay } from './modal-dialog.js';
 
 export function createOnboardingController({
   document,
@@ -24,6 +25,7 @@ export function createOnboardingController({
 
   let onboardingAutoAttempted = false;
   let onboardingPositionTimer = null;
+  let releaseBackground = null;
 
   function hasCompletedOnboarding() {
     try { return localStorage.getItem(ONBOARDING_COMPLETE_KEY) === '1'; }
@@ -46,7 +48,7 @@ export function createOnboardingController({
   }
 
   function startOnboarding({ manual = false } = {}) {
-    if (isPrivacyOn()) return;
+    if (isPrivacyOn() || onboardingState.active) return;
 
     if (typeof closeContextMenu === 'function') closeContextMenu();
     if (isFocusSweepActive()) exitFocusSweep();
@@ -64,12 +66,15 @@ export function createOnboardingController({
     document.documentElement.classList.add('onboarding-open');
     document.body.classList.add('onboarding-open');
     if (overlay) overlay.style.display = 'block';
+    releaseBackground = isolateOverlay(overlay);
 
     renderOnboardingStep({ focus: true });
   }
 
   function finishOnboarding({ skipped = false, viaEscape = false } = {}) {
     if (!onboardingState.active) return;
+    releaseBackground?.();
+    releaseBackground = null;
 
     if (skipped || !viaEscape || !onboardingState.manual) markOnboardingComplete();
 
@@ -128,10 +133,10 @@ export function createOnboardingController({
     if (prev) prev.disabled = onboardingState.index === 0;
     if (next) next.textContent = isLast ? 'Start using Tab Atlas' : 'Next';
 
-    window.requestAnimationFrame(() => {
-      positionOnboarding();
-      if (focus) focusOnboardingPrimary();
-    });
+    // Copy and demo height can change between steps. Place the card before
+    // the next paint so the old position never clips the new, taller content.
+    positionOnboarding();
+    if (focus) window.requestAnimationFrame(focusOnboardingPrimary);
   }
 
   function focusOnboardingPrimary() {

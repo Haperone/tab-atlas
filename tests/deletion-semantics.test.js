@@ -49,6 +49,20 @@ test('single and bulk deletion persist physical removal immediately and Undo res
   assert.deepEqual(storage.state.deferred, records());
 });
 
+test('persistent notification Undo remains valid until consumed or replaced', () => {
+  let now = 0;
+  const store = createUndoStore({ now: () => now, ttlMs: Infinity, maxEntries: 1 });
+  const token = store.add(() => 'restore');
+  now += 86_400_000;
+  assert.equal(store.take(token)(), 'restore');
+  assert.equal(store.take(token), null);
+  const older = store.add(() => 'older');
+  const latest = store.add(() => 'latest');
+  assert.equal(store.size(), 1);
+  assert.equal(store.take(older), null);
+  assert.equal(store.take(latest)(), 'latest');
+});
+
 test('Undo store expires callbacks, consumes once, and remains bounded in memory', () => {
   let now = 100;
   const store = createUndoStore({ now: () => now, ttlMs: 10, maxEntries: 2 });
@@ -201,7 +215,8 @@ test('application routes single, bulk, folder, archive, and Focus Sweep cleanup 
   assert.match(source, /action === 'restore-archive-item'/);
   assert.match(source, /showToast\('Restored to Saved for later'/);
   assert.match(source, /action === 'clear-archive'/);
-  assert.match(source, /for \(const id of savedIds\).*dismissSavedTab\(id\)/s);
+  assert.match(source, /await undoSavedAdditions\(savedIds\)/);
+  assert.match(source, /async function undoSavedAdditions\(ids\).*await dismissSavedTab\(id\)/s);
   assert.match(source, /function folderIsLocked\(folderId, folders\)/);
   assert.match(source, /folderIsLocked\(tab\.folderId, folders\)/);
   assert.match(source, /checkOffSavedTab\(id, \{ internalUndo: true \}\)/);

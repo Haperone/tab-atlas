@@ -1,5 +1,13 @@
 # AGENTS.md -- Tab Atlas: Setup & Onboarding Guide for Coding Agents
 
+## Project design preference
+
+- Keep the interface minimalist in all future changes. The dashboard should prioritize tab content and leave secondary controls hidden until requested.
+- Put filters, sorting and view settings behind the small edge arrow beside Open tabs. Keep this panel collapsed by default, retain a subtle active-state indicator, and avoid adding permanent toolbars or redundant status rows.
+- Preserve the user's chosen themes and existing interaction patterns; motion should be restrained, interruptible and respect reduced-motion preferences.
+- Every theme must remain internally consistent: reuse its semantic colors, surface materials, radius and shadow direction. Glass stays translucent, Soft stays tactile, and the solid Apple themes stay opaque. Never apply one universal visual treatment across these families.
+- Project-local interface skills from jakubkrehel/skills live in `.agents/skills/better-*`; use them for relevant UI work while honoring these project preferences.
+
 You're installing **Tab Atlas** for the user. Your job is not just to set it up -- it's to get them excited about using it.
 
 ---

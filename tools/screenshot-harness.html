@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Atlas — Screenshot Harness</title>
 
   <!--
@@ -60,9 +60,34 @@
       workspaceSnapshots: [],
     };
 
+    // A crowded, local-only fixture for drag-scroll and interaction regression checks.
+    const harnessParams = new URLSearchParams(location.search);
+    let failInitialRead = harnessParams.has('load-failure');
+    if (harnessParams.has('audit')) { SEED_TABS[0].groupId = 77; SEED_TABS[1].groupId = 77; }
+    if (harnessParams.has('deep')) {
+      SEED_TABS[0].pinned = true;
+      SEED_STORE.workspaceSnapshots = [{ id: 'w-deep', name: 'Research with a longer workspace title', createdAt: iso(60),
+        windows: [{ id: 1, state: 'normal', focused: true, tabs: [{ url: 'https://example.com/research', title: 'Research', index: 0, pinned: false, active: true }] }], groups: {} }];
+    }
+    if (harnessParams.has('stress') || harnessParams.has('checks')) {
+      SEED_TABS.push({ id: 16, windowId: 2, index: 0, url: SEED_TABS[0].url, title: SEED_TABS[0].title });
+      SEED_TABS[2].pinned = true;
+      SEED_TABS[4].audible = true;
+      SEED_TABS.forEach((tab, index) => { tab.lastAccessed = Date.now() - index * 1000; });
+      for (let index = 0; index < 60; index++) {
+        SEED_STORE.deferred.push({ id: `stress-inbox-${index}`, url: `https://example.com/reading/${index}`, title: `Reading item ${index + 1}`, savedAt: iso(index + 1), completed: false, dismissed: false, folderId: null });
+      }
+      for (let index = 0; index < 20; index++) {
+        const folderId = `stress-folder-${index}`;
+        SEED_STORE.folders.push({ id: folderId, name: `Project ${index + 1}`, collapsed: false, createdAt: iso(index + 1) });
+        SEED_STORE.deferred.push({ id: `stress-filed-${index}`, url: `https://example.com/project/${index}`, title: `Project link ${index + 1}`, savedAt: iso(index + 1), completed: false, dismissed: false, folderId });
+      }
+    }
+
     // ---- Minimal chrome.* mock (only what the dashboard reads) ----
     const store = JSON.parse(JSON.stringify(SEED_STORE));
     const noopEvent = () => ({ addListener() {}, removeListener() {} });
+    const storageListeners = new Set();
     const resolve = (v) => Promise.resolve(v);
     const sessionStore = {};
 
@@ -71,7 +96,7 @@
         id: 'screenshot-harness',
         // favIcon() builds a URL from this; the post-render patch below supplies
         // pretty letter-tile icons, so the exact value here doesn't matter.
-        getURL: (path) => new URL(path, location.origin).toString(),
+        getURL: (path) => new URL(path.startsWith('sounds/') ? `../extension/${path}` : path, path.startsWith('sounds/') ? location.href : location.origin).toString(),
         lastError: null,
         onMessage: noopEvent(),
         sendMessage(message, callback) {
@@ -85,17 +110,24 @@
         },
       },
       storage: {
+        onChanged: { addListener(listener) { storageListeners.add(listener); }, removeListener(listener) { storageListeners.delete(listener); } },
         local: {
           get(keys) {
+            if (failInitialRead) { failInitialRead = false; return Promise.reject(new Error('Audit: initial read failure')); }
             const wanted = keys == null ? Object.keys(store)
               : Array.isArray(keys) ? keys
               : typeof keys === 'string' ? [keys]
               : Object.keys(keys);
             const out = {};
             for (const k of wanted) if (k in store) out[k] = store[k];
-            return resolve(out);
+            return resolve(structuredClone(out));
           },
-          set(obj) { Object.assign(store, JSON.parse(JSON.stringify(obj))); return resolve(); },
+          set(obj) {
+            const changes = Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, { oldValue: store[key], newValue: JSON.parse(JSON.stringify(value)) }]));
+            Object.assign(store, JSON.parse(JSON.stringify(obj)));
+            queueMicrotask(() => storageListeners.forEach(listener => listener(changes, 'local')));
+            return resolve();
+          },
           remove(keys) { for (const k of [].concat(keys)) delete store[k]; return resolve(); },
         },
         session: {
@@ -106,13 +138,20 @@
       },
       tabs: {
         query: (q = {}) => resolve(
-          typeof q.groupId === 'number' ? [] : SEED_TABS.map(t => ({ ...t, groupId: -1, active: false, pinned: false }))
+          typeof q.groupId === 'number' ? SEED_TABS.filter(t => t.groupId === q.groupId) : SEED_TABS.map(t => ({ groupId: -1, active: false, pinned: false, ...t }))
         ),
         get: (id) => resolve(SEED_TABS.find(t => t.id === id) || null),
-        create: () => resolve({ id: 999 }),
-        update: () => resolve({}),
-        remove: () => resolve(),
-        group: () => resolve(1),
+        create: (options) => {
+          const tab = { id: Math.max(998, ...SEED_TABS.map(tab => tab.id)) + 1, windowId: 1, index: SEED_TABS.length, ...options };
+          SEED_TABS.push(tab); return resolve({ ...tab });
+        },
+        update: (id, options) => { const tab = SEED_TABS.find(tab => tab.id === id); if (tab) Object.assign(tab, options); return resolve(tab || {}); },
+        remove: (ids) => { const removed = new Set([].concat(ids)); for (let index = SEED_TABS.length - 1; index >= 0; index--) if (removed.has(SEED_TABS[index].id)) SEED_TABS.splice(index, 1); return resolve(); },
+        group: (options = {}) => {
+          const id = options.groupId ?? 1;
+          for (const tab of SEED_TABS) if (options.tabIds?.includes(tab.id)) tab.groupId = id;
+          return resolve(id);
+        },
         onCreated: noopEvent(), onRemoved: noopEvent(), onUpdated: noopEvent(),
         onActivated: noopEvent(), onReplaced: noopEvent(), onMoved: noopEvent(),
         onAttached: noopEvent(),
@@ -123,10 +162,10 @@
         update: () => resolve({}),
         create: () => resolve({ id: 2, tabs: [{ id: 1000 }] }),
       },
-      // Provide tabGroups so the code path exists but no groups are shown.
+      // Native groups are disposable audit data; other previews stay unchanged.
       tabGroups: {
-        query: () => resolve([]),
-        get: () => resolve(null),
+        query: () => resolve(harnessParams.has('audit') ? [{ id:77, windowId:1, title:'Audit native group', color:'blue', collapsed:false }] : []),
+        get: (id) => resolve(harnessParams.has('audit') && id === 77 ? { id:77, title:'Audit native group', color:'blue' } : null),
         update: () => resolve({}),
         onCreated: noopEvent(), onRemoved: noopEvent(), onUpdated: noopEvent(),
       },
@@ -180,6 +219,7 @@
   <link rel="stylesheet" href="../extension/apple-themes.css">
   <link rel="stylesheet" href="../extension/interaction-controls.css">
   <link rel="stylesheet" href="../extension/folder-share.css">
+  <link rel="stylesheet" href="../extension/dashboard-controls.css">
 </head>
 <body>
   <!-- The dashboard markup is created by app.js against these anchors, but the real
@@ -188,9 +228,12 @@
   <script>
     (async () => {
       const surface = new URLSearchParams(location.search).get('surface');
-      if (surface === 'share-import') {
+      if (surface === 'share-import' || new URLSearchParams(location.search).has('audit')) {
         const { createSharePackage, encodeTa1Package } = await import('../extension/lib/ta1-codec.js');
-        const encoded = await encodeTa1Package(createSharePackage({ name: 'Imported design links', items: SEED_STORE.deferred.slice(0, 3).map(item => ({ url: item.url, title: item.title })) }));
+        const items = new URLSearchParams(location.search).has('audit')
+          ? Array.from({ length:20 }, (_, i) => ({ url:`https://example.com/review/${i}`, title:`Incoming review link ${i + 1}` }))
+          : SEED_STORE.deferred.slice(0, 3).map(item => ({ url:item.url, title:item.title }));
+        const encoded = await encodeTa1Package(createSharePackage({ name: 'Imported design links', items }));
         const token = '11111111111111111111111111111111';
         sessionStore[`tab-atlas-share-handoff:${token}`] = { fragment: encoded.fragment, createdAt: Date.now() };
         location.hash = `share-import=${token}`;
@@ -198,10 +241,43 @@
       const html = await (await fetch('../extension/index.html')).text();
       const doc = new DOMParser().parseFromString(html, 'text/html');
       document.body.innerHTML = doc.body.innerHTML;
+      if (new URLSearchParams(location.search).has('spacing')) {
+        const spacing = document.createElement('style');
+        spacing.textContent = '* {line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important} p {margin-bottom:2em!important}';
+        document.head.append(spacing);
+      }
       const boot = document.createElement('script');
       boot.type = 'module';
       boot.src = '../extension/app.js';
       document.body.appendChild(boot);
+      if (new URLSearchParams(location.search).has('audit')) {
+        const checks = document.createElement('script'); checks.type = 'module';
+        checks.src = './interface-audit-checks.js'; document.body.appendChild(checks);
+      }
+      if (new URLSearchParams(location.search).has('checks')) {
+        const checks = document.createElement('script');
+        checks.type = 'module';
+        checks.src = './dashboard-smoke.js';
+        document.body.appendChild(checks);
+      }
+      if (new URLSearchParams(location.search).has('polish')) {
+        const checks = document.createElement('script');
+        checks.type = 'module';
+        checks.src = './interface-polish-checks.js';
+        document.body.appendChild(checks);
+      }
+      if (new URLSearchParams(location.search).has('deep')) {
+        const checks = document.createElement('script');
+        checks.type = 'module';
+        checks.src = './interface-deep-checks.js';
+        document.body.appendChild(checks);
+      }
+      if (new URLSearchParams(location.search).has('saved-refresh')) {
+        const checks = document.createElement('script');
+        checks.type = 'module';
+        checks.src = './saved-refresh-checks.js';
+        document.body.appendChild(checks);
+      }
       if (surface === 'share-sender') setTimeout(() => {
         document.querySelector('[data-action="folder-menu"][data-folder-id="f-read"]')?.click();
         setTimeout(() => [...document.querySelectorAll('.context-menu-item')].find(item => item.textContent.includes('Share folder'))?.click(), 40);

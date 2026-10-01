@@ -20,6 +20,7 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 - **Local favicons** via Chrome’s built‑in cache — works offline, for intranet sites, and sends nothing to any third party
 
 **Save & organise**
+- **Save from any website** — click the toolbar icon, choose a folder and confirm to save and close the popup, or right-click the page → **Save page to Tab Atlas** → choose a folder. A small green confirmation rises from the bottom center, with a brief sound when Sound is enabled. Its bottom strip shows the time remaining; hover or focus pauses the countdown and reveals **Undo**. Click the confirmation to cancel that save, with its own sound. The tab stays open. Repeated saves reuse the existing link; Undo also remains available when the popup is reopened. The popup uses one surface in your dashboard theme and its top-right arrow opens Tab Atlas.
 - **Save for later** — stash tabs into an inbox before closing them, with archive support for dismissed items
 - **Archive retention** — automatically remove archived links after 180 days by default; choose 30, 90 or 180 days, or turn cleanup off; automatic removals can be undone
 - **Bulk actions for saved tabs** — `Ctrl/⌘`, `Shift`, or drag-select saved items, then right-click the selection to open, move, or remove them together
@@ -30,14 +31,17 @@ Tab Atlas replaces your Chrome new‑tab page with a calm dashboard of everythin
 - **Right‑click menus** for moving, opening and removing items
 
 **Find & focus**
+- **Open-tab views** — open the small arrow on the left edge of Open tabs to reveal filters, window scope, sorting and compact view. The panel stays hidden by default; a small dot marks customized settings. Bulk actions in a filtered view affect the shown tabs.
+- **Drag scrolling** — hold a dragged link at a column’s top or bottom edge to reveal offscreen folders; the wheel also works during a drag. Scrolling stops on drop, cancellation or leaving the window.
 - **Clearable text fields** — search, naming and shortcut fields reveal a compact clear button as soon as you type
-- **One search bar** over open tabs, the inbox and folders — press `/` to focus it
-- Search **operators**: `domain:github`, `url:docs`, plus free text
+- **One search bar** over open tabs, the inbox and folders — press `/` or `Ctrl/⌘ K` to focus it; use Arrow Down to reach results and Enter to switch to a tab
+- Search **operators**: `domain:github`, `url:docs`, quoted phrases such as `"code review"`, and exclusions such as `-draft` or `-domain:youtube`
 - **Undo** for destructive actions (closing tabs, removing saved items, deleting folders)
 - **Privacy mode** — a full‑screen clock hides the dashboard for screen‑sharing (toggle with `Esc`)
 - **Auto‑refresh** — the dashboard stays in sync as tabs open/close/navigate
 
 **Make it yours**
+- **Sound and motion preferences** — mute closing sounds or reduce animations from Customize. The system’s reduced-motion preference is always respected, including confetti and drag-deck transitions.
 - **16 themes** (11 dark + 5 light) — choose one dark and one light theme as a saved pair in **Customize**, then switch between them with the animated Moon → Sun Bloom control; the collection includes tactile soft variants, the original glass set, and three isolated Apple-inspired materials: solid Space Black, layered Pacific Blue and colourful Orchid Bloom
 - **Speed dial** — an editable grid of site shortcuts under the header (open in the current tab, or a new tab with `Ctrl/⌘`); show or hide the whole strip from **Customize**
 
@@ -109,12 +113,13 @@ the shot. Full step-by-step (including the real-extension path) is in `CHROMEWEB
 | What | How |
 |------|-----|
 | Extension | Chrome Manifest V3 |
-| Permissions | `tabs`, `storage`, `favicon`, `tabGroups` |
+| Permissions | `tabs`, `storage`, `favicon`, `tabGroups`, `contextMenus`, `activeTab`, `scripting`, `offscreen` |
+| Minimum Chrome version | 109 |
 | Storage | `chrome.storage.local` (saved tabs, folders, workspaces) · `localStorage` (theme pair, shortcuts, archive retention) |
 | Favicons | Chrome `_favicon` (local, offline‑friendly) |
 | Theming | CSS custom properties via `[data-theme]` |
 | Sound | Web Audio API (synthesized, no files) |
-| Animations | CSS transitions + JS confetti |
+| Animations | CSS transitions + bounded Web Animations for card movement + optional JS confetti |
 
 ---
 

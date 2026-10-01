@@ -1,3 +1,5 @@
+import { openModalDialog, closeModalDialog } from './modal-dialog.js';
+
 const SPEED_DIAL_KEY = 'tabout-speeddial';
 const SPEED_DIAL_ENABLED_KEY = 'tabout-speeddial-enabled';
 
@@ -42,6 +44,7 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
   function renderSpeedDial() {
     const element = document.getElementById('speedDial');
     if (!element) return;
+    const focused = element.contains(document.activeElement) ? document.activeElement : null;
     if (!speedDialEnabled()) {
       element.style.display = 'none';
       element.innerHTML = '';
@@ -49,6 +52,10 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
     }
     element.innerHTML = renderSpeedDialMarkup(getSpeedDialItems(), escapeHtml, favIcon);
     element.style.display = 'flex';
+    if (focused) {
+      const replacement = [...element.querySelectorAll('[data-id]')].find(tile => tile.dataset.id === focused.dataset.id);
+      (replacement || element.querySelector('[data-action="speeddial-add"]'))?.focus({ preventScroll: true });
+    }
   }
 
   function openSpeedDialDialog(id) {
@@ -60,9 +67,15 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
     if (title) title.textContent = item ? 'Edit shortcut' : 'Add shortcut';
     if (labelInput) labelInput.value = item ? item.label : '';
     if (urlInput) urlInput.value = item ? item.url : '';
+    if (urlInput) {
+      urlInput.removeAttribute('aria-invalid');
+      urlInput.setCustomValidity('');
+    }
+    const error = document.getElementById('speedDialUrlError');
+    if (error) error.hidden = true;
     syncClearButtons(document.getElementById('speedDialDialog'));
     const dialog = document.getElementById('speedDialDialog');
-    if (dialog) dialog.style.display = 'flex';
+    openModalDialog(dialog, closeSpeedDialDialog);
     if (labelInput) {
       labelInput.focus();
       labelInput.select();
@@ -71,18 +84,27 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
 
   function closeSpeedDialDialog() {
     const dialog = document.getElementById('speedDialDialog');
-    if (dialog) dialog.style.display = 'none';
+    closeModalDialog(dialog);
     pendingId = null;
   }
 
   function saveSpeedDialFromDialog() {
     let label = (document.getElementById('speedDialLabelInput')?.value || '').trim();
-    let url = (document.getElementById('speedDialUrlInput')?.value || '').trim();
-    if (!url) {
-      closeSpeedDialDialog();
+    const urlInput = document.getElementById('speedDialUrlInput');
+    let url = (urlInput?.value || '').trim();
+    // Accept a bare domain, but keep invalid or unsupported addresses editable.
+    if (url && !/^[a-z][a-z\d+.-]*:/i.test(url)) url = `https://${url}`;
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) throw new Error();
+      url = parsed.href;
+    } catch {
+      const message = 'Enter a website address, such as github.com.';
+      const error = document.getElementById('speedDialUrlError');
+      if (error) { error.textContent = message; error.hidden = false; }
+      if (urlInput) { urlInput.setAttribute('aria-invalid', 'true'); urlInput.focus(); }
       return;
     }
-    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
     if (!label) {
       try { label = new URL(url).hostname.replace(/^www\./, ''); } catch { label = url; }
     }
@@ -103,8 +125,18 @@ export function createSpeedDialController({ document, storage, escapeHtml, favIc
   }
 
   function removeSpeedDial(id) {
-    saveSpeedDialItems(getSpeedDialItems().filter(item => item.id !== id));
+    const items = getSpeedDialItems();
+    const index = items.findIndex(item => item.id === id);
+    if (index < 0) return;
+    const removed = items[index];
+    saveSpeedDialItems(items.filter(item => item.id !== id));
     renderSpeedDial();
+    showToast('Shortcut removed', () => {
+      const current = getSpeedDialItems();
+      if (!current.some(item => item.id === id)) current.splice(Math.min(index, current.length), 0, removed);
+      saveSpeedDialItems(current);
+      renderSpeedDial();
+    });
   }
 
   return Object.freeze({

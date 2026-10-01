@@ -1,6 +1,11 @@
 /* Applies the saved theme + privacy state before first paint (no flash).
    Must be an EXTERNAL script: Manifest V3's CSP blocks inline <script>. */
 try {
+  const dashboardPreferences = JSON.parse(localStorage.getItem('tabout-dashboard-preferences') || '{}');
+  document.documentElement.dataset.density = dashboardPreferences?.density === 'compact' ? 'compact' : 'comfortable';
+  document.documentElement.dataset.motion = dashboardPreferences?.motion === false || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduced' : 'full';
+} catch {}
+try {
   const storedTheme = localStorage.getItem('tabout-theme');
   const legacyThemes = {
     paper: 'paperglass',

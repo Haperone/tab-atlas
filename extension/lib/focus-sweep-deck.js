@@ -93,7 +93,7 @@ export function createFocusSweepDeckController({
   }
 
   function reducedMotion() {
-    return !!reducedMotionQuery?.matches;
+    return !!reducedMotionQuery?.matches || window.document?.documentElement?.dataset?.motion === 'reduced';
   }
 
   function setIntent(intent) {

@@ -1,0 +1,1318 @@
+{
+  "samples": [
+    {
+      "theme": "default",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(27, 34, 42)",
+        "radius": "16px",
+        "shadow": "rgba(0, 0, 0, 0.28) 0px 12px 32px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(243, 238, 229)",
+          "background": "rgba(120, 168, 200, 0.16)",
+          "ratio": 10.47,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(147, 160, 173)",
+          "background": "rgb(20, 25, 31)",
+          "ratio": 6.62,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(147, 160, 173)",
+          "background": "rgb(20, 25, 31)",
+          "ratio": 6.62,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(147, 160, 173)",
+          "background": "rgb(20, 25, 31)",
+          "ratio": 6.62,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.614118 0.658039 0.700392)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.64,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(147, 160, 173)",
+          "background": "rgb(20, 25, 31)",
+          "ratio": 6.62,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.614118 0.658039 0.700392)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.64,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(147, 160, 173)",
+          "background": "rgb(20, 25, 31)",
+          "ratio": 6.62,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(147, 160, 173)",
+          "background": "rgb(20, 25, 31)",
+          "ratio": 6.62,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.614118 0.658039 0.700392)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.64,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "graphite",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(35, 40, 48)",
+        "radius": "16px",
+        "shadow": "rgba(0, 0, 0, 0.42) 0px 12px 32px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(246, 241, 227)",
+          "background": "rgba(212, 175, 55, 0.16)",
+          "ratio": 9.61,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(156, 163, 173)",
+          "background": "rgb(27, 31, 36)",
+          "ratio": 6.51,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(156, 163, 173)",
+          "background": "rgb(27, 31, 36)",
+          "ratio": 6.51,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(156, 163, 173)",
+          "background": "rgb(27, 31, 36)",
+          "ratio": 6.51,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.647059 0.669804 0.699608)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.4,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(156, 163, 173)",
+          "background": "rgb(27, 31, 36)",
+          "ratio": 6.51,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.647059 0.669804 0.699608)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.4,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(156, 163, 173)",
+          "background": "rgb(27, 31, 36)",
+          "ratio": 6.51,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(156, 163, 173)",
+          "background": "rgb(27, 31, 36)",
+          "ratio": 6.51,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.647059 0.669804 0.699608)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.4,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "solarized",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(2, 46, 57)",
+        "radius": "16px",
+        "shadow": "rgba(0, 0, 0, 0.5) 0px 12px 32px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(179, 192, 192)",
+          "background": "rgba(47, 155, 216, 0.16)",
+          "ratio": 6.03,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(114, 150, 154)",
+          "background": "rgb(0, 20, 27)",
+          "ratio": 5.86,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(114, 150, 154)",
+          "background": "rgb(0, 20, 27)",
+          "ratio": 5.86,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(114, 150, 154)",
+          "background": "rgb(0, 20, 27)",
+          "ratio": 5.86,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.472549 0.604706 0.618824)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.76,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(114, 150, 154)",
+          "background": "rgb(0, 20, 27)",
+          "ratio": 5.86,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.472549 0.604706 0.618824)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.76,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(114, 150, 154)",
+          "background": "rgb(0, 20, 27)",
+          "ratio": 5.86,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(114, 150, 154)",
+          "background": "rgb(0, 20, 27)",
+          "ratio": 5.86,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.472549 0.604706 0.618824)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.76,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "tokyonight",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(36, 40, 59)",
+        "radius": "16px",
+        "shadow": "rgba(0, 0, 0, 0.5) 0px 12px 32px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(192, 202, 245)",
+          "background": "rgba(122, 162, 247, 0.16)",
+          "ratio": 6.77,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(139, 145, 177)",
+          "background": "rgb(26, 27, 38)",
+          "ratio": 5.52,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(139, 145, 177)",
+          "background": "rgb(26, 27, 38)",
+          "ratio": 5.52,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(139, 145, 177)",
+          "background": "rgb(26, 27, 38)",
+          "ratio": 5.52,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.565882 0.59098 0.720784)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.07,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(139, 145, 177)",
+          "background": "rgb(26, 27, 38)",
+          "ratio": 5.52,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.565882 0.59098 0.720784)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.07,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(139, 145, 177)",
+          "background": "rgb(26, 27, 38)",
+          "ratio": 5.52,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(139, 145, 177)",
+          "background": "rgb(26, 27, 38)",
+          "ratio": 5.52,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.565882 0.59098 0.720784)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.07,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "mocha",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(49, 50, 68)",
+        "radius": "16px",
+        "shadow": "rgba(0, 0, 0, 0.42) 0px 12px 32px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(205, 214, 244)",
+          "background": "rgba(203, 166, 247, 0.16)",
+          "ratio": 6.27,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(147, 153, 178)",
+          "background": "rgb(30, 30, 46)",
+          "ratio": 5.81,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(147, 153, 178)",
+          "background": "rgb(30, 30, 46)",
+          "ratio": 5.81,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(147, 153, 178)",
+          "background": "rgb(30, 30, 46)",
+          "ratio": 5.81,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.599216 0.623922 0.723922)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.8,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(147, 153, 178)",
+          "background": "rgb(30, 30, 46)",
+          "ratio": 5.81,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.599216 0.623922 0.723922)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.8,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(147, 153, 178)",
+          "background": "rgb(30, 30, 46)",
+          "ratio": 5.81,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(147, 153, 178)",
+          "background": "rgb(30, 30, 46)",
+          "ratio": 5.81,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.599216 0.623922 0.723922)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.8,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "monokai",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(52, 53, 46)",
+        "radius": "16px",
+        "shadow": "rgba(0, 0, 0, 0.42) 0px 12px 32px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(248, 248, 242)",
+          "background": "rgba(166, 226, 46, 0.16)",
+          "ratio": 7.99,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(165, 159, 133)",
+          "background": "rgb(39, 40, 34)",
+          "ratio": 5.59,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(165, 159, 133)",
+          "background": "rgb(39, 40, 34)",
+          "ratio": 5.59,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(165, 159, 133)",
+          "background": "rgb(39, 40, 34)",
+          "ratio": 5.59,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.679608 0.658431 0.564314)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.18,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(165, 159, 133)",
+          "background": "rgb(39, 40, 34)",
+          "ratio": 5.59,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.679608 0.658431 0.564314)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.18,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(165, 159, 133)",
+          "background": "rgb(39, 40, 34)",
+          "ratio": 5.59,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(165, 159, 133)",
+          "background": "rgb(39, 40, 34)",
+          "ratio": 5.59,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.679608 0.658431 0.564314)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.18,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "obsidian",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(28, 28, 33)",
+        "radius": "16px",
+        "shadow": "rgba(0, 0, 0, 0.55) 0px 12px 32px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(230, 230, 234)",
+          "background": "rgba(129, 140, 248, 0.16)",
+          "ratio": 10.6,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(138, 138, 147)",
+          "background": "rgb(19, 19, 22)",
+          "ratio": 5.42,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(138, 138, 147)",
+          "background": "rgb(19, 19, 22)",
+          "ratio": 5.42,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(138, 138, 147)",
+          "background": "rgb(19, 19, 22)",
+          "ratio": 5.42,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.577255 0.577255 0.610588)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.57,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(138, 138, 147)",
+          "background": "rgb(19, 19, 22)",
+          "ratio": 5.42,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.577255 0.577255 0.610588)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.57,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(138, 138, 147)",
+          "background": "rgb(19, 19, 22)",
+          "ratio": 5.42,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(138, 138, 147)",
+          "background": "rgb(19, 19, 22)",
+          "ratio": 5.42,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.577255 0.577255 0.610588)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.57,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "auroraglass",
+      "contentWidth": 309,
+      "panel": {
+        "background": "color(srgb 0.0941176 0.129412 0.211765 / 0.92)",
+        "radius": "20px",
+        "shadow": "rgba(0, 0, 0, 0.26) 0px 16px 40px 0px",
+        "blur": "blur(24px)"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(244, 247, 255)",
+          "background": "rgba(139, 184, 255, 0.16)",
+          "ratio": 8.54,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(168, 183, 212)",
+          "background": "rgb(17, 24, 39)",
+          "ratio": 8.78,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(168, 183, 212)",
+          "background": "rgb(17, 24, 39)",
+          "ratio": 8.78,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(168, 183, 212)",
+          "background": "rgb(17, 24, 39)",
+          "ratio": 8.78,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.688627 0.742745 0.848235)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.74,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(168, 183, 212)",
+          "background": "rgb(17, 24, 39)",
+          "ratio": 8.78,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.688627 0.742745 0.848235)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.74,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(168, 183, 212)",
+          "background": "rgb(17, 24, 39)",
+          "ratio": 8.78,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(168, 183, 212)",
+          "background": "rgb(17, 24, 39)",
+          "ratio": 8.78,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.688627 0.742745 0.848235)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.74,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "smokeglass",
+      "contentWidth": 309,
+      "panel": {
+        "background": "color(srgb 0.113725 0.12549 0.145098 / 0.92)",
+        "radius": "20px",
+        "shadow": "rgba(0, 0, 0, 0.34) 0px 14px 34px 0px",
+        "blur": "blur(24px)"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(243, 244, 246)",
+          "background": "rgba(197, 201, 209, 0.16)",
+          "ratio": 8.19,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(167, 171, 179)",
+          "background": "rgb(21, 23, 27)",
+          "ratio": 7.79,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(167, 171, 179)",
+          "background": "rgb(21, 23, 27)",
+          "ratio": 7.79,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(167, 171, 179)",
+          "background": "rgb(21, 23, 27)",
+          "ratio": 7.79,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.684706 0.699216 0.728235)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.17,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(167, 171, 179)",
+          "background": "rgb(21, 23, 27)",
+          "ratio": 7.79,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.684706 0.699216 0.728235)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.17,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(167, 171, 179)",
+          "background": "rgb(21, 23, 27)",
+          "ratio": 7.79,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(167, 171, 179)",
+          "background": "rgb(21, 23, 27)",
+          "ratio": 7.79,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.684706 0.699216 0.728235)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.17,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "spaceblack",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(28, 28, 33)",
+        "radius": "18px",
+        "shadow": "rgba(0, 0, 0, 0.48) 0px 28px 64px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(245, 245, 247)",
+          "background": "rgba(138, 183, 255, 0.16)",
+          "ratio": 11.36,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(170, 170, 178)",
+          "background": "rgb(35, 35, 41)",
+          "ratio": 6.77,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(170, 170, 178)",
+          "background": "rgb(35, 35, 41)",
+          "ratio": 6.77,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(170, 170, 178)",
+          "background": "rgb(35, 35, 41)",
+          "ratio": 6.77,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.696078 0.696078 0.725098)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 7.97,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(170, 170, 178)",
+          "background": "rgb(35, 35, 41)",
+          "ratio": 6.77,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.696078 0.696078 0.725098)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 7.97,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(170, 170, 178)",
+          "background": "rgb(35, 35, 41)",
+          "ratio": 6.77,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(170, 170, 178)",
+          "background": "rgb(35, 35, 41)",
+          "ratio": 6.77,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.696078 0.696078 0.725098)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 7.97,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "pacificblue",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(16, 50, 71)",
+        "radius": "24px",
+        "shadow": "rgba(0, 8, 18, 0.48) 0px 30px 72px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(242, 248, 251)",
+          "background": "rgba(123, 201, 239, 0.16)",
+          "ratio": 8.83,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(169, 189, 201)",
+          "background": "rgb(22, 59, 80)",
+          "ratio": 6.09,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(169, 189, 201)",
+          "background": "rgb(22, 59, 80)",
+          "ratio": 6.09,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(169, 189, 201)",
+          "background": "rgb(22, 59, 80)",
+          "ratio": 6.09,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.691373 0.764314 0.807843)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 7.36,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(169, 189, 201)",
+          "background": "rgb(22, 59, 80)",
+          "ratio": 6.09,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.691373 0.764314 0.807843)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 7.36,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(169, 189, 201)",
+          "background": "rgb(22, 59, 80)",
+          "ratio": 6.09,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(169, 189, 201)",
+          "background": "rgb(22, 59, 80)",
+          "ratio": 6.09,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.691373 0.764314 0.807843)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 7.36,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "papersoft",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(230, 223, 208)",
+        "radius": "20px",
+        "shadow": "rgb(244, 238, 221) -6px -6px 14px 0px, rgb(201, 193, 172) 6px 6px 16px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(74, 64, 52)",
+          "background": "rgb(230, 223, 208)",
+          "ratio": 7.63,
+          "opaque": true
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(230, 223, 208)",
+          "ratio": 4.88,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(230, 223, 208)",
+          "ratio": 4.88,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(230, 223, 208)",
+          "ratio": 4.88,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.38902 0.353333 0.302745)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.11,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(230, 223, 208)",
+          "ratio": 4.88,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.38902 0.353333 0.302745)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.11,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(230, 223, 208)",
+          "ratio": 4.88,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(230, 223, 208)",
+          "ratio": 4.88,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.38902 0.353333 0.302745)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.11,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "lattesoft",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(224, 227, 234)",
+        "radius": "20px",
+        "shadow": "rgb(241, 243, 251) -6px -6px 14px 0px, rgb(198, 202, 214) 6px 6px 16px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(76, 79, 105)",
+          "background": "rgb(224, 227, 234)",
+          "ratio": 6.22,
+          "opaque": true
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(95, 98, 119)",
+          "background": "rgb(224, 227, 234)",
+          "ratio": 4.67,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(95, 98, 119)",
+          "background": "rgb(224, 227, 234)",
+          "ratio": 4.67,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(95, 98, 119)",
+          "background": "rgb(224, 227, 234)",
+          "ratio": 4.67,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.365098 0.376863 0.461176)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.81,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(95, 98, 119)",
+          "background": "rgb(224, 227, 234)",
+          "ratio": 4.67,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.365098 0.376863 0.461176)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.81,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(95, 98, 119)",
+          "background": "rgb(224, 227, 234)",
+          "ratio": 4.67,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(95, 98, 119)",
+          "background": "rgb(224, 227, 234)",
+          "ratio": 4.67,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.365098 0.376863 0.461176)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.81,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "pearlglass",
+      "contentWidth": 309,
+      "panel": {
+        "background": "color(srgb 0.941176 0.94902 0.956863 / 0.92)",
+        "radius": "20px",
+        "shadow": "rgba(56, 65, 77, 0.12) 0px 14px 32px 0px, rgba(56, 65, 77, 0.05) 0px 2px 6px 0px",
+        "blur": "blur(24px)"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(37, 42, 51)",
+          "background": "rgba(90, 79, 158, 0.16)",
+          "ratio": 8.71,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(83, 92, 105)",
+          "background": "rgb(230, 233, 237)",
+          "ratio": 5.56,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(83, 92, 105)",
+          "background": "rgb(230, 233, 237)",
+          "ratio": 5.56,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(83, 92, 105)",
+          "background": "rgb(230, 233, 237)",
+          "ratio": 5.56,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.307451 0.341176 0.390588)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.48,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(83, 92, 105)",
+          "background": "rgb(230, 233, 237)",
+          "ratio": 5.56,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.307451 0.341176 0.390588)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.48,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(83, 92, 105)",
+          "background": "rgb(230, 233, 237)",
+          "ratio": 5.56,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(83, 92, 105)",
+          "background": "rgb(230, 233, 237)",
+          "ratio": 5.56,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.307451 0.341176 0.390588)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 5.48,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "paperglass",
+      "contentWidth": 309,
+      "panel": {
+        "background": "color(srgb 0.956863 0.929412 0.87451 / 0.92)",
+        "radius": "20px",
+        "shadow": "rgba(112, 91, 57, 0.13) 0px 14px 32px 0px, rgba(112, 91, 57, 0.06) 0px 2px 6px 0px",
+        "blur": "blur(24px)"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(74, 64, 52)",
+          "background": "rgba(147, 64, 31, 0.16)",
+          "ratio": 5.84,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(238, 231, 217)",
+          "ratio": 5.26,
+          "opaque": true
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(238, 231, 217)",
+          "ratio": 5.26,
+          "opaque": true
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(238, 231, 217)",
+          "ratio": 5.26,
+          "opaque": true
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.38902 0.353333 0.302745)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.89,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(238, 231, 217)",
+          "ratio": 5.26,
+          "opaque": true
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.38902 0.353333 0.302745)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.89,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(238, 231, 217)",
+          "ratio": 5.26,
+          "opaque": true
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(102, 93, 80)",
+          "background": "rgb(238, 231, 217)",
+          "ratio": 5.26,
+          "opaque": true
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.38902 0.353333 0.302745)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 4.89,
+          "opaque": false
+        }
+      ]
+    },
+    {
+      "theme": "orchidbloom",
+      "contentWidth": 309,
+      "panel": {
+        "background": "rgb(255, 250, 255)",
+        "radius": "24px",
+        "shadow": "rgba(82, 52, 99, 0.22) 0px 28px 70px 0px",
+        "blur": "none"
+      },
+      "pairs": [
+        {
+          "control": "All",
+          "foreground": "rgb(45, 38, 50)",
+          "background": "rgba(103, 69, 150, 0.16)",
+          "ratio": 11.11,
+          "opaque": false
+        },
+        {
+          "control": "Duplicates",
+          "foreground": "rgb(104, 93, 112)",
+          "background": "rgba(103, 69, 150, 0.09)",
+          "ratio": 5.25,
+          "opaque": false
+        },
+        {
+          "control": "Pinned",
+          "foreground": "rgb(104, 93, 112)",
+          "background": "rgba(103, 69, 150, 0.09)",
+          "ratio": 5.25,
+          "opaque": false
+        },
+        {
+          "control": "Playing audio",
+          "foreground": "rgb(104, 93, 112)",
+          "background": "rgba(103, 69, 150, 0.09)",
+          "ratio": 5.25,
+          "opaque": false
+        },
+        {
+          "control": "Window",
+          "foreground": "color(srgb 0.384706 0.343137 0.414902)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.59,
+          "opaque": false
+        },
+        {
+          "control": "All windowsThis window",
+          "foreground": "rgb(104, 93, 112)",
+          "background": "rgba(103, 69, 150, 0.09)",
+          "ratio": 5.25,
+          "opaque": false
+        },
+        {
+          "control": "Sort",
+          "foreground": "color(srgb 0.384706 0.343137 0.414902)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.59,
+          "opaque": false
+        },
+        {
+          "control": "Most tabsA–ZRecently used",
+          "foreground": "rgb(104, 93, 112)",
+          "background": "rgba(103, 69, 150, 0.09)",
+          "ratio": 5.25,
+          "opaque": false
+        },
+        {
+          "control": "Compact view",
+          "foreground": "rgb(104, 93, 112)",
+          "background": "rgba(103, 69, 150, 0.09)",
+          "ratio": 5.25,
+          "opaque": false
+        },
+        {
+          "control": "15 open tabs across 1 window",
+          "foreground": "color(srgb 0.384706 0.343137 0.414902)",
+          "background": "rgba(0, 0, 0, 0)",
+          "ratio": 6.59,
+          "opaque": false
+        }
+      ]
+    }
+  ],
+  "viewport": 320,
+  "contentWidth": 309
+}

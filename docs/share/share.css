@@ -12,6 +12,8 @@ h1 { margin: 0; line-height: 1.12; letter-spacing: -.025em; font-size: clamp(1.6
 .share-link-url { display: block; color: color-mix(in srgb, CanvasText 65%, Canvas); font-size: .86rem; overflow-wrap: anywhere; }
 .share-more { margin-top: .9rem; }
 .share-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.5rem; }
+.share-actions[hidden], .share-preview[hidden], button[hidden], a[hidden] { display: none; }
+.share-list li:focus-visible { outline: 2px solid Highlight; outline-offset: 3px; }
 button, .secondary { min-height: 2.7rem; border-radius: .78rem; border: 1px solid color-mix(in srgb, CanvasText 25%, transparent); padding: .58rem .95rem; color: CanvasText; background: color-mix(in srgb, Canvas 92%, CanvasText 8%); font: inherit; font-weight: 650; cursor: pointer; text-decoration: none; }
 #shareAdd { background: Highlight; border-color: Highlight; color: HighlightText; }
 button:hover, .secondary:hover { background: color-mix(in srgb, CanvasText 12%, Canvas); }

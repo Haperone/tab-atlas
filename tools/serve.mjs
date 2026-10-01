@@ -15,6 +15,7 @@ const TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.wav': 'audio/wav',
 };
 
 http.createServer(async (req, res) => {

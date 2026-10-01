@@ -8,12 +8,12 @@
   <style>
     :root {
       --bg: #f7f5f0; --surface: #ffffff; --text: #23201b;
-      --muted: #6b6459; --accent: #9f4528; --border: #e4ded3;
+      --muted: #6b6459; --accent: #9f4528; --border: #e4ded3; --primary-ink: #fff;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #16181c; --surface: #1e2228; --text: #e6e8ea;
-        --muted: #9aa0a6; --accent: #78a8c8; --border: #2c3038;
+        --muted: #9aa0a6; --accent: #78a8c8; --border: #2c3038; --primary-ink: #16181c;
       }
     }
     * { box-sizing: border-box; }
@@ -33,7 +33,7 @@
       border: 1px solid var(--border); background: var(--surface);
       color: var(--text); text-decoration: none; font-weight: 600;
     }
-    a.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    a.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--primary-ink); }
     a.btn:hover { border-color: var(--accent); }
     footer { margin-top: 40px; color: var(--muted); font-size: 0.9rem; }
     footer a { color: var(--accent); text-decoration: none; }
