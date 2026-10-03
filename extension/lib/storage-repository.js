@@ -1,3 +1,5 @@
+import { checkStorageCapacity } from './storage-usage.js';
+
 export const STORAGE_KEYS = Object.freeze({
   deferred: 'deferred',
   folders: 'folders',
@@ -58,5 +60,6 @@ export function createStorageRepository(storageArea) {
     setWorkspaceSnapshots: value => setArray(STORAGE_KEYS.workspaceSnapshots, value),
     getCollections,
     setCollections,
+    checkCapacity: collections => checkStorageCapacity(storageArea, collections),
   });
 }

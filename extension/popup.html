@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Save page · Tab Atlas</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon32.png">
   <script src="theme-init.js"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="apple-themes.css">
@@ -53,6 +54,10 @@
     <p id="saveError" class="quick-save-error" role="alert" hidden></p>
     <button id="retrySave" class="quick-save-text" hidden>Try again</button>
     <p class="quick-save-hint" id="saveHint" hidden>Your tab stays open.</p>
+    <div id="popupStorageWarning" class="quick-save-storage" hidden>
+      <p id="popupStorageText" role="status"></p>
+      <button id="popupManageStorage" class="quick-save-text" type="button">Manage in Tab Atlas</button>
+    </div>
   </main>
   <script type="module" src="popup.js"></script>
 </body>

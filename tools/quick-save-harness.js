@@ -3,6 +3,7 @@ import { createQuickSaveService } from '../extension/lib/quick-save-service.js';
 import { playUiSound } from '../extension/lib/ui-sound.js';
 
 const options = new URLSearchParams(location.search);
+const previewQuota = 10 * 1024 * 1024;
 const listeners = [];
 const menuItems = new Map();
 const page = { id: 7, active: true, windowId: 1, title: 'Designing calm interfaces — a practical guide', url: 'https://example.com/design/calm-interfaces' };
@@ -17,6 +18,7 @@ if (options.has('empty')) data.folders = [];
 if (options.has('many')) data.folders.push(...Array.from({ length: 25 }, (_, i) => ({ id: `f-${i}`, name: `Research folder ${i + 1} — notes and useful links` })));
 if (options.has('existing')) data.deferred.push({ id: 'existing', url: page.url, title: page.title, folderId: 'reading', completed: false, dismissed: false });
 if (options.has('undone')) data.quickSaveFeedback = { ok:true, kind:'undone' };
+if (options.has('storage')) data.previewStoragePadding = 'x'.repeat(Math.floor(previewQuota * Number(options.get('storage')) / 100));
 if (options.has('persist')) {
   try { data = JSON.parse(sessionStorage.getItem('quick-save-demo') || 'null') || data; } catch {}
 }
@@ -25,6 +27,12 @@ const chromeApi = {
   runtime: { getURL: value => new URL(`../extension/${value}`, location.href).href, lastError: null,
     async sendMessage(message) { return service.handleMessage(message); } },
   storage: { local: {
+    QUOTA_BYTES: previewQuota,
+    async getBytesInUse(keys) {
+      const encoder = new TextEncoder();
+      return (keys == null ? Object.keys(data) : [].concat(keys)).reduce((bytes, key) =>
+        bytes + (key in data ? encoder.encode(key).length + encoder.encode(JSON.stringify(data[key])).length : 0), 0);
+    },
     async get(keys) {
       if (options.has('unavailable')) throw new Error('Simulated unreadable storage');
       return Object.fromEntries(keys.map(key => [key, structuredClone(data[key])]));

@@ -121,6 +121,17 @@ the shot. Full step-by-step (including the real-extension path) is in `CHROMEWEB
 | Sound | Web Audio API (synthesized, no files) |
 | Animations | CSS transitions + bounded Web Animations for card movement + optional JS confetti |
 
+Storage warnings appear at 80% usage, with a stronger warning at 95%, in the
+dashboard and toolbar popup. **Customize → Storage usage** shows the actual
+Chrome quota and a breakdown, with links to review archives and workspaces or
+export a backup. Archiving a link does not free storage; removing it does.
+Warnings disappear when usage falls below 80%.
+
+Backup imports accept JSON files up to 10 MiB and 50,000 saved links. Import
+checks the capacity of the final merged data before writing, including other
+extension data already stored. These import limits do not increase Chrome's
+storage quota or guarantee interface performance at that collection size.
+
 ---
 
 ## License & credits

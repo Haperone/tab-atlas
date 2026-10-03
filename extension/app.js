@@ -20,6 +20,7 @@ import {
   parseBackupFile,
 } from './lib/backup-data.js';
 import { createStorageRepository } from './lib/storage-repository.js';
+import { formatStorageBytes, readStorageDetails, readStorageUsage, storageWarningText } from './lib/storage-usage.js';
 import { openModalDialog, closeModalDialog, isolateOverlay } from './lib/modal-dialog.js';
 import { snapshotUndoTab, restoreUndoTabRecord } from './lib/tab-undo.js';
 import { SHARE_BASE_URL } from './lib/share-config.js';
@@ -1150,6 +1151,73 @@ function openBackupMenu(x, y) {
   ]);
 }
 
+let storageRefreshTimer;
+let storageReadVersion = 0;
+let storageWarningLevel = 'normal';
+let storageDetailsVersion = 0;
+
+async function refreshStorageWarning() {
+  const version = ++storageReadVersion;
+  try {
+    const usage = await readStorageUsage(chrome.storage.local);
+    if (!usage || version !== storageReadVersion) return;
+    const banner = document.getElementById('storageWarning');
+    const text = storageWarningText(usage);
+    document.getElementById('storageWarningText').textContent = text;
+    banner.dataset.level = usage.level;
+    if (usage.level === 'normal' && banner.contains(document.activeElement)) {
+      document.getElementById('globalSearch').focus({ preventScroll: true });
+    }
+    banner.hidden = usage.level === 'normal';
+    if (usage.level !== storageWarningLevel) {
+      document.getElementById('storageAnnouncement').textContent = text || 'Storage space is available again.';
+      storageWarningLevel = usage.level;
+    }
+    if (document.getElementById('storageUsageDialog').open) void loadStorageDetails();
+  } catch { /* A failed measurement must not announce that storage is empty. */ }
+}
+
+async function loadStorageDetails() {
+  const dialog = document.getElementById('storageUsageDialog');
+  const version = ++storageDetailsVersion;
+  const error = document.getElementById('storageUsageError');
+  error.hidden = true;
+  try {
+    const details = await readStorageDetails(chrome.storage.local);
+    if (!dialog.open || version !== storageDetailsVersion) return;
+    document.getElementById('storageUsageSummary').textContent = `${formatStorageBytes(details.used)} of ${formatStorageBytes(details.quota)} used · ${details.percent}%`;
+    const meter = document.getElementById('storageUsageMeter');
+    meter.value = details.percent;
+    meter.hidden = false;
+    dialog.dataset.level = details.level;
+    document.getElementById('storageUsageBreakdown').innerHTML = details.categories.map(item =>
+      `<div><dt>${escapeHtml(item.label)}</dt><dd>${formatStorageBytes(item.bytes)}</dd></div>`).join('');
+    document.getElementById('storageUsageRetry').hidden = true;
+  } catch {
+    if (!dialog.open || version !== storageDetailsVersion) return;
+    document.getElementById('storageUsageSummary').textContent = '';
+    document.getElementById('storageUsageMeter').hidden = true;
+    document.getElementById('storageUsageBreakdown').replaceChildren();
+    error.textContent = 'Could not check storage usage. Try again.';
+    error.hidden = false;
+    document.getElementById('storageUsageRetry').hidden = false;
+  }
+}
+
+function closeStorageDialog() {
+  storageDetailsVersion++;
+  closeModalDialog(document.getElementById('storageUsageDialog'));
+}
+
+function openStorageDialog() {
+  closeContextMenu();
+  const dialog = document.getElementById('storageUsageDialog');
+  document.getElementById('storageUsageSummary').textContent = 'Checking storage…';
+  document.getElementById('storageUsageMeter').hidden = true;
+  openModalDialog(dialog, closeStorageDialog);
+  void loadStorageDetails();
+}
+
 function currentArchiveRetentionDays() {
   try {
     return normalizeArchiveRetentionDays(localStorage.getItem(ARCHIVE_RETENTION_KEY));
@@ -1238,6 +1306,7 @@ function openCustomizeMenu(x, y) {
     } },
     { separator: true },
     { label: 'Backup & restore…', onClick: () => openBackupMenu(x, y) },
+    { label: 'Storage usage…', onClick: openStorageDialog },
     { label: 'Restart tour', onClick: () => startOnboarding({ manual: true }) },
   ]);
 }
@@ -2393,6 +2462,16 @@ async function handleDashboardClick(e) {
 
   const action = actionEl.dataset.action;
   if (action === 'retry-dashboard') { await initializeTabAtlas(); return; }
+  if (action === 'manage-storage') { openStorageDialog(); return; }
+  if (action === 'close-storage') { closeStorageDialog(); return; }
+  if (action === 'retry-storage') { await loadStorageDetails(); return; }
+  if (action === 'storage-export') { await exportTabAtlasBackup(); return; }
+  if (action === 'storage-archive') {
+    closeStorageDialog();
+    openArchiveDrawer(document.getElementById('storageWarning').hidden ? document.getElementById('customizeToggle') : document.querySelector('[data-action="manage-storage"]'));
+    return;
+  }
+  if (action === 'storage-workspaces') { closeStorageDialog(); setWorkspaceDrawerOpen(true); return; }
 
   // ---- Guided onboarding ----
   if (action === 'start-onboarding')  { startOnboarding({ manual: true });       return; }
@@ -5480,6 +5559,10 @@ function scheduleSavedRefresh() {
 
 chrome.storage.onChanged?.addListener((changes, area) => {
   if (area === 'local' && (changes.deferred || changes.folders)) scheduleSavedRefresh();
+  if (area === 'local') {
+    clearTimeout(storageRefreshTimer);
+    storageRefreshTimer = setTimeout(refreshStorageWarning, 200);
+  }
 });
 
 // Don't redraw while the user is mid-interaction — it would be disruptive.
@@ -5490,7 +5573,7 @@ function autoRefreshBlocked() {
   if (isOnboardingActive()) return true;
   const menu    = document.getElementById('contextMenu');
   if (menu && menu.style.display !== 'none') return true;
-  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'speedDialDialog', 'folderShareDialog', 'folderShareImportDialog']) {
+  for (const id of ['folderDeleteDialog', 'closeAllDialog', 'speedDialDialog', 'folderShareDialog', 'folderShareImportDialog', 'storageUsageDialog']) {
     const d = document.getElementById(id);
     if (d && (d.open || (d.style.display && d.style.display !== 'none'))) return true;
   }
@@ -5653,6 +5736,7 @@ async function initializeTabAtlas() {
     dashboardWindowId = (await chrome.windows.getCurrent()).id;
     await purgeLegacyDismissedTabs();
     const archiveCleanup = await removeExpiredArchiveLinks();
+    void refreshStorageWarning();
 
     // Paint the speed-dial shortcut strip; its visibility is managed in Customize.
     renderSpeedDial();

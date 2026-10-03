@@ -94,6 +94,127 @@ html[data-theme$="glass"] {
   --view-panel-shadow: -6px -6px 14px var(--neu-light), 6px 6px 16px var(--neu-dark);
   --view-control-bg: var(--bg);
 }
+.container > footer { flex-wrap: wrap; gap: 16px 24px; }
+.container > footer .last-refresh { margin-inline-start: auto; line-height: 1.5; }
+.footer-support { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.footer-support-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 36px; padding: 6px 10px; border: 1px solid var(--view-panel-border);
+  border-radius: var(--view-control-radius); background: var(--view-control-bg);
+  color: var(--text); font-size: 12px; font-weight: 500; line-height: 1.5;
+  text-decoration: none; white-space: nowrap;
+}
+.footer-support-link svg { width: 16px; height: 16px; flex: none; }
+.footer-support-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
+html[data-theme$="glass"] .footer-support-link {
+  background: var(--view-panel-bg); border-color: var(--glass-border);
+  -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur));
+}
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .footer-support-link {
+  border-color: transparent; box-shadow: -3px -3px 6px var(--neu-light), 3px 3px 6px var(--neu-dark);
+}
+@media (hover: hover) {
+  .footer-support-link:hover { background: var(--surface-strong-hover); border-color: var(--accent-primary); }
+  html[data-theme="spaceblack"] .footer-support-link:hover { background: var(--space-control-hover); }
+  html[data-theme="pacificblue"] .footer-support-link:hover { background: var(--pacific-control-hover); }
+  html[data-theme="orchidbloom"] .footer-support-link:hover { background: var(--orchid-control-hover); }
+  html[data-theme$="glass"] .footer-support-link:hover { background: color-mix(in srgb, var(--surface-strong-hover) 92%, transparent); }
+  :is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .footer-support-link:hover {
+    background: var(--bg); border-color: transparent;
+    box-shadow: -2px -2px 4px var(--neu-light), 2px 2px 4px var(--neu-dark);
+  }
+}
+.footer-support-link:active { border-color: var(--accent-primary); }
+:is(html[data-theme="papersoft"], html[data-theme="lattesoft"]) .footer-support-link:active {
+  border-color: transparent; box-shadow: inset -2px -2px 4px var(--neu-light), inset 2px 2px 4px var(--neu-dark);
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduced"]) .footer-support-link { transition: scale 100ms ease-out; }
+  html:not([data-motion="reduced"]) .footer-support-link:active { scale: .96; }
+}
+@media (max-width: 640px) {
+  .container > footer .last-refresh { max-width: calc(100% - 90px); text-align: end; }
+  .footer-support { width: 100%; }
+}
+@media (pointer: coarse) { .footer-support-link { min-height: 44px; } }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html[data-theme$="glass"] .footer-support-link { background: var(--surface-strong); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (forced-colors: active) {
+  .footer-support-link { background: Canvas !important; color: LinkText; border: 1px solid LinkText !important; box-shadow: none !important; }
+  .footer-support-link:focus-visible { outline-color: Highlight; }
+}
+.storage-warning {
+  position: relative; isolation: isolate;
+  display: flex; align-items: center; gap: 12px; margin: 0 0 20px;
+  padding: 8px 12px; background: color-mix(in srgb, var(--accent-danger) 14%, var(--view-panel-bg)); color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent-danger) 65%, var(--view-panel-border)); border-inline-start: 3px solid var(--accent-danger); border-radius: var(--view-control-radius);
+  font-size: 13px; line-height: 1.5;
+}
+.storage-warning[hidden] { display: none; }
+.storage-warning > svg { width: 18px; height: 18px; flex: none; color: var(--view-danger-text); }
+.storage-warning[data-level="critical"] { background: color-mix(in srgb, var(--accent-danger) var(--storage-warning-critical-tint, 22%), var(--view-panel-bg)); border-color: var(--accent-danger); }
+html[data-theme="lattesoft"] .storage-warning { --storage-warning-critical-tint: 16%; }
+.storage-warning p { margin: 0; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.storage-warning button { flex: none; min-height: 40px; padding: 4px 8px; border: 0; background: transparent; color: var(--text); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.storage-warning button:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+/* A single comet traces the alert's edge; its masked centre keeps text clear. */
+@property --storage-signal-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.storage-warning::after {
+  content: ''; position: absolute; inset: -1px; padding: 2px;
+  border-radius: inherit; pointer-events: none; opacity: 0;
+  background: conic-gradient(from var(--storage-signal-angle), transparent 0deg,
+    color-mix(in srgb, var(--accent-danger) 35%, var(--text)) 45deg, transparent 100deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduced"]) .storage-warning[data-level="warning"]::after { animation: storage-warning-signal 1200ms cubic-bezier(.2,0,0,1) both; }
+  html:not([data-motion="reduced"]) .storage-warning[data-level="critical"]::after { animation: storage-critical-signal 1200ms cubic-bezier(.2,0,0,1) both; }
+  html:not([data-motion="reduced"]) .storage-warning[data-level="warning"] > svg { animation: storage-warning-wake 420ms ease-out; }
+  html:not([data-motion="reduced"]) .storage-warning[data-level="critical"] > svg { animation: storage-critical-wake 420ms ease-out; }
+}
+/* Distinct names restart the one-shot signal when the warning becomes critical. */
+@keyframes storage-warning-signal {
+  0% { --storage-signal-angle: 0deg; opacity: 0; }
+  15% { opacity: .9; }
+  75% { opacity: .7; }
+  100% { --storage-signal-angle: 360deg; opacity: 0; }
+}
+@keyframes storage-critical-signal {
+  0% { --storage-signal-angle: 0deg; opacity: 0; }
+  15% { opacity: .9; }
+  75% { opacity: .7; }
+  100% { --storage-signal-angle: 360deg; opacity: 0; }
+}
+@keyframes storage-warning-wake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-9deg); }
+  55% { transform: rotate(6deg); }
+  80% { transform: rotate(-3deg); }
+}
+@keyframes storage-critical-wake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-9deg); }
+  55% { transform: rotate(6deg); }
+  80% { transform: rotate(-3deg); }
+}
+@media (forced-colors: active) { .storage-warning::after { display: none; } }
+.storage-usage-panel { background: var(--view-panel-bg); border: 1px solid var(--view-panel-border); border-radius: var(--view-panel-radius); box-shadow: var(--view-panel-shadow); }
+.storage-usage-panel .dialog-title { margin-top: 0; }
+.storage-usage-breakdown { margin: 20px 0; font-size: 13px; line-height: 1.6; }
+.storage-usage-breakdown > div { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; }
+.storage-usage-breakdown dd { margin: 0; flex: none; font-variant-numeric: tabular-nums; }
+.storage-usage-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+#storageUsageMeter { display: block; width: 100%; height: 6px; margin: 16px 0; border: 0; border-radius: 3px; overflow: hidden; appearance: none; background: var(--view-panel-border); }
+#storageUsageMeter[hidden] { display: none; }
+#storageUsageMeter::-webkit-progress-bar { background: var(--view-panel-border); }
+#storageUsageMeter::-webkit-progress-value { background: var(--accent-primary); }
+#storageUsageMeter::-moz-progress-bar { background: var(--accent-primary); }
+:is([data-level="warning"], [data-level="critical"]) #storageUsageMeter::-webkit-progress-value { background: var(--view-danger-text); }
+:is([data-level="warning"], [data-level="critical"]) #storageUsageMeter::-moz-progress-bar { background: var(--view-danger-text); }
+@media (max-width: 480px) { .storage-warning { flex-wrap: wrap; } .storage-warning p { flex-basis: calc(100% - 30px); } .storage-warning button { margin-left: 26px; } .storage-usage-actions { flex-direction: column; } }
 .tab-view-toggle {
   position: fixed;
   z-index: 381;

@@ -2,6 +2,7 @@ import { QUICK_SAVE_ERRORS } from './lib/quick-save-core.js';
 import { QUICK_SAVE_PREFIX } from './lib/quick-save-service.js';
 import { FOLDER_COLORS } from './lib/view-config.js';
 import { syncQuickSaveAppearance } from './lib/quick-save-appearance.js';
+import { readStorageUsage, storageWarningText } from './lib/storage-usage.js';
 
 syncQuickSaveAppearance();
 
@@ -11,6 +12,18 @@ let busy = false;
 let refreshPending = false;
 let refreshRevision = 0;
 let selectedFolder;
+let storageRevision = 0;
+let storageTimer;
+
+async function refreshStorageNotice() {
+  const revision = ++storageRevision;
+  try {
+    const usage = await readStorageUsage(chrome.storage.local);
+    if (!usage || revision !== storageRevision) return;
+    byId('popupStorageText').textContent = storageWarningText(usage);
+    byId('popupStorageWarning').hidden = usage.level === 'normal';
+  } catch { /* Keep the previous warning if a measurement fails. */ }
+}
 const CHECK = '<svg class="destination-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>';
 const LOCK = '<svg class="destination-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -180,13 +193,16 @@ byId('openDashboard').addEventListener('click', async () => {
   if (busy) return;
   try { await request('dashboard'); window.close(); } catch (error) { showError(error); }
 });
+byId('popupManageStorage').addEventListener('click', () => byId('openDashboard').click());
 byId('retrySave').addEventListener('click', () => { void initialize(); });
 chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local') { clearTimeout(storageTimer); storageTimer = setTimeout(refreshStorageNotice, 200); }
   if (area !== 'local' || !current || !['deferred', 'folders', 'quickSaveUndo', 'quickSaveFeedback'].some(key => changes[key])) return;
   if (busy) refreshPending = true; else void refresh().catch(showError);
 });
 
 async function initialize() {
+  void refreshStorageNotice();
   byId('retrySave').hidden = true;
   byId('saveError').hidden = true;
   try {

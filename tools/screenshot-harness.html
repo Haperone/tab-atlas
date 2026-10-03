@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Atlas — Screenshot Harness</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="../extension/icons/icon32.png">
 
   <!--
     Store-screenshot harness. Renders the REAL dashboard (../extension/app.js +
@@ -86,6 +87,8 @@
 
     // ---- Minimal chrome.* mock (only what the dashboard reads) ----
     const store = JSON.parse(JSON.stringify(SEED_STORE));
+    const previewQuota = 10 * 1024 * 1024;
+    if (harnessParams.has('storage')) store.previewStoragePadding = 'x'.repeat(Math.floor(previewQuota * Number(harnessParams.get('storage')) / 100));
     const noopEvent = () => ({ addListener() {}, removeListener() {} });
     const storageListeners = new Set();
     const resolve = (v) => Promise.resolve(v);
@@ -112,6 +115,12 @@
       storage: {
         onChanged: { addListener(listener) { storageListeners.add(listener); }, removeListener(listener) { storageListeners.delete(listener); } },
         local: {
+          QUOTA_BYTES: previewQuota,
+          getBytesInUse(keys) {
+            const wanted = keys == null ? Object.keys(store) : [].concat(keys);
+            const encoder = new TextEncoder();
+            return resolve(wanted.reduce((bytes, key) => bytes + (key in store ? encoder.encode(key).length + encoder.encode(JSON.stringify(store[key])).length : 0), 0));
+          },
           get(keys) {
             if (failInitialRead) { failInitialRead = false; return Promise.reject(new Error('Audit: initial read failure')); }
             const wanted = keys == null ? Object.keys(store)
@@ -277,6 +286,13 @@
         checks.type = 'module';
         checks.src = './saved-refresh-checks.js';
         document.body.appendChild(checks);
+      }
+      if (harnessParams.has('storage-checks')) await import('./storage-usage-checks.js');
+      // Recording-only delay leaves the production animation speed unchanged.
+      if (harnessParams.has('storage-motion-preview')) {
+        const previewStyle = document.createElement('style');
+        previewStyle.textContent = '.storage-warning::after, .storage-warning > svg { animation-delay: 2s !important; }';
+        document.head.append(previewStyle);
       }
       if (surface === 'share-sender') setTimeout(() => {
         document.querySelector('[data-action="folder-menu"][data-folder-id="f-read"]')?.click();

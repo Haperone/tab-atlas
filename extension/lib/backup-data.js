@@ -4,9 +4,9 @@ import { cloneStorageArray } from './storage-repository.js';
 export const BACKUP_APP_NAME = 'Tab Atlas';
 export const BACKUP_SCHEMA_VERSION = 1;
 export const BACKUP_LIMITS = Object.freeze({
-  fileBytes: 5 * 1024 * 1024,
+  fileBytes: 10 * 1024 * 1024,
   folders: 500,
-  savedTabs: 10_000,
+  savedTabs: 50_000,
   workspaces: 50,
   windowsPerWorkspace: 50,
   tabsPerWorkspace: 5_000,
@@ -28,7 +28,7 @@ const SAFE_ID = /^[A-Za-z0-9_-]+$/;
 export async function parseBackupFile(file) {
   if (!file) throw new Error('No backup file selected');
   if (Number.isFinite(file.size) && file.size > BACKUP_LIMITS.fileBytes) {
-    throw new Error('Backup file exceeds the 5 MiB limit');
+    throw new Error('Backup file exceeds the 10 MiB limit');
   }
   try {
     return JSON.parse(await file.text());
@@ -405,6 +405,7 @@ export function mergeBackupCollections(current, backup, options = {}) {
 export async function importBackupDocument(repository, parsed, options = {}) {
   const normalized = normalizeBackupDocument(parsed, options);
   const result = mergeBackupCollections(await repository.getCollections(), normalized, options);
+  await repository.checkCapacity?.(result.collections);
   await repository.setCollections(result.collections);
   return result.imported;
 }

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Atlas</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon32.png">
 
   <!-- Apply the saved theme before first paint (external file: MV3 CSP blocks inline scripts) -->
   <script src="theme-init.js"></script>
@@ -102,6 +103,12 @@
     </button>
   </div>
 
+  <p id="storageAnnouncement" class="visually-hidden" role="status"></p>
+  <aside id="storageWarning" class="storage-warning" aria-label="Storage warning" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linejoin="round" d="M12 3 2 21h20L12 3Z"/><path stroke-linecap="round" d="M12 9v5m0 3h.01"/></svg>
+    <p id="storageWarningText"></p>
+    <button type="button" data-action="manage-storage">Manage storage</button>
+  </aside>
   <div class="dashboard-load-state" id="dashboardLoadState" role="status" hidden>
     <p id="dashboardLoadMessage"></p>
     <button type="button" data-action="retry-dashboard" hidden>Retry loading</button>
@@ -190,7 +197,7 @@
   </main><!-- end .dashboard-columns -->
 
   <!-- ================================================================
-       FOOTER — global stats + refresh control
+       FOOTER — global stats, credits and optional support
        ================================================================ -->
   <footer>
     <div class="footer-stats">
@@ -202,6 +209,16 @@
     <div class="last-refresh">
       <span style="color: var(--muted); font-size: 11px;"><a href="https://github.com/Haperone/tab-atlas" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Tab Atlas</a> &middot; based on <a href="https://github.com/zarazhangrui/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Tab Out</a> by Zara</span>
     </div>
+    <nav class="footer-support" aria-label="Support Tab Atlas">
+      <a class="footer-support-link" href="https://buymeacoffee.com/haperone" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h12v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8Zm12 1h1a3 3 0 1 1 0 6h-1M8 3v2m4-2v2M3 22h16"/></svg>
+        <span>Buy Me a Coffee</span>
+      </a>
+      <a class="footer-support-link" href="https://ko-fi.com/haperone" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 4.8a5.2 5.2 0 0 0-7.4 0L12 5.9l-1.1-1.1a5.2 5.2 0 0 0-7.4 7.4L12 21l8.5-8.8a5.2 5.2 0 0 0 0-7.4Z"/></svg>
+        <span>Ko-fi</span>
+      </a>
+    </nav>
   </footer>
 
 </div><!-- end .container -->
@@ -278,6 +295,24 @@
      FOLDER DELETE DIALOG — asks whether to keep tabs (move to inbox)
      or delete them along with the folder. Hidden by default.
      ================================================================ -->
+<dialog class="dialog-overlay" id="storageUsageDialog" aria-labelledby="storageUsageTitle" aria-describedby="storageUsageHelp" style="display:none">
+  <div class="dialog storage-usage-panel">
+    <h2 class="dialog-title" id="storageUsageTitle">Storage usage</h2>
+    <p id="storageUsageSummary" class="dialog-text" role="status"></p>
+    <progress id="storageUsageMeter" max="100" value="0" aria-label="Storage used" hidden></progress>
+    <dl id="storageUsageBreakdown" class="storage-usage-breakdown"></dl>
+    <p class="dialog-text" id="storageUsageHelp">Remove unneeded links from the archive or delete old workspaces to free space. Archiving a link keeps it stored. Export a backup before removing anything you want to keep.</p>
+    <p id="storageUsageError" class="dialog-error" role="alert" hidden></p>
+    <button class="dialog-btn" id="storageUsageRetry" data-action="retry-storage" type="button" hidden>Try again</button>
+    <div class="storage-usage-actions">
+      <button class="dialog-btn" data-action="storage-archive" type="button">Review archive</button>
+      <button class="dialog-btn" data-action="storage-workspaces" type="button">Review workspaces</button>
+      <button class="dialog-btn" data-action="storage-export" type="button">Export backup</button>
+    </div>
+    <div class="dialog-actions"><button class="dialog-btn" data-action="close-storage" type="button" autofocus>Done</button></div>
+  </div>
+</dialog>
+
 <dialog class="dialog-overlay" id="folderDeleteDialog" aria-labelledby="folderDeleteTitle" aria-describedby="folderDeleteText" style="display:none">
   <div class="dialog">
     <div class="dialog-title" id="folderDeleteTitle">Delete folder?</div>

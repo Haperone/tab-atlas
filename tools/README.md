@@ -127,3 +127,11 @@ and a separate JSON inventory/hash report. It checks every packaged JavaScript
 file, local dependencies, ZIP integrity and byte equality with current sources;
 excludes private config, tests and store assets; and refuses to overwrite an
 existing release archive.
+
+Storage warning checks: open
+`http://localhost:8232/tools/screenshot-harness.html?storage-checks=1`.
+The fixture checks healthy/warning/critical states, external writes, cleanup
+navigation, focus restoration, retry after a failed measurement, and controls
+across all themes. For a static preview use `?storage=85&theme=spaceblack` or
+`tools/quick-save-harness.html?storage=96&theme=spaceblack`.
+All data and quotas in these previews belong to disposable Chrome API mocks.

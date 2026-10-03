@@ -33,7 +33,7 @@ function emptyBackup(overrides = {}) {
   };
 }
 
-test('5 MiB size limit is checked before reading file text', async () => {
+test('10 MiB size limit is checked before reading file text', async () => {
   let textCalled = false;
   const file = {
     size: BACKUP_LIMITS.fileBytes + 1,
@@ -42,8 +42,34 @@ test('5 MiB size limit is checked before reading file text', async () => {
       return '{}';
     },
   };
-  await assert.rejects(parseBackupFile(file), /5 MiB limit/);
+  await assert.rejects(parseBackupFile(file), /10 MiB limit/);
   assert.equal(textCalled, false);
+});
+
+test('files between the old limit and the new 10 MiB boundary are accepted', async () => {
+  for (const size of [5 * 1024 * 1024 + 1, 10 * 1024 * 1024]) {
+    assert.deepEqual(await parseBackupFile({ size, async text() { return '{}'; } }), {});
+  }
+});
+
+test('more than 10,000 saved links can be normalized without losing entries', () => {
+  const deferred = Array.from({ length: 50_000 }, (_, index) => ({ url: `https://example.com/${index}`, title: `Page ${index}` }));
+  const normalized = normalizeBackupDocument(emptyBackup({ deferred }), deterministicOptions());
+  assert.equal(normalized.data.deferred.length, 50_000);
+  assert.equal(normalized.data.deferred.at(-1).url, 'https://example.com/49999');
+  assert.equal(BACKUP_LIMITS.savedTabs, 50_000);
+  assert.throws(() => normalizeBackupDocument(emptyBackup({ deferred: [...deferred, deferred[0]] }), deterministicOptions()), /limit of 50000/);
+});
+
+test('capacity failure leaves existing collections untouched', async () => {
+  let written = false;
+  const repository = {
+    async getCollections() { return { deferred: [], folders: [], workspaceSnapshots: [] }; },
+    async checkCapacity() { throw new Error('Not enough storage'); },
+    async setCollections() { written = true; },
+  };
+  await assert.rejects(importBackupDocument(repository, emptyBackup()), /Not enough storage/);
+  assert.equal(written, false);
 });
 
 test('empty schema-v1 backup remains a valid no-op document', () => {

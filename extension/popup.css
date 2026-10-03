@@ -47,6 +47,9 @@ input::placeholder { color: var(--view-secondary-text); opacity: 1; }
 .quick-save-feedback { margin-top:8px; display:flex; justify-content:center; }
 .quick-save-error { margin: 12px 0 0; color: var(--view-danger-text); font-size: 12px; overflow-wrap: anywhere; }
 .quick-save-hint { color: var(--view-secondary-text); text-align: center; font-size: 12px; margin: 12px 0 0; }
+.quick-save-storage { margin-top: 16px; padding-top: 12px; border-top: 2px solid var(--accent-danger); font-size: 12px; color: var(--view-danger-text); }
+.quick-save-storage p { margin: 0 0 4px; }
+.quick-save-storage button { min-height: 32px; text-decoration: underline; text-underline-offset: 3px; }
 :is(button, input):focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .quick-save-destination:focus-visible { outline-offset: -2px; }
 button { transition: transform 100ms ease-out; }
