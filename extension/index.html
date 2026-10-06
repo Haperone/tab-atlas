@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="interaction-controls.css">
   <link rel="stylesheet" href="folder-share.css">
   <link rel="stylesheet" href="dashboard-controls.css">
+  <link rel="stylesheet" href="time-machine.css">
 </head>
 <body>
 <p class="visually-hidden" id="selectionKeyboardHint">Control or Command plus Space selects a link. Shift plus Space selects a range.</p>
@@ -309,6 +310,11 @@
       <button class="dialog-btn" data-action="storage-workspaces" type="button">Review workspaces</button>
       <button class="dialog-btn" data-action="storage-export" type="button">Export backup</button>
     </div>
+    <section class="tm-storage-summary" aria-labelledby="historyStorageTitle">
+      <h3 id="historyStorageTitle">Time machine · separate storage</h3>
+      <p id="historyStorageSummary" class="dialog-text" role="status"></p>
+      <button class="dialog-btn" data-action="storage-history" type="button">Manage history</button>
+    </section>
     <div class="dialog-actions"><button class="dialog-btn" data-action="close-storage" type="button" autofocus>Done</button></div>
   </div>
 </dialog>

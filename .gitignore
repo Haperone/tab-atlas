@@ -12,3 +12,15 @@ skills-lock.json
 
 # Personal config (landing page patterns, etc.) — never push to GitHub
 extension/config.local.js
+
+# Generated development artifacts (reports, screenshots, image exports)
+/output/
+# Older/manual check runs must not add generated evidence to docs.
+/docs/atlas-history-*.json
+/docs/atlas-history-*.txt
+/docs/time-machine-*.json
+/docs/time-machine-*.txt
+/docs/time-machine-screenshots/
+/docs/interface-*-measurements.json
+/docs/interface-full-before.json
+/docs/quick-save-measurements.json

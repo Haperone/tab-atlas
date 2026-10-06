@@ -204,24 +204,27 @@ test('backup export excludes legacy dismissed tombstones defensively', () => {
 });
 
 test('application routes single, bulk, folder, archive, and Focus Sweep cleanup through physical deletion', async () => {
-  const [source, recordsSource] = await Promise.all([
+  const [source, recordsSource, commandsSource] = await Promise.all([
     fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8'),
     fs.readFile(new URL('../extension/lib/saved-records.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../extension/lib/atlas-collection-commands.js', import.meta.url), 'utf8'),
   ]);
   assert.match(source, /const removed = await dismissSavedTab\(id\)/);
   assert.match(source, /const removed = await dismissSavedTabs\(removableTabIds\)/);
-  assert.match(source, /deleteFolderRecords\(folders, deferred, id, mode\)/);
+  assert.match(source, /collectionCommand\('folder-delete', \{ id, mode \}\)/);
+  assert.match(commandsSource, /deleteFolderRecords\(folders, deferred, request\.id, request\.mode\)/);
   assert.match(source, /action === 'remove-archive-item'/);
   assert.match(source, /action === 'restore-archive-item'/);
   assert.match(source, /showToast\('Restored to Saved for later'/);
   assert.match(source, /action === 'clear-archive'/);
   assert.match(source, /await undoSavedAdditions\(savedIds\)/);
-  assert.match(source, /async function undoSavedAdditions\(ids\).*await dismissSavedTab\(id\)/s);
+  assert.match(source, /async function undoSavedAdditions\(ids\).*await dismissSavedTabs\(requested\)/s);
   assert.match(source, /function folderIsLocked\(folderId, folders\)/);
   assert.match(source, /folderIsLocked\(tab\.folderId, folders\)/);
   assert.match(source, /checkOffSavedTab\(id, \{ internalUndo: true \}\)/);
   assert.match(source, /async function moveTabsToFolder\(deferredIds, folderId\)/);
-  assert.match(source, /moveSavedRecords\(deferred, folders, deferredIds, folderId\)/);
+  assert.match(source, /collectionCommand\('move-links', \{ ids: deferredIds, folderId \}\)/);
+  assert.match(commandsSource, /moveSavedRecords\(deferred, folders, request\.ids, request\.folderId\)/);
   assert.match(source, /moveTabsToFolder\(tabIds, folderId\)/);
   assert.match(source, /const result = await moveTabToFolder\(data\.id, targetFolderId\)/);
   assert.match(source, /item\.draggable === false \|\| item\.closest\('\.folder\[data-folder-locked="true"\]'\)/);
@@ -230,10 +233,14 @@ test('application routes single, bulk, folder, archive, and Focus Sweep cleanup 
 });
 
 test('automatic archive retention uses physical deletion and exposes Undo restoration', async () => {
-  const source = await fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8');
+  const [source, commandsSource] = await Promise.all([
+    fs.readFile(new URL('../extension/app.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../extension/lib/atlas-collection-commands.js', import.meta.url), 'utf8'),
+  ]);
   assert.match(source, /async function removeExpiredArchiveLinks\(\)/);
-  assert.match(source, /expiredArchiveRecordIds\(deferred, days\)/);
-  assert.match(source, /expiredIds\.length \? await dismissSavedTabs\(expiredIds\) : \[\]/);
+  assert.match(source, /collectionCommand\('cleanup-archive', \{ days \}\)/);
+  assert.match(commandsSource, /expiredArchiveRecordIds\(deferred, request\.days, Date\.now\(\), stored\[ATLAS_ARCHIVE_PROTECTION_KEY\]\)/);
+  assert.match(commandsSource, /removeSavedRecords\(deferred, removable\)/);
   assert.match(source, /showArchiveCleanupResult[\s\S]*restoreRemovedSavedTabs\(removed\)/);
 });
 

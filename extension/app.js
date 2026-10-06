@@ -3,7 +3,7 @@
 
    This file is the brain of the dashboard. Now that the dashboard
    IS the extension page (not inside an iframe), it can call
-   chrome.tabs and chrome.storage directly — no postMessage bridge needed.
+   chrome.tabs directly. Collection mutations go through the shared worker owner.
 
    What this file does:
    1. Reads open browser tabs directly via chrome.tabs.query()
@@ -15,27 +15,18 @@
 
 import {
   createBackupEnvelope,
-  importBackupDocument,
-  normalizeWorkspaceSnapshots,
   parseBackupFile,
 } from './lib/backup-data.js';
 import { createStorageRepository } from './lib/storage-repository.js';
+import { createAtlasCollectionClient } from './lib/atlas-collection-client.js';
 import { formatStorageBytes, readStorageDetails, readStorageUsage, storageWarningText } from './lib/storage-usage.js';
 import { openModalDialog, closeModalDialog, isolateOverlay } from './lib/modal-dialog.js';
 import { snapshotUndoTab, restoreUndoTabRecord } from './lib/tab-undo.js';
 import { SHARE_BASE_URL } from './lib/share-config.js';
 import { createSharePackage, decodeTa1Fragment, encodeTa1Package, inspectShareUrl, sanitizeShareUrl } from './lib/ta1-codec.js';
-import { importSharedPackage } from './lib/share-import.js';
 import { SHARE_CONSUME_TYPE } from './lib/share-handoff.js';
 import {
   createUndoStore,
-  deleteFolderRecords,
-  moveSavedRecords,
-  purgeDismissedRecords,
-  removeSavedRecords,
-  restoreFolderRecords,
-  restoreSavedRecords,
-  setSavedRecordCompletion,
 } from './lib/saved-records.js';
 import {
   ICONS,
@@ -52,7 +43,6 @@ import {
   ARCHIVE_RETENTION_OPTIONS,
   DEFAULT_ARCHIVE_RETENTION_DAYS,
   archiveRetentionLabel,
-  expiredArchiveRecordIds,
   normalizeArchiveRetentionDays,
 } from './lib/archive-retention.js';
 import { createOnboardingController } from './lib/onboarding-controller.js';
@@ -76,6 +66,7 @@ import {
 import { createThemeController } from './lib/theme-controller.js';
 import { syncQuickSaveAppearance } from './lib/quick-save-appearance.js';
 import { playUiSound } from './lib/ui-sound.js';
+import { createAtlasHistoryController } from './lib/atlas-history-ui.js';
 import { isInternalBrowserUrl } from './lib/urls.js';
 import {
   CHROME_GROUP_COLORS,
@@ -91,6 +82,9 @@ syncQuickSaveAppearance();
 let dashboardPreferences;
 try { dashboardPreferences = normalizeDashboardPreferences(JSON.parse(localStorage.getItem(DASHBOARD_PREFERENCES_KEY))); }
 catch { dashboardPreferences = normalizeDashboardPreferences(); }
+const timeMachineController = createAtlasHistoryController({ sound:kind => {
+  if (dashboardPreferences.sound) return playUiSound(kind).catch(() => {});
+} });
 let tabViewFilter = 'all';
 let tabWindowScope = 'all';
 let dashboardWindowId = null;
@@ -168,6 +162,8 @@ function makeClearableInput(input, label) {
 }
 
 const storageRepository = createStorageRepository(chrome.storage.local);
+const collectionClient = createAtlasCollectionClient(chrome);
+const collectionCommand = collectionClient.command;
 const undoStore = createUndoStore({ ttlMs: Infinity, maxEntries: 1 });
 const speedDialController = createSpeedDialController({
   document,
@@ -244,21 +240,9 @@ function isSnapshotTab(tab) {
 }
 
 async function getWorkspaceSnapshots() {
-  const stored = await storageRepository.getWorkspaceSnapshots();
-  const { snapshots } = normalizeWorkspaceSnapshots(stored, {
-    preserveIds: true,
-    preserveGroupKeys: true,
-    strict: false,
-  });
-  if (JSON.stringify(snapshots) !== JSON.stringify(stored)) {
-    await storageRepository.setWorkspaceSnapshots(snapshots);
-  }
-  return snapshots;
+  return collectionCommand('workspace-normalize');
 }
 
-async function setWorkspaceSnapshots(snapshots) {
-  await storageRepository.setWorkspaceSnapshots(snapshots);
-}
 
 function snapshotDefaultName() {
   return `Workspace ${new Date().toLocaleString([], {
@@ -346,26 +330,18 @@ async function saveCurrentWorkspaceSnapshot() {
     return;
   }
 
-  const snapshots = await getWorkspaceSnapshots();
-  snapshots.unshift(snapshot);
-  await setWorkspaceSnapshots(snapshots.slice(0, 20));
+  await collectionCommand('workspace-add', { snapshot });
   await renderWorkspacePanel();
   showToast(`Saved “${snapshot.name}”`);
 }
 
 async function deleteWorkspaceSnapshot(snapshotId) {
-  const snapshots = await getWorkspaceSnapshots();
-  const index = snapshots.findIndex(snapshot => snapshot.id === snapshotId);
-  if (index < 0) return;
-  const removed = snapshots[index];
-  const next = snapshots.filter(s => s.id !== snapshotId);
-  await setWorkspaceSnapshots(next);
+  const removed = await collectionCommand('workspace-delete', { id: snapshotId });
+  if (!removed) return;
   await renderWorkspacePanel();
   document.querySelector('#workspaceDrawer button')?.focus({ preventScroll: true });
   showToast('Workspace deleted', async () => {
-    const current = await getWorkspaceSnapshots();
-    if (!current.some(snapshot => snapshot.id === snapshotId)) current.splice(Math.min(index, current.length), 0, removed);
-    await setWorkspaceSnapshots(current);
+    await collectionCommand('workspace-undo-delete', removed);
     await renderWorkspacePanel();
   });
 }
@@ -376,8 +352,7 @@ async function renameWorkspaceSnapshot(snapshotId) {
   if (!snapshot) return;
   const name = (window.prompt('Snapshot name', snapshot.name || 'Workspace') || '').trim();
   if (!name) return;
-  snapshot.name = name;
-  await setWorkspaceSnapshots(snapshots);
+  await collectionCommand('workspace-rename', { id: snapshotId, name });
   await renderWorkspacePanel();
   showToast('Snapshot renamed');
 }
@@ -782,22 +757,7 @@ async function closeTabOutDupes() {
  * @param {{ url: string, title: string }} tab
  */
 async function saveTabForLater(tab, folderId = null) {
-  const deferred = await storageRepository.getDeferred();
-  // Keep an existing active link and its edited title when saving the same destination.
-  if (deferred.some(item => !item.dismissed && !item.completed && item.url === tab.url && (item.folderId || null) === (folderId || null))) return null;
-  if (folderId && !(await getFolders()).some(folder => folder.id === folderId)) throw new Error('Folder was removed');
-  const id = Date.now().toString() + Math.random().toString(36).slice(2, 6);
-  deferred.push({
-    id,
-    url:       tab.url,
-    title:     tab.title,
-    savedAt:   new Date().toISOString(),
-    completed: false,
-    dismissed: false,
-    folderId:  folderId || null,
-  });
-  await storageRepository.setDeferred(deferred);
-  return id;
+  return collectionCommand('save', { page: { url: tab.url, title: tab.title }, folderId });
 }
 
 /**
@@ -806,8 +766,7 @@ async function saveTabForLater(tab, folderId = null) {
  * Restores physically removed records at their original positions.
  */
 async function restoreRemovedSavedTabs(snapshots) {
-  const deferred = await storageRepository.getDeferred();
-  await storageRepository.setDeferred(restoreSavedRecords(deferred, snapshots));
+  await collectionCommand('restore-links', { snapshots });
 }
 
 /**
@@ -832,16 +791,7 @@ async function getSavedTabs() {
  * Marks a saved tab as completed (checked off). It moves to the archive.
  */
 async function checkOffSavedTab(id, { internalUndo = false } = {}) {
-  const [deferred, folders] = await Promise.all([
-    storageRepository.getDeferred(),
-    getFolders(),
-  ]);
-  const result = setSavedRecordCompletion(deferred, folders, id, true, {
-    allowLocked: internalUndo,
-  });
-  if (!result.updated) return false;
-  await storageRepository.setDeferred(result.records);
-  return true;
+  return collectionCommand('completion', { id, completed: true, internalUndo });
 }
 
 /**
@@ -850,9 +800,7 @@ async function checkOffSavedTab(id, { internalUndo = false } = {}) {
  * Reverses checkOffSavedTab() — used by the "Undo" toast action.
  */
 async function uncheckSavedTab(id) {
-  const deferred = await storageRepository.getDeferred();
-  const result = setSavedRecordCompletion(deferred, [], id, false);
-  if (result.updated) await storageRepository.setDeferred(result.records);
+  await collectionCommand('completion', { id, completed: false });
 }
 
 /**
@@ -865,38 +813,21 @@ async function dismissSavedTab(id) {
 }
 
 async function undoSavedAdditions(ids) {
-  while (ids.length) {
-    const id = ids[0];
-    if (id) {
-      const removed = await dismissSavedTab(id);
-      if (!removed.length && (await storageRepository.getDeferred()).some(tab => tab.id === id)) {
-        throw new Error('Unlock this saved folder before Undo');
-      }
-    }
-    ids.shift();
-  }
+  const requested = ids.filter(Boolean);
+  if (!requested.length) { ids.length = 0; return; }
+  await dismissSavedTabs(requested);
+  const existing = new Set((await storageRepository.getDeferred()).map(tab => tab.id));
+  const remaining = requested.filter(id => existing.has(id));
+  ids.splice(0, ids.length, ...remaining);
+  if (remaining.length) throw new Error('Unlock this saved folder before Undo');
 }
 
 async function dismissSavedTabs(ids) {
-  const [deferred, folders] = await Promise.all([
-    storageRepository.getDeferred(),
-    getFolders(),
-  ]);
-  const requested = new Set((Array.isArray(ids) ? ids : [ids]).filter(Boolean));
-  const removableIds = [...requested].filter(id => {
-    const tab = deferred.find(record => record.id === id);
-    return tab && !folderIsLocked(tab.folderId, folders);
-  });
-  const result = removeSavedRecords(deferred, removableIds);
-  if (result.removed.length) await storageRepository.setDeferred(result.records);
-  return result.removed;
+  return collectionCommand('remove-links', { ids: Array.isArray(ids) ? ids : [ids] });
 }
 
 async function purgeLegacyDismissedTabs() {
-  const deferred = await storageRepository.getDeferred();
-  const result = purgeDismissedRecords(deferred);
-  if (result.removedCount) await storageRepository.setDeferred(result.records);
-  return result.removedCount;
+  return collectionCommand('purge-legacy');
 }
 
 
@@ -948,20 +879,7 @@ function folderIsLocked(folderId, folders) {
  * Adds a new folder and returns it. Empty names are ignored.
  */
 async function createFolder(name) {
-  const clean = (name || '').trim();
-  if (!clean) return null;
-  const folders = await getFolders();
-  const folder = {
-    id:        Date.now().toString() + Math.random().toString(36).slice(2, 6),
-    name:      clean,
-    collapsed: false,
-    locked:    false,
-    color:     null, // no colour by default — the user sets one from the menu
-    createdAt: new Date().toISOString(),
-  };
-  folders.push(folder);
-  await storageRepository.setFolders(folders);
-  return folder;
+  return collectionCommand('folder-create', { name });
 }
 
 /**
@@ -970,21 +888,11 @@ async function createFolder(name) {
  * Sets a folder's accent colour (pass null to clear it).
  */
 async function setFolderColor(id, color) {
-  const folders = await getFolders();
-  const folder = folders.find(f => f.id === id);
-  if (folder) {
-    folder.color = color || null;
-    await storageRepository.setFolders(folders);
-  }
+  await collectionCommand('folder-edit', { id, fields: { color } });
 }
 
 async function setFolderLocked(id, locked) {
-  const folders = await getFolders();
-  const folder = folders.find(f => f.id === id);
-  if (!folder) return false;
-  folder.locked = !!locked;
-  await storageRepository.setFolders(folders);
-  return true;
+  return collectionCommand('folder-edit', { id, fields: { locked } });
 }
 
 /**
@@ -993,14 +901,7 @@ async function setFolderLocked(id, locked) {
  * Moves the dragged folder to the position of the target folder.
  */
 async function reorderFolders(draggedId, targetId) {
-  if (draggedId === targetId) return;
-  const folders = await getFolders();
-  const from = folders.findIndex(f => f.id === draggedId);
-  const to   = folders.findIndex(f => f.id === targetId);
-  if (from === -1 || to === -1) return;
-  const [moved] = folders.splice(from, 1);
-  folders.splice(to, 0, moved);
-  await storageRepository.setFolders(folders);
+  await collectionCommand('folder-reorder', { draggedId, targetId });
 }
 
 /**
@@ -1009,9 +910,7 @@ async function reorderFolders(draggedId, targetId) {
  * Collapses or expands every folder at once.
  */
 async function setAllFoldersCollapsed(collapsed) {
-  const folders = await getFolders();
-  folders.forEach(f => { f.collapsed = !!collapsed; });
-  await storageRepository.setFolders(folders);
+  await collectionCommand('folders-collapse', { collapsed });
 }
 
 /**
@@ -1020,14 +919,7 @@ async function setAllFoldersCollapsed(collapsed) {
  * Renames a folder. Empty names are ignored (folder keeps its old name).
  */
 async function renameFolder(id, name) {
-  const clean = (name || '').trim();
-  if (!clean) return;
-  const folders = await getFolders();
-  const folder = folders.find(f => f.id === id);
-  if (folder) {
-    folder.name = clean;
-    await storageRepository.setFolders(folders);
-  }
+  await collectionCommand('folder-edit', { id, fields: { name } });
 }
 
 /**
@@ -1036,12 +928,7 @@ async function renameFolder(id, name) {
  * Persists a folder's collapsed/expanded state.
  */
 async function setFolderCollapsed(id, collapsed) {
-  const folders = await getFolders();
-  const folder = folders.find(f => f.id === id);
-  if (folder) {
-    folder.collapsed = !!collapsed;
-    await storageRepository.setFolders(folders);
-  }
+  await collectionCommand('folder-edit', { id, fields: { collapsed } });
 }
 
 /**
@@ -1052,12 +939,7 @@ async function setFolderCollapsed(id, collapsed) {
  *   'delete' → tabs are dismissed along with the folder
  */
 async function deleteFolder(id, mode = 'inbox') {
-  const folders = await getFolders();
-  const deferred = await storageRepository.getDeferred();
-  const result = deleteFolderRecords(folders, deferred, id, mode);
-  if (!result.snapshot) return null;
-  await storageRepository.setCollections({ folders: result.folders, deferred: result.records });
-  return result.snapshot;
+  return collectionCommand('folder-delete', { id, mode });
 }
 
 /**
@@ -1067,11 +949,7 @@ async function deleteFolder(id, mode = 'inbox') {
  * restores each affected tab's folderId / dismissed state.
  */
 async function restoreDeletedFolder(snapshot) {
-  if (!snapshot || !snapshot.folder) return;
-  const folders = await getFolders();
-  const deferred = await storageRepository.getDeferred();
-  const restored = restoreFolderRecords(folders, deferred, snapshot);
-  await storageRepository.setCollections({ folders: restored.folders, deferred: restored.records });
+  if (snapshot?.folder) await collectionCommand('folder-undo-delete', { snapshot });
 }
 
 /**
@@ -1081,13 +959,7 @@ async function restoreDeletedFolder(snapshot) {
  * is null/empty. Only the single record is touched.
  */
 async function moveTabsToFolder(deferredIds, folderId) {
-  const [deferred, folders] = await Promise.all([
-    storageRepository.getDeferred(),
-    getFolders(),
-  ]);
-  const result = moveSavedRecords(deferred, folders, deferredIds, folderId);
-  if (result.changed) await storageRepository.setDeferred(result.records);
-  return result;
+  return collectionCommand('move-links', { ids: deferredIds, folderId });
 }
 
 async function moveTabToFolder(deferredId, folderId) {
@@ -1125,7 +997,7 @@ function downloadBackupFile(backup) {
 }
 
 async function mergeBackupData(backup) {
-  return importBackupDocument(storageRepository, backup);
+  return collectionCommand('import-backup', { document: backup });
 }
 
 async function exportTabAtlasBackup() {
@@ -1182,6 +1054,7 @@ async function loadStorageDetails() {
   const version = ++storageDetailsVersion;
   const error = document.getElementById('storageUsageError');
   error.hidden = true;
+  void timeMachineController.storageSummary(document.getElementById('historyStorageSummary'));
   try {
     const details = await readStorageDetails(chrome.storage.local);
     if (!dialog.open || version !== storageDetailsVersion) return;
@@ -1233,21 +1106,20 @@ function setArchiveRetentionDays(days) {
 }
 
 async function removeExpiredArchiveLinks() {
+  const guardUndo = collectionClient.captureUndoGuard();
   const days = currentArchiveRetentionDays();
   if (days === 0) return { days, removed: [] };
-  const deferred = await storageRepository.getDeferred();
-  const expiredIds = expiredArchiveRecordIds(deferred, days);
-  const removed = expiredIds.length ? await dismissSavedTabs(expiredIds) : [];
-  return { days, removed };
+  return { ...await collectionCommand('cleanup-archive', { days }), guardUndo };
 }
 
-function showArchiveCleanupResult({ days, removed }, announceEmpty = false) {
+function showArchiveCleanupResult({ days, removed, guardUndo }, announceEmpty = false) {
   if (removed.length) {
     const count = removed.length;
-    showToast(`Removed ${count} archived link${count !== 1 ? 's' : ''} older than ${days} days`, async () => {
+    const undo = async () => {
       await restoreRemovedSavedTabs(removed);
       await refreshSavedAndFolders();
-    });
+    };
+    showToast(`Removed ${count} archived link${count !== 1 ? 's' : ''} older than ${days} days`, guardUndo ? guardUndo(undo) : undo);
     return;
   }
   if (announceEmpty) {
@@ -1306,6 +1178,7 @@ function openCustomizeMenu(x, y) {
     } },
     { separator: true },
     { label: 'Backup & restore…', onClick: () => openBackupMenu(x, y) },
+    { label: 'Time machine…', icon:'clock', onClick: () => { closeContextMenu(); void timeMachineController.open(); } },
     { label: 'Storage usage…', onClick: openStorageDialog },
     { label: 'Restart tour', onClick: () => startOnboarding({ manual: true }) },
   ]);
@@ -1417,6 +1290,7 @@ async function folderToGroup(folderId) {
  * after the group), then closes those tabs (full conversion).
  */
 async function groupToFolder(groupId) {
+  const showToast = beginCollectionActionToast();
   if (typeof chrome === 'undefined' || !chrome.tabGroups) {
     showToast('Tab groups not available'); return;
   }
@@ -1429,16 +1303,13 @@ async function groupToFolder(groupId) {
   const savable = tabs.filter(t => t.url && !t.url.startsWith('chrome') && !t.url.startsWith('about:'));
   if (savable.length === 0) { showToast('Group has nothing to save'); return; }
 
-  const folder = await createFolder(group.title || 'Tab group');
-  if (!folder) { showToast('Could not create the folder. Your tab group remains open; try again.', null, { error:true }); return; }
-  await setFolderColor(folder.id, groupColorToHex(group.color));
-  const committed = [], savedIds = [];
-  for (const tab of savable) {
-    try {
-      savedIds.push(await saveTabForLater({ url:tab.url, title:tab.title }, folder.id));
-      committed.push(tab);
-    } catch { /* Unsaved members stay in the open group. */ }
-  }
+  let saved;
+  try { saved = await collectionCommand('save-many', { pages: savable.map(tab => ({ url:tab.url, title:tab.title })),
+    createFolder: { name: group.title || 'Tab group', color: groupColorToHex(group.color) } }); }
+  catch { showToast('Could not save the group. Its tabs remain open; try again.', null, { error:true }); return; }
+  const folder = saved.folder;
+  if (!folder) { showToast('Could not save the group. Its tabs remain open; try again.', null, { error:true }); return; }
+  const committed = saved.savedIndexes.map(index => savable[index]), savedIds = saved.savedIds;
   const closed = await closeTrackedTabs(committed);
   const undoTabs = closed.map(tabUndoSnapshot);
   const failed = savable.length - committed.length;
@@ -1773,6 +1644,11 @@ function restoreToastFocus(toast) {
     .find(el => !toast.contains(el) && el.getClientRects().length);
   (target || document.getElementById('globalSearch'))?.focus({ preventScroll:true });
 }
+function beginCollectionActionToast() {
+  // Capture before asynchronous work: a restore can finish before this action shows its receipt.
+  const guard = collectionClient.captureUndoGuard();
+  return (message, undoFn, options) => showToast(message, typeof undoFn === 'function' ? guard(undoFn) : undoFn, options);
+}
 function showToast(message, undoFn, { error = false } = {}) {
   const toast = document.getElementById('toast');
   toast.classList.toggle('is-error', error);
@@ -1800,7 +1676,7 @@ function showToast(message, undoFn, { error = false } = {}) {
   toastUndoToken = null;
 
   if (typeof undoFn === 'function') {
-    const token = undoStore.add(undoFn);
+    const token = undoStore.add(collectionClient.guardUndo(undoFn));
     toastUndoToken = token;
     toastUndoMessage = message;
     const btn = document.createElement('button');
@@ -1815,7 +1691,10 @@ function showToast(message, undoFn, { error = false } = {}) {
       restoreToastFocus(toast);
       if (callback) {
         try { if (await callback() !== false) playUndoSound(); }
-        catch { showToast('Could not complete Undo. Try Undo again for the remaining changes.', callback, { error:true }); }
+        catch (error) {
+          if (error.code === 'GENERATION_CHANGED') showToast('Atlas was restored. This earlier Undo is no longer available; use Time machine to return.', null, { error:true });
+          else showToast('Could not complete Undo. Try Undo again for the remaining changes.', callback, { error:true });
+        }
       }
     });
     toast.appendChild(btn);
@@ -2190,7 +2069,7 @@ async function renderFoldersColumn() {
       emptyEl.style.display = 'none';
 
       // Bucket active tabs by their folderId
-      const byFolder = {};
+      const byFolder = Object.create(null);
       for (const t of active) {
         if (t.folderId) (byFolder[t.folderId] = byFolder[t.folderId] || []).push(t);
       }
@@ -2284,7 +2163,7 @@ function renderOpenTabsView() {
   // Landing pages (Gmail inbox, Twitter home, etc.) get their own special group
   // so they can be closed together without affecting content tabs on the same domain.
   domainGroups = [];
-  const groupMap    = {};
+  const groupMap    = Object.create(null);
   const landingTabs = [];
 
   // Custom group rules when a fork defines them before app.js.
@@ -2444,6 +2323,7 @@ document.addEventListener('click', event => {
   });
 });
 async function handleDashboardClick(e) {
+  const showToast = beginCollectionActionToast();
   const savedSelectItem = getSelectableSavedItem(e.target);
   if (savedSelectItem && (suppressNextSavedBrushClick || e.ctrlKey || e.metaKey || e.shiftKey)) {
     e.preventDefault();
@@ -2464,6 +2344,7 @@ async function handleDashboardClick(e) {
   if (action === 'retry-dashboard') { await initializeTabAtlas(); return; }
   if (action === 'manage-storage') { openStorageDialog(); return; }
   if (action === 'close-storage') { closeStorageDialog(); return; }
+  if (action === 'storage-history') { closeStorageDialog(); await timeMachineController.open(); return; }
   if (action === 'retry-storage') { await loadStorageDetails(); return; }
   if (action === 'storage-export') { await exportTabAtlasBackup(); return; }
   if (action === 'storage-archive') {
@@ -3188,6 +3069,7 @@ function showContextMenu(x, y, items) {
       } else {
         btn.textContent = it.label;
       }
+      if(it.icon==='clock')btn.insertAdjacentHTML('afterbegin','<svg class="tm-entry-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
       btn.addEventListener('click', async (ev) => {
         ev.stopPropagation();
         closeContextMenu();
@@ -3260,6 +3142,7 @@ function closeContextMenu({ restoreFocus = true } = {}) {
  * create a new folder, or remove. Accepts one id or a selected batch.
  */
 async function openTabContextMenu(x, y, deferredIds) {
+  const showToast = beginCollectionActionToast();
   const ids = [...new Set((Array.isArray(deferredIds) ? deferredIds : [deferredIds]).filter(Boolean))];
   if (!ids.length) return;
 
@@ -3543,7 +3426,7 @@ async function confirmSharedImport() {
   const pending = pendingSharedImport;
   button.disabled = true;
   let result;
-  try { result = await importSharedPackage(storageRepository, pending.fragment); }
+  try { result = await collectionCommand('import-share', { fragment: pending.fragment }); }
   catch { result = { code:'STORAGE_READ_FAILED' }; }
   finally { button.disabled = false; }
   if (pendingSharedImport !== pending) return;
@@ -3791,6 +3674,7 @@ document.addEventListener('drop', event => {
   void handleDashboardDrop(event).catch(() => showToast('Could not complete the move. Try again.', null, { error:true }));
 });
 async function handleDashboardDrop(e) {
+  const showToast = beginCollectionActionToast();
   if (!dragData) return;
   const data = dragData;
   dragData = null;
@@ -4370,6 +4254,7 @@ async function closeSelectedTabs() {
  */
 let savingSelection = false;
 async function saveSelectedTabs(folderId) {
+  const showToast = beginCollectionActionToast();
   if (savingSelection) return;
   const urls = [...selectedTabUrls];
   if (!urls.length) return;
@@ -4388,14 +4273,13 @@ async function saveSelectedTabs(folderId) {
       const t = targets.find(x => x.url === u) || openTabs.find(x => x.url === u);
       return t ? (t.title || u) : u;
     };
-    const savedIds = [];
+    let savedIds = [];
     const savedUrls = new Set();
-    for (const u of urls) {
-      try {
-        savedIds.push(await saveTabForLater({ url:u, title:titleFor(u) }, folderId || null));
-        savedUrls.add(u);
-      } catch { /* Unsaved pages remain open and selected for retry. */ }
-    }
+    try {
+      const saved = await collectionCommand('save-many', { pages: urls.map(url => ({ url, title:titleFor(url) })), folderId: folderId || null });
+      savedIds = saved.savedIds;
+      for (const index of saved.savedIndexes) savedUrls.add(urls[index]);
+    } catch { /* No tabs close unless the complete local batch committed. */ }
 
     const closed = [];
     for (const tab of targets.filter(tab => savedUrls.has(tab.url))) {
@@ -5180,6 +5064,7 @@ async function keepFocusSweepTab() {
 }
 
 async function saveFocusSweepTab() {
+  const showToast = beginCollectionActionToast();
   if (!focusSweep.active || focusSweep.busyAction) return false;
   const item = currentFocusSweepItem();
   const tab = await getCurrentFocusSweepLiveTab();
@@ -5322,6 +5207,7 @@ function setFocusSweepSaveDestination(folderId, folderName) {
 }
 
 async function applyFocusSweepActions() {
+  const showToast = beginCollectionActionToast();
   if (!focusSweep.active || focusSweep.busyAction) return;
 
   if (focusSweep.applied || focusSweep.actionMode === 'instant') {
@@ -5355,6 +5241,7 @@ async function applyFocusSweepActions() {
   let savedCount = 0;
   let closedCount = 0;
   let skippedCount = 0;
+  const stagedSaves = [];
 
   for (const [tabId, action] of stagedEntries) {
     const item = focusSweep.queue.find(entry => entry.id === tabId);
@@ -5365,20 +5252,18 @@ async function applyFocusSweepActions() {
     }
 
     if (action.type === 'save') {
-      try {
-        const savedId = await saveTabForLater(
-          { url: tab.url, title: tab.title || item.title },
-          action.folderId || null
-        );
-        savedIds.push(savedId);
-        closeTargets.push({ tab, kind:'save' });
-        savedCount += 1;
-      } catch {
-        skippedCount += 1;
-      }
+      stagedSaves.push({ tab, page: { url:tab.url, title:tab.title || item.title }, folderId:action.folderId || null });
     } else if (action.type === 'close') {
       closeTargets.push({ tab, kind:'close' });
     }
+  }
+
+  if (stagedSaves.length) {
+    try {
+      const saved = await collectionCommand('save-many', { pages: stagedSaves.map(({ page, folderId }) => ({ page, folderId })) });
+      savedIds.push(...saved.savedIds); savedCount = saved.savedIndexes.length; skippedCount += saved.failedIndexes.length;
+      for (const index of saved.savedIndexes) closeTargets.push({ tab:stagedSaves[index].tab, kind:'save' });
+    } catch { skippedCount += stagedSaves.length; }
   }
 
   let leftOpen = 0;

@@ -49,7 +49,7 @@ export async function readStorageDetails(storageArea) {
 }
 
 /** Check the final merged data, accounting for the keys that it replaces. */
-export async function checkStorageCapacity(storageArea, update) {
+export async function checkStorageCapacity(storageArea, update, { action = 'import this backup' } = {}) {
   if (typeof storageArea.getBytesInUse !== 'function') return;
   const [used, replaced] = await Promise.all([
     storageArea.getBytesInUse(null), storageArea.getBytesInUse(Object.keys(update)),
@@ -57,6 +57,6 @@ export async function checkStorageCapacity(storageArea, update) {
   const quota = storageQuota(storageArea);
   const projected = used - replaced + storageBytes(update);
   if (projected > quota) {
-    throw new Error(`Not enough storage to import this backup. Free at least ${Math.ceil((projected - quota) / MIB * 10) / 10} MB by removing unneeded saved links or workspaces, then try again. Your existing data has not changed.`);
+    throw new Error(`Not enough storage to ${action}. Free at least ${Math.ceil((projected - quota) / MIB * 10) / 10} MB by removing unneeded saved links or workspaces, then try again. Your existing data has not changed.`);
   }
 }

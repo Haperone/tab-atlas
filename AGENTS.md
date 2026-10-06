@@ -8,6 +8,15 @@
 - Every theme must remain internally consistent: reuse its semantic colors, surface materials, radius and shadow direction. Glass stays translucent, Soft stays tactile, and the solid Apple themes stay opaque. Never apply one universal visual treatment across these families.
 - Project-local interface skills from jakubkrehel/skills live in `.agents/skills/better-*`; use them for relevant UI work while honoring these project preferences.
 
+## Mobile PWA and optional synchronization
+
+- The approved requirements are in `docs/mobile-sync-spec.md`. The local skill catalog, pinned sources and application boundaries are in `docs/mobile-sync-skills.md`.
+- For mobile interface work, combine `mobile-native` with the existing `better-*` skills and the project's theme rules. For PWA behavior, consult `pwa-development`; for browser verification, consult the relevant `playwright-best-practices` references.
+- Supabase and Cloudflare remain provider candidates. Their skills do not authorize provisioning, authentication, deployment, paid plans, framework changes, package installation or Git actions. Follow the user's current scope and existing project patterns.
+- PWA snippets are references, not the synchronization design: preserve durable outbox/ack behavior, owner-scoped storage, optional E2EE sync and local Time machine. Do not cache private API/auth responses through generic recipes or delete unrelated caches. Activate updates without discarding pending changes.
+- Verify evolving installation, Share Target, background execution and storage capabilities against current platform documentation. Never disable zoom; distinguish browser emulation from Android/iOS hardware verification.
+- Load only the skills and reference files relevant to the current task. Generic security guidance does not replace design and review of the E2EE protocol, key recovery, or concurrent synchronization.
+
 You're installing **Tab Atlas** for the user. Your job is not just to set it up -- it's to get them excited about using it.
 
 ---

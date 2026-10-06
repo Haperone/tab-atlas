@@ -2,17 +2,19 @@ import { makeStorageId } from './ids.js';
 import { findSavedPage, websiteUrl, savePage, undoSave, QUICK_SAVE_UNDO_KEY, QUICK_SAVE_FEEDBACK_KEY, QUICK_SAVE_ERRORS } from './quick-save-core.js';
 import { QUICK_SAVE_APPEARANCE_KEY } from './quick-save-appearance.js';
 import { showQuickSaveNotification } from './quick-save-notification.js';
+import { createAtlasCollectionWriter } from './atlas-collection-writer.js';
 
 export const QUICK_SAVE_PREFIX = 'tab-atlas/quick-save/';
 export const SAVE_MENU_ID = 'tab-atlas-save-page';
 const INBOX_MENU_ID = `${SAVE_MENU_ID}:inbox`;
 const FOLDER_MENU_PREFIX = `${SAVE_MENU_ID}:folder:`;
 
-export function createQuickSaveService(chromeApi, { openDashboard, updateBadge, playSaveSound, playUndoSound }) {
+export function createQuickSaveService(chromeApi, { openDashboard, updateBadge, playSaveSound, playUndoSound, collectionWriter }) {
   // These queues serialize in-flight operations only; durable data lives in storage.
   let writes = Promise.resolve();
   let menus = Promise.resolve();
   const area = chromeApi.storage.local;
+  const writer = collectionWriter || createAtlasCollectionWriter(area, { extraKeys: [QUICK_SAVE_UNDO_KEY, QUICK_SAVE_FEEDBACK_KEY] });
   const serialize = operation => {
     const previous = writes;
     const result = (async () => { await previous; return operation(); })();
@@ -39,15 +41,23 @@ export function createQuickSaveService(chromeApi, { openDashboard, updateBadge, 
       undo: data[QUICK_SAVE_UNDO_KEY] || null, feedback: data[QUICK_SAVE_FEEDBACK_KEY] || null };
   }
 
-  async function save(page, folderId, contextMenu = false, createdCollections = null) {
-    const data = createdCollections || await collections();
-    const result = savePage(data.deferred, data.folders, page, folderId);
-    const feedback = { ok: result.ok, error: result.error, folderName: result.folderName, kind: result.kind,
-      pageTitle: page.title || page.url, createdAt: new Date().toISOString() };
-    const update = { [QUICK_SAVE_FEEDBACK_KEY]: feedback };
-    if (createdCollections && result.ok) update.folders = data.folders;
-    if (result.changed) Object.assign(update, { deferred: result.records, [QUICK_SAVE_UNDO_KEY]: result.undo });
-    await area.set(update);
+  async function save(page, folderId, contextMenu = false, createName = null) {
+    const committed = await writer.mutate(data => {
+      let created = false;
+      if (createName) {
+        const folder = { id: makeStorageId(new Set(data.folders.map(item => item.id))), name: createName,
+          collapsed: false, locked: false, color: null, createdAt: new Date().toISOString() };
+        data.folders.push(folder); folderId = folder.id; created = true;
+      }
+      const result = savePage(data.deferred, data.folders, page, folderId);
+      const feedback = { ok: result.ok, error: result.error, folderName: result.folderName, kind: result.kind,
+        pageTitle: page.title || page.url, createdAt: new Date().toISOString() };
+      const update = { [QUICK_SAVE_FEEDBACK_KEY]: feedback };
+      if (created && result.ok) update.folders = data.folders;
+      if (result.changed) Object.assign(update, { deferred: result.records, [QUICK_SAVE_UNDO_KEY]: result.undo });
+      return { update, result };
+    }, { kind: createName ? 'create-folder-and-save' : 'quick-save' });
+    const result = committed.result;
     if (contextMenu) {
       try {
         await chromeApi.action.setBadgeText({ text: result.ok ? '✓' : '!' });
@@ -79,24 +89,23 @@ export function createQuickSaveService(chromeApi, { openDashboard, updateBadge, 
         if (action === 'create-folder') {
           const name = String(request.name || '').trim().slice(0, 120);
           if (!name) return { ok: false, error: 'EMPTY_NAME' };
-          const data = await collections();
           const page = await activePage(request.tabId);
           if (request.expectedUrl && page.url !== request.expectedUrl) return { ok: false, error: 'PAGE_CHANGED' };
           if (!websiteUrl(page.url)) return { ok: false, error: 'UNSUPPORTED_PAGE' };
-          const folder = { id: makeStorageId(new Set(data.folders.map(item => item.id))), name,
-            collapsed: false, locked: false, color: null, createdAt: new Date().toISOString() };
-          const result = await save(page, folder.id, false, { ...data, folders: [...data.folders, folder] });
+          const result = await save(page, null, false, name);
           if (request.notify && result.ok) await notifyPage(page, result);
           return result;
         }
         if (action === 'undo') {
-          const data = await collections();
-          const undo = data[QUICK_SAVE_UNDO_KEY];
-          if (!undo || undo.id !== request.undoId) return { ok: false, error: 'UNDO_GONE' };
-          const result = undoSave(data.deferred, data.folders, undo);
-          if (!result.ok) return result;
-          await area.set({ deferred: result.records, [QUICK_SAVE_UNDO_KEY]: null,
-            [QUICK_SAVE_FEEDBACK_KEY]: { ok: true, kind: 'undone', createdAt: new Date().toISOString() } });
+          const committed = await writer.mutate((data, stored) => {
+            const undo = stored[QUICK_SAVE_UNDO_KEY];
+            if (!undo || undo.id !== request.undoId) return { update: {}, result: { ok: false, error: 'UNDO_GONE' } };
+            const result = undoSave(data.deferred, data.folders, undo);
+            if (!result.ok) return { update: {}, result };
+            return { update: { deferred: result.records, [QUICK_SAVE_UNDO_KEY]: null,
+              [QUICK_SAVE_FEEDBACK_KEY]: { ok: true, kind: 'undone', createdAt: new Date().toISOString() } }, result: { ok: true } };
+          }, { kind: 'quick-save-undo' });
+          if (!committed.result.ok) return committed.result;
           await playSoundIfEnabled(playUndoSound);
           return { ok: true };
         }

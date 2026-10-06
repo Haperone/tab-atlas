@@ -22,6 +22,8 @@ export function closeModalDialog(dialog) {
   // A pending recovery notification must stay reachable after its dialog closes.
   const toast = dialog.querySelector('#toast');
   if (toast) dialog.ownerDocument.body.appendChild(toast);
+  const notice = globalThis.__tabAtlasSaveNotification?.host;
+  if (notice && dialog.contains(notice)) dialog.ownerDocument.documentElement.append(notice);
   const previous = returnTargets.get(dialog);
   returnTargets.delete(dialog);
   const target = previous?.isConnected && previous.getClientRects().length

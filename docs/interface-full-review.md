@@ -1,3 +1,5 @@
+> Generated evidence referenced below was deleted during the 6 October 2026 cleanup at the user's request. Filenames identify historical captures, not current verification. See [output storage and reruns](development-artifacts.md).
+
 # Полный аудит интерфейса — 2026-09-30
 
 ## Scope and coverage

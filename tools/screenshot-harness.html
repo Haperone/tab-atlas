@@ -63,7 +63,7 @@
 
     // A crowded, local-only fixture for drag-scroll and interaction regression checks.
     const harnessParams = new URLSearchParams(location.search);
-    let failInitialRead = harnessParams.has('load-failure');
+    let failInitialRead = false;
     if (harnessParams.has('audit')) { SEED_TABS[0].groupId = 77; SEED_TABS[1].groupId = 77; }
     if (harnessParams.has('deep')) {
       SEED_TABS[0].pinned = true;
@@ -166,6 +166,7 @@
         onAttached: noopEvent(),
       },
       windows: {
+        get: (id) => resolve({ id, type: 'normal', incognito: false }),
         getCurrent: () => resolve({ id: 1 }),
         getAll: () => resolve([{ id: 1, focused: true, state: 'normal', tabs: SEED_TABS }]),
         update: () => resolve({}),
@@ -229,6 +230,7 @@
   <link rel="stylesheet" href="../extension/interaction-controls.css">
   <link rel="stylesheet" href="../extension/folder-share.css">
   <link rel="stylesheet" href="../extension/dashboard-controls.css">
+  <link rel="stylesheet" href="../extension/time-machine.css">
 </head>
 <body>
   <!-- The dashboard markup is created by app.js against these anchors, but the real
@@ -250,6 +252,10 @@
       const html = await (await fetch('../extension/index.html')).text();
       const doc = new DOMParser().parseFromString(html, 'text/html');
       document.body.innerHTML = doc.body.innerHTML;
+      const { setupAtlasHistoryPreview } = await import('./atlas-history-preview.js');
+      await setupAtlasHistoryPreview(window.chrome, harnessParams);
+      // Fail the dashboard's first read, after the independent history owner starts.
+      failInitialRead = harnessParams.has('load-failure');
       if (new URLSearchParams(location.search).has('spacing')) {
         const spacing = document.createElement('style');
         spacing.textContent = '* {line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important} p {margin-bottom:2em!important}';
@@ -259,6 +265,7 @@
       boot.type = 'module';
       boot.src = '../extension/app.js';
       document.body.appendChild(boot);
+      if (harnessParams.has('history-checks')) await import('./atlas-history-ui-checks.js');
       if (new URLSearchParams(location.search).has('audit')) {
         const checks = document.createElement('script'); checks.type = 'module';
         checks.src = './interface-audit-checks.js'; document.body.appendChild(checks);

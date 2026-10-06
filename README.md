@@ -62,6 +62,64 @@ Outside that explicit sharing action there is no server, npm install, build step
 
 ---
 
+## Time machine
+
+Time machine records local collection changes automatically from the first launch.
+Open **Customize → Time machine** to browse them; pause or turn off recording from its options menu.
+Changes to **folders, active saved links and their order** create automatic snapshots, including saves from the popup
+and page context menu while the dashboard is closed. Browser tab activity, settings,
+themes, website contents and manual workspace snapshots are excluded.
+
+Browse an earlier Atlas without changing current collections. Groups whose links
+are all still present are hidden, including Saved for later. Missing folders are
+red; mixed groups show missing links first in red and present links below in green.
+Details of moves and edits appear on hover or keyboard focus, without permanent status labels.
+Archived links are excluded from snapshots and the timeline.
+The timeline zooms from years and months down to individual snapshots. Scroll to
+zoom around the pointer, drag to move the period, or use the zoom and calendar
+anchors. Small dots show individual moments; fine strokes group nearby moments,
+with counts on hover or focus. Select a group to zoom in, then a dot to inspect
+that exact snapshot. **All history** expands the range again. Earlier/Later and
+arrow keys move one snapshot at a time; dragging and zooming keep the inspected
+snapshot unchanged. Home/End select the endpoints; Page Up/Down move the period.
+On wide screens, Saved for later is a plain list on the left and folder cards are
+on the right, with independent scrolling. On narrow screens they stack and share
+the content scroll. Search, missing-first ordering and selection work across both.
+Saved for later is fully expanded. Folders expose every missing link immediately;
+remaining present links can be expanded in batches of 25.
+Restore the entire Atlas, selected folders or individual saved links after reviewing the changes. The
+restore control appears only when the snapshot differs from the current active Atlas,
+including folder properties and order. **Restore entire Atlas** is a secondary
+action in the fixed header. A bottom panel appears only after selecting items,
+showing **Restore selected**, the snapshot date and folder/link counts. Labels wrap
+without truncation. On narrow screens it spans the available width without covering links.
+Clearing the selection hides that panel and returns focus to the header action. When
+a folder already exists, choose **Replace folder**, **Add missing links** or **Restore
+a copy** with a `Restored ·` prefix. Add missing keeps current edits and order.
+Open any saved link from a snapshot separately in the current normal browser window;
+restoring collections does not open browser tabs or windows.
+
+The exact current Atlas is protected before restoration. **Undo last restore** remains
+in the options after the success notice disappears. Undo after newer edits requires
+confirmation and protects those edits too: **Show Before Undo** lets you return to them.
+Restored links return active to their original folder; a missing original folder is
+restored with the selected links. If the same identity is currently archived, it is
+reactivated without a duplicate. Other current archived links stay unchanged. Exact
+Undo data is protected separately, including a reactivated link's preceding archive
+state. Existing collection history is migrated without deleting moments or promised Undo.
+
+History uses the separate `tab-atlas-collections-history` IndexedDB database: **200 MiB
+accounted payload budget**, trimmed towards **160 MiB** as it fills. The warning appears
+at **160 MiB (80%)**, and becomes “almost full” at **190 MiB (95%)**. There is no fixed
+maximum age; available history depends on collection size and changes. The latest
+protected return point survives automatic trimming. Physical database overhead and
+browser origin quotas apply separately; storage is not unlimited.
+
+Use **Time machine options → History storage** to review usage and explicitly clear
+history, including protected Undo. Current collections stay unchanged. Regular schema-1
+backups **exclude history**. No new permissions or external services are used. This
+source feature is under acceptance testing; the existing 1.2.0 release ZIP is unchanged.
+
 ## Install (Load unpacked)
 
 ```bash

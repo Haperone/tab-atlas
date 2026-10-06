@@ -13,7 +13,7 @@ export function archiveRetentionLabel(days) {
   return normalized === 0 ? 'Off' : `${normalized} days`;
 }
 
-export function expiredArchiveRecordIds(records, retentionDays, now = Date.now()) {
+export function expiredArchiveRecordIds(records, retentionDays, now = Date.now(), protection = {}) {
   const days = normalizeArchiveRetentionDays(retentionDays);
   if (days === 0) return [];
   const cutoff = Number(now) - days * 24 * 60 * 60 * 1000;
@@ -22,6 +22,8 @@ export function expiredArchiveRecordIds(records, retentionDays, now = Date.now()
   return (Array.isArray(records) ? records : [])
     .filter(record => {
       if (!record?.id || record.completed !== true || !record.completedAt) return false;
+      const restored = protection?.[record.id];
+      if (restored?.completedAt === record.completedAt && Number.isFinite(restored.until) && restored.until > Number(now)) return false;
       const completedAt = Date.parse(record.completedAt);
       return Number.isFinite(completedAt) && completedAt <= cutoff;
     })

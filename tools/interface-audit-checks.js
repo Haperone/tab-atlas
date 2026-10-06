@@ -190,22 +190,24 @@ async function run() {
     await until(() => document.querySelector('#foldersList .folder')?.dataset.folderId === 'f-read');
     assert(document.activeElement.dataset.folderId === 'f-read', 'Folder reorder loses focus');
   });
-  await check('Bulk save: only committed pages close; unsaved pages stay selected for retry', async () => {
+  await check('Bulk save: failed atomic commit closes nothing, retains selection and retries with exact Undo', async () => {
     const chips = [...document.querySelectorAll('.chip-focus')].slice(0, 2);
     chips.forEach(el => el.dispatchEvent(new MouseEvent('click', { bubbles:true, ctrlKey:true })));
     const tabsBefore = await chrome.tabs.query({});
+    const dataBefore = await chrome.storage.local.get(['folders','deferred']);
     const set = chrome.storage.local.set;
     let writes = 0;
     chrome.storage.local.set = async update => {
-      if (update.deferred && ++writes === 2) throw new Error('Audit: storage quota');
+      if (update.deferred && ++writes === 1) throw new Error('Audit: storage quota');
       return set(update);
     };
     click('[data-action="select-save"]');
-    await until(() => document.getElementById('toastText').textContent.includes('retry the selection'));
+    await until(() => document.getElementById('toastText').textContent.includes('They remain open; try again'));
     chrome.storage.local.set = set;
-    const after = await chrome.tabs.query({});
-    assert(after.length === tabsBefore.length - tabsBefore.filter(tab => tab.url === chips[0].dataset.tabUrl).length, 'Unsaved page was closed');
-    assert(document.getElementById('selectionCount').textContent.includes('1 selected'), 'Failed page cannot be retried from selection');
+    assert((await chrome.tabs.query({})).length === tabsBefore.length, 'A failed batch closed a tab');
+    assert(JSON.stringify(await chrome.storage.local.get(['folders','deferred'])) === JSON.stringify(dataBefore), 'A failed batch partially changed collections');
+    assert(document.getElementById('selectionCount').textContent.includes('2 selected'), 'Failed pages cannot be retried from selection');
+    click('[data-action="select-save"]'); await until(() => document.getElementById('toastText').textContent.startsWith('Saved 2 tabs'));
     click('#toast .toast-undo'); await wait(100);
     assert((await chrome.tabs.query({})).length === tabsBefore.length, 'Undo duplicated a still-open tab or failed to restore the closed one');
     click('[data-action="select-clear"]');
@@ -240,17 +242,19 @@ async function run() {
     click('#toast .toast-undo'); await wait(100);
     assert((await chrome.tabs.query({})).length === before.length, 'Retry restored a successful step twice');
   });
-  await check('Native group conversion leaves unsaved pages open and has exact Undo', async () => {
+  await check('Native group conversion commits folder and links together; failure closes nothing and retry has exact Undo', async () => {
     await themes('.group-control', ['.group-chip-name','.group-chip-count','.group-control-btn']);
     const before = await chrome.tabs.query({});
     const members = await chrome.tabs.query({groupId:77});
+    const dataBefore = await chrome.storage.local.get(['folders','deferred']);
     const set = chrome.storage.local.set; let writes = 0;
-    chrome.storage.local.set = async update => { if (update.deferred && ++writes === 2) throw new Error('Audit: quota'); return set(update); };
+    chrome.storage.local.set = async update => { if (update.deferred && ++writes === 1) throw new Error('Audit: quota'); return set(update); };
     click('[data-action="group-to-folder"]');
-    await until(() => document.getElementById('toastText').textContent.includes('Unsaved tabs remain open'));
+    await until(() => document.getElementById('toastText').textContent.includes('Its tabs remain open; try again'));
     chrome.storage.local.set = set;
-    assert((await chrome.tabs.query({})).some(tab=>tab.id===members[1].id), 'Unsaved group member was closed');
-    assert((await chrome.tabs.query({})).length === before.length - 1, 'Conversion closed more than its committed member');
+    assert((await chrome.tabs.query({})).length === before.length, 'Failed conversion closed a member');
+    assert(JSON.stringify(await chrome.storage.local.get(['folders','deferred'])) === JSON.stringify(dataBefore), 'Failed conversion left an empty folder or partial links');
+    click('[data-action="group-to-folder"]'); await until(() => document.getElementById('toastText').textContent.includes(`Saved ${members.length} of ${members.length} tabs`));
     click('#toast .toast-undo'); await wait(100);
     assert((await chrome.tabs.query({})).length === before.length, 'Group conversion Undo duplicated live members');
   });

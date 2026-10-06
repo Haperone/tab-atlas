@@ -1,5 +1,5 @@
 // This function is serialized by chrome.scripting: keep it self-contained.
-export function showQuickSaveNotification(message, appearance, expectedUrl) {
+export function showQuickSaveNotification(message, appearance, expectedUrl, onUndo) {
   if (location.href !== expectedUrl || !document.documentElement) return false;
   const key = '__tabAtlasSaveNotification';
   const previous = globalThis[key];
@@ -164,7 +164,7 @@ export function showQuickSaveNotification(message, appearance, expectedUrl) {
     content.setAttribute('aria-disabled', 'true');
     syncTimer();
     let result;
-    try { result = await chrome.runtime.sendMessage({ type:'tab-atlas/quick-save/undo', undoId:message.undoId }); }
+    try { result = typeof onUndo === 'function' ? await onUndo() : await chrome.runtime.sendMessage({ type:'tab-atlas/quick-save/undo', undoId:message.undoId }); }
     catch { result = { ok:false }; }
     if (disposed || dismissing) return;
     if (result?.ok) { dismiss(); return; }
@@ -175,9 +175,9 @@ export function showQuickSaveNotification(message, appearance, expectedUrl) {
     copy.setAttribute('role', 'alert');
     copy.querySelector('.undo-label')?.remove();
     icon.innerHTML = '<circle cx="12" cy="12" r="9"/><path d="M12 7v6m0 4h.01"/>';
-    label.textContent = result?.error === 'UNDO_GONE' ? 'This Undo is no longer available.'
+    label.textContent = result?.message || (result?.error === 'UNDO_GONE' ? 'This Undo is no longer available.'
       : result?.error === 'UNDO_CHANGED' || result?.error === 'SOURCE_LOCKED' ? 'The saved page changed. Review it in Tab Atlas.'
-      : 'Could not undo the save. Try again in Tab Atlas.';
+      : 'Could not undo the save. Try again in Tab Atlas.');
     progress?.cancel(); progress = null;
     remaining = duration = 8000;
     syncTimer();
@@ -190,7 +190,7 @@ export function showQuickSaveNotification(message, appearance, expectedUrl) {
   notice.addEventListener('focusin', () => { focused = true; syncTimer(); });
   notice.addEventListener('focusout', event => { focused = !!event.relatedTarget && notice.contains(event.relatedTarget); syncTimer(); });
   notice.addEventListener('keydown', event => { if (event.key === 'Escape') dismiss(); });
-  document.documentElement.append(host);
+  (document.querySelector('dialog[open]') || document.documentElement).append(host);
   // Populate the already-mounted live region so assistive technology announces it.
   label.textContent = message.text;
   globalThis[key] = { host, dispose };

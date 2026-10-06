@@ -33,3 +33,13 @@ test('archive retention expires only completed records with a valid completion d
   assert.deepEqual(expiredArchiveRecordIds(records, 30, now), ['expired']);
   assert.deepEqual(expiredArchiveRecordIds(records, 0, now), []);
 });
+
+test('restored archive grace preserves original dates, expires exactly, and cannot protect a later re-archive of the same id', () => {
+  const now = Date.parse('2026-10-05T00:00:00Z'), old = { id: 'old', completed: true, completedAt: '2025-01-01T00:00:00Z' };
+  const protection = { old: { completedAt: old.completedAt, until: now + 1000 } };
+  assert.deepEqual(expiredArchiveRecordIds([old], 180, now, protection), []);
+  assert.deepEqual(expiredArchiveRecordIds([old], 180, now + 1000, protection), ['old']);
+  assert.deepEqual(expiredArchiveRecordIds([{ ...old, completedAt: '2025-02-01T00:00:00Z' }], 180, now, protection), ['old']);
+  assert.equal(old.completedAt, '2025-01-01T00:00:00Z');
+  assert.deepEqual(expiredArchiveRecordIds([old], 180, now, { old: { completedAt: old.completedAt, until: 'forever' } }), ['old']);
+});

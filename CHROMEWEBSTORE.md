@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Tab Atlas
 
-> Last Updated: 2026-09-30
+> Last Updated: 2026-10-05
 
 ## Store Listing
 
@@ -94,6 +94,25 @@ feedback and the persisted save result. The native toolbar popup keeps its
 360px width rather than shrinking with its initial viewport.
 
 ## Privacy & Data Use
+
+**Time machine (source feature; not added to the existing 1.2.0 release ZIP):** Recording
+is enabled by default and can be paused or disabled from its options menu. It records automatic
+snapshots of folders, active saved links and their order, excluding archive, in the separate
+`tab-atlas-collections-history` IndexedDB database, including saves from the popup
+or context menu while the dashboard is closed. Browser tab activity, browsing history,
+website contents, settings and manual workspace snapshots are excluded. Restore changes
+Atlas collections; opening a saved historical link is a separate action in the current
+normal browser window. No new permissions are added. Pause/off and confirmed Clear
+history controls are available. History has a 20 MiB accounted payload cap, automatic
+trimming to 16 MiB and no fixed maximum age. Physical database overhead and browser origin
+quotas apply separately. The latest protected return point is kept during trimming.
+Restore Undo is durable; Undo after newer edits requires confirmation and protects the
+newer state too. Restored links return active to their original folder; the same
+currently archived identity is reactivated without duplication. Unselected archive
+stays unchanged. Protected Undo separately retains exact preceding collection data;
+ordinary timeline snapshots exclude archive. Regular backup files do not include history. The source
+feature remains under acceptance testing. Update declarations/screenshots before a future
+release; this change does not publish or modify the existing 1.2.0 package.
 
 **Does the extension collect user data?** No. It processes current tab information locally and does not transmit it to the developer or any third party. If a user explicitly creates and sends a folder-share link, that user has chosen to share its encrypted URL with the recipient.
 
